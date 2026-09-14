@@ -1,0 +1,180 @@
+{
+  "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md.",
+  "defaults": {
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styles": {
+    "garden": {
+      "prefix": "Whimsical storybook illustration for a cheerful card game. Painterly, soft edges, warm sunlit colours (buttery yellow, leaf green, cream, sky blue). Subject is a cute, friendly CYBORG garden creature: visible brass gears, tiny glass lenses, springs and copper wire integrated into its body, gentle happy expression. Centered, full body, clean silhouette, no text, no border.",
+      "suffix": "Transparent background."
+    },
+    "thicket": {
+      "prefix": "Dark, unsettling illustration for a creepy folk-horror card game. Muted desaturated palette of near-black greens, umber and bruised purple; heavy film grain; high contrast; a single warm rim light; glowing amber eyes. Menacing, wrong, slightly too many joints - but no gore. Centered, full body, no text, no border.",
+      "suffix": "Transparent background."
+    },
+    "scene": {
+      "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit garden of flowers, moss and pebbles; it fades with depth into a dark, tangled thicket of roots, thorns and shadow where faint amber eyes watch. Film grain, vignette, no characters, no text.",
+      "suffix": ""
+    }
+  },
+  "assets": [
+    {
+      "id": "style-anchor-garden",
+      "style": "garden",
+      "prompt": "A small cyborg earthworm named Wormillion: segmented pink body with a brass cap on its head, one round glass lens for an eye, a tiny spring tail, smiling.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "style-anchor-thicket",
+      "style": "thicket",
+      "prompt": "A gaunt rat crouched low, fur matted, ribs showing, long naked tail curling behind, eyes glowing amber.",
+      "size": "1024x1024"
+    },
+
+    {
+      "id": "card-wormillion",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "Wormillion, a cheerful cyborg earthworm: segmented pink body, brass head cap, single glass lens eye, spring tail, rearing up proudly.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-wormillion-plus",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "Wormillion upgraded: the same cyborg earthworm now wearing a tiny tweed waistcoat and pince-nez, polished brass, small solar panel on its back, beaming.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-roly-poly",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg roly poly (pill bug) with riveted brass armour plates, half-curled into a ball, peeking out with a shy smile.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-caterpillar",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A fuzzy green cyborg caterpillar with copper-wire bristles that spark faintly, clockwork legs, munching a leaf, content.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-ladybug",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg ladybug, red enamel shell with seven brass-rimmed spots, one spot is a tiny lens, wings half open, mid take-off.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-butterfly",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg butterfly with stained-glass wings held in a fine brass frame, clockwork antennae, hovering, radiant.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-chameleon",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg chameleon with one telescopic brass eye, shifting rainbow scales, curled spring tail, tongue about to snap.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-cat",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A small cyborg cat with one glowing robotic eye lens, brass ear, alert and staring at something no one else can see.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "card-cat-plus",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "Sir Reginald V: the same cyborg cat now wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
+      "size": "1024x1536"
+    },
+
+    {
+      "id": "enemy-rat",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A gaunt rat crouched low, fur matted, ribs showing, long naked tail, eyes glowing amber, baring yellow teeth."
+    },
+    {
+      "id": "enemy-possum",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A possum with a rictus grin of too many needle teeth, pale face, black eyes with an amber glint, playing dead on its back but watching."
+    },
+    {
+      "id": "enemy-spider",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A spindly spider with legs too long and jointed one time too many, eight amber eyes, strands of web trailing from it."
+    },
+    {
+      "id": "enemy-scorpion",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A scorpion of black chitin with a tail raised high, venom bead glowing faintly green at the sting, amber eyes."
+    },
+    {
+      "id": "enemy-greeble",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "The Greeble: a hunched, indistinct creature made of shadow and static, only a pair of amber eyes and a wide grin are certain, clutching a stolen breadcrumb."
+    },
+    {
+      "id": "enemy-rat-king",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A rat king: several rats fused at the tail into a writhing crown-shaped mass, many amber eyes, one wearing a tiny bent crown."
+    },
+    {
+      "id": "enemy-wolf-spider",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A huge hairy wolf spider, forelegs raised, fangs dripping, eight amber eyes in two rows, cloaked in web."
+    },
+    {
+      "id": "boss-bear",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "An enormous bear rearing on its hind legs, fur hanging in ragged clumps, one eye milky, one eye amber, claws catching the light, filling the frame.",
+      "size": "1024x1536"
+    },
+    {
+      "id": "boss-moose",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A gaunt moose with antlers like dead branches strung with cobweb, breath steaming, amber eyes, looming.",
+      "size": "1024x1536"
+    },
+
+    {
+      "id": "npc-snail",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A friendly elderly cyborg snail carrying a tiny wooden market stall on its shell, lanterns hanging from the awning, wearing spectacles.",
+      "size": "1024x1024"
+    },
+
+    {
+      "id": "bg-battle",
+      "style": "scene",
+      "prompt": "The view across a garden table toward the woods: sunlit foreground of flowers and moss, fading into a dark thicket in the distance.",
+      "size": "1536x1024",
+      "background": "opaque"
+    },
+    {
+      "id": "bg-map",
+      "style": "scene",
+      "prompt": "A top-down garden map: winding dirt trails between flower beds, a pond, a fence, and at the far edge a dark forest.",
+      "size": "1536x1024",
+      "background": "opaque"
+    }
+  ]
+}
