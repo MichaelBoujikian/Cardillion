@@ -3,7 +3,7 @@
  * HP bars projected from the 3D scene, and a damage number pop.
  */
 import * as THREE from 'three';
-import type { Enemy } from './scene';
+import type { Enemy, LookArt } from './scene';
 import { drawCardFace, type Bug } from './textures';
 
 const CSS = /* css */ `
@@ -56,7 +56,7 @@ export interface Hud {
   hit(enemy: Enemy, amount: number): void;
 }
 
-export function mountHud(root: HTMLElement, enemies: Enemy[]): Hud {
+export function mountHud(root: HTMLElement, enemies: Enemy[], art: LookArt = {}): Hud {
   const style = document.createElement('style');
   style.textContent = CSS;
   root.appendChild(style);
@@ -88,7 +88,8 @@ export function mountHud(root: HTMLElement, enemies: Enemy[]): Hud {
   bugs.forEach((bug, i) => {
     const c = document.createElement('div');
     c.className = 'card';
-    c.style.backgroundImage = `url(${drawCardFace(bug).toDataURL('image/png')})`;
+    const face = drawCardFace(bug, bug === 'wormillion' ? art.wormillion : null);
+    c.style.backgroundImage = `url(${face.toDataURL('image/png')})`;
     const a = (i - (bugs.length - 1) / 2) * 6;
     c.style.transform = `rotate(${a}deg) translateY(${Math.abs(a) * 1.4}px)`;
     hand.appendChild(c);

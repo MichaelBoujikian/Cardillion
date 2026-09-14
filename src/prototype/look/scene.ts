@@ -6,11 +6,19 @@ import * as THREE from 'three';
 import {
   RAT_EYES,
   cardTexture,
+  findGlowPoints,
+  imageTexture,
   makeGlowTexture,
   makeGoboTexture,
   makeRatTexture,
   makeTableTexture,
 } from './textures';
+
+/** Generated art that exists on disk; anything missing falls back to a drawn placeholder. */
+export interface LookArt {
+  rat?: HTMLImageElement | null;
+  wormillion?: HTMLImageElement | null;
+}
 
 export interface Enemy {
   root: THREE.Object3D;
@@ -44,7 +52,7 @@ function rnd(seed: number): () => number {
   };
 }
 
-export function buildScene(): LookScene {
+export function buildScene(art: LookArt = {}): LookScene {
   const r = rnd(3);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(FOG_COLOR);
@@ -363,11 +371,12 @@ export function buildScene(): LookScene {
   }
 
   // ---------- enemies ----------
-  const ratTex = makeRatTexture();
+  const ratTex = art.rat ? imageTexture(art.rat) : makeRatTexture();
+  const ratEyes = art.rat ? findGlowPoints(art.rat) : RAT_EYES;
   const enemies: Enemy[] = [];
   const makeRat = (x: number, z: number, flip: boolean): Enemy => {
     const root = new THREE.Group();
-    const size = 2.3;
+    const size = art.rat ? 2.9 : 2.3;
     const sprite = new THREE.Mesh(
       new THREE.PlaneGeometry(size, size),
       new THREE.MeshStandardMaterial({
@@ -382,12 +391,12 @@ export function buildScene(): LookScene {
     if (flip) sprite.scale.x = -1;
     root.add(sprite);
     // Emissive eyes sitting exactly on the drawn ones.
-    for (const [u, v] of RAT_EYES) {
+    for (const [u, v] of ratEyes) {
       const e = new THREE.Sprite(eyeMat);
       const lx = (u - 0.5) * size * (flip ? -1 : 1);
       const ly = (0.5 - v) * size + sprite.position.y;
-      e.position.set(lx, ly, 0.02);
-      e.scale.setScalar(0.11);
+      e.position.set(lx, ly, 0.03);
+      e.scale.setScalar(art.rat ? 0.3 : 0.11);
       root.add(e);
     }
     // Contact shadow blob.
@@ -422,7 +431,7 @@ export function buildScene(): LookScene {
   const cardGeo = new THREE.PlaneGeometry(1.0, 1.4);
   const cardMatFor = (bug: Parameters<typeof cardTexture>[0]) =>
     new THREE.MeshStandardMaterial({
-      map: cardTexture(bug),
+      map: cardTexture(bug, bug === 'wormillion' ? art.wormillion : null),
       roughness: 0.55,
       metalness: 0.02,
       side: THREE.DoubleSide,

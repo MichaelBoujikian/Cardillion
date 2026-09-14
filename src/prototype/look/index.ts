@@ -5,9 +5,17 @@
 import * as THREE from 'three';
 import { mountHud } from './hud';
 import { makePost } from './post';
-import { buildScene } from './scene';
+import { buildScene, type LookArt } from './scene';
+import { loadImage } from './textures';
 
-export function mountLook(root: HTMLElement): () => void {
+export async function mountLook(root: HTMLElement): Promise<() => void> {
+  // Generated art, if any batch has been approved yet (served from assets/ via Vite publicDir).
+  const [rat, wormillion] = await Promise.all([
+    loadImage('art/enemy-rat.png'),
+    loadImage('art/card-wormillion.png'),
+  ]);
+  const art: LookArt = { rat, wormillion };
+
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
     powerPreference: 'high-performance',
@@ -21,9 +29,9 @@ export function mountLook(root: HTMLElement): () => void {
   renderer.domElement.style.inset = '0';
   root.appendChild(renderer.domElement);
 
-  const look = buildScene();
+  const look = buildScene(art);
   const post = makePost(renderer, look.scene, look.camera);
-  const hud = mountHud(root, look.enemies);
+  const hud = mountHud(root, look.enemies, art);
 
   let w = 1;
   let h = 1;

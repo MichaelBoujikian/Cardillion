@@ -1,5 +1,5 @@
 {
-  "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md.",
+  "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md. Styles with `key` are rendered opaque on that chroma colour and keyed out by the tool (see tools/gen-art.mjs).",
   "defaults": {
     "size": "1024x1024",
     "quality": "high",
@@ -7,12 +7,14 @@
   },
   "styles": {
     "garden": {
-      "prefix": "Whimsical storybook illustration for a cheerful card game. Painterly, soft edges, warm sunlit colours (buttery yellow, leaf green, cream, sky blue). Subject is a cute, friendly CYBORG garden creature: visible brass gears, tiny glass lenses, springs and copper wire integrated into its body, gentle happy expression. Centered, full body, clean silhouette, no text, no border.",
-      "suffix": "Transparent background."
+      "prefix": "Soft watercolor storybook illustration for a cheerful card game: painterly, gentle edges, warm sunlit colours (buttery yellow, leaf green, cream, sky blue). The subject is a cute, friendly CYBORG garden creature: visible brass gears, tiny glass lenses, springs and copper wire integrated into its body, gentle happy expression. Centered, full body, clean silhouette, no text, no border.",
+      "suffix": "Isolated on a fully transparent background: no scenery, no foliage, no backdrop, no vignette, no ground shadow.",
+      "key": "blue"
     },
     "thicket": {
-      "prefix": "Grim, realistic painted illustration for a folk-horror card game: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is diseased and wrong: mangy wet matted fur, patches of bare greasy skin, visible ribs, crusted eyes that glow amber, joints that bend one time too many. Gross, never gory. Centered, full body, no text, no border.",
-      "suffix": "Transparent background."
+      "prefix": "Grim, realistic painted illustration for a folk-horror card game: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is diseased and wrong: mangy wet matted fur, patches of bare greasy skin, visible ribs, crusted eyes that glow amber, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
+      "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
+      "key": "green"
     },
     "scene": {
       "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit storybook garden of flowers, moss and pebbles; with depth it turns into grim painted realism: wet black soil, tangled roots, thorns, cobwebs and shadow where faint amber eyes watch. Heavy film grain on the far half only, vignette, no characters, no text.",
@@ -23,83 +25,83 @@
     {
       "id": "style-anchor-garden",
       "style": "garden",
-      "prompt": "A small cyborg earthworm named Wormillion: segmented pink body with a brass cap on its head, one round glass lens for an eye, a tiny spring tail, smiling.",
+      "prompt": "Wormillion, a cyborg earthworm: a long segmented pink worm body with no legs, rearing up like a cobra, a domed brass cap on its head, one round glass lens for an eye, a small copper spring at the tail tip, smiling.",
       "size": "1024x1024"
     },
     {
       "id": "style-anchor-thicket",
       "style": "thicket",
-      "prompt": "A gaunt rat crouched low, fur matted, ribs showing, long naked tail curling behind, eyes glowing amber.",
+      "prompt": "A gaunt rat crouched low on all four legs, facing the viewer's left, fur matted and patchy, ribs showing, long naked tail curling behind it on the ground, both eyes glowing amber.",
       "size": "1024x1024"
     },
     {
       "id": "card-wormillion",
       "style": "garden",
       "reference": "style-anchor-garden",
-      "prompt": "Wormillion, a cheerful cyborg earthworm: segmented pink body, brass head cap, single glass lens eye, spring tail, rearing up proudly.",
-      "size": "1024x1536"
+      "prompt": "Wormillion, a cheerful cyborg earthworm: a long segmented pink worm body with no legs, rearing up proudly, a domed brass cap on its head, one round glass lens for an eye, a small copper spring at the tail tip, smiling.",
+      "size": "1024x1024"
     },
     {
       "id": "card-wormillion-plus",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "Wormillion upgraded: the same cyborg earthworm now wearing a tiny tweed waistcoat and pince-nez, polished brass, small solar panel on its back, beaming.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-roly-poly",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A cyborg roly poly (pill bug) with riveted brass armour plates, half-curled into a ball, peeking out with a shy smile.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-caterpillar",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A fuzzy green cyborg caterpillar with copper-wire bristles that spark faintly, clockwork legs, munching a leaf, content.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-ladybug",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A cyborg ladybug, red enamel shell with seven brass-rimmed spots, one spot is a tiny lens, wings half open, mid take-off.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-butterfly",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A cyborg butterfly with stained-glass wings held in a fine brass frame, clockwork antennae, hovering, radiant.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-chameleon",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A cyborg chameleon with one telescopic brass eye, shifting rainbow scales, curled spring tail, tongue about to snap.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-cat",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "A small cyborg cat with one glowing robotic eye lens, brass ear, alert and staring at something no one else can see.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "card-cat-plus",
       "style": "garden",
       "reference": "style-anchor-garden",
       "prompt": "Sir Reginald V: the same cyborg cat now wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
-      "size": "1024x1536"
+      "size": "1024x1024"
     },
     {
       "id": "enemy-rat",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A gaunt rat crouched low, fur matted, ribs showing, long naked tail, eyes glowing amber, baring yellow teeth."
+      "prompt": "A gaunt rat in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body, fur matted and patchy with bare greasy skin showing, ribs visible, long naked tail attached at the rump and trailing along the ground behind it, both eyes glowing amber, yellow teeth bared."
     },
     {
       "id": "enemy-possum",

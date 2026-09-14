@@ -463,8 +463,8 @@ procedurally so the game is always fully playable without any generated art.
 
 | Kind          | Id pattern        | Generated size  | Displayed as                  | Background  |
 | ------------- | ----------------- | --------------- | ----------------------------- | ----------- |
-| Card art      | `card-<bug>`      | 1024 × 1536 PNG | 5:7 crop in the card frame    | transparent |
-| Upgraded card | `card-<bug>-plus` | 1024 × 1536 PNG | as above                      | transparent |
+| Card art      | `card-<bug>`      | 1024 × 1024 PNG | contain-fit in the art window | transparent |
+| Upgraded card | `card-<bug>-plus` | 1024 × 1024 PNG | as above                      | transparent |
 | Enemy sprite  | `enemy-<name>`    | 1024 × 1024 PNG | billboard, height ≈ 1.6 units | transparent |
 | Boss sprite   | `boss-<name>`     | 1024 × 1536 PNG | billboard, height ≈ 3 units   | transparent |
 | NPC           | `npc-<name>`      | 1024 × 1024 PNG | map marker / shop portrait    | transparent |

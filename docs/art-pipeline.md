@@ -42,6 +42,20 @@ That is the entire setup. From here the agent runs the pipeline.
 Costs: roughly $0.02 / $0.07 / $0.19 per image at low / medium / high quality. Use
 `--quality medium` while iterating on prompts, `high` for the final render.
 
+## Chroma-key mode (the default for both styles)
+
+The API's native transparent mode drops thin dark limbs — rats came back with floating paws and
+detached tails. So styles carry `"key": "green"` (thicket) or `"key": "blue"` (garden): the
+image is rendered **opaque on a flat chroma screen** and keyed out by the tool. The key estimates
+the screen's actual hue from the image corners (the model paints "pure green" in its own
+palette), gates on brightness so near-black green fur survives, fills interior holes, drops
+floating specks, and despills edge fringe. Green for the thicket because its rim light is cold
+blue; blue for the garden because worms are pink and caterpillars are leaf-green.
+
+Raw renders are kept in `art/out/<id>-raw.png` (gitignored) so the key can be re-tuned for free:
+`npm run art -- --rekey --only <id>` re-runs only the key, no API call. A single asset can
+override its style's key (`"key": "magenta"`) or disable it (`"key": null`) in the manifest.
+
 ## Flags
 
 ```
@@ -50,10 +64,11 @@ npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality medium      low | medium | high
 npm run art -- --dry-run             print prompts, call nothing
+npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)
 ```
 
 ## Post-processing
 
-Card art is generated at 1024×1536 and shown through a 5:7 window; keep the subject centred
-with margin. Enemy sprites are generated on a transparent background and displayed as
+Card art is generated square (1024×1024) and contain-fitted into the card's art window; keep the
+subject centred with margin. Enemy sprites are generated on a transparent background and displayed as
 billboards; if an image comes back with a baked-in background, re-roll rather than masking.

@@ -22,6 +22,90 @@ function srgbTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
   return t;
 }
 
+/** Resolve to the image, or null if it does not exist (placeholders are used instead). */
+export function loadImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+export function imageTexture(img: HTMLImageElement): THREE.Texture {
+  const t = new THREE.Texture(img);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  t.needsUpdate = true;
+  return t;
+}
+
+/**
+ * Find glowing amber eyes in a sprite: bright, warm, saturated pixels clustered together.
+ * Returns up to two centroids in UV space (0..1, v down), largest cluster first.
+ */
+export function findGlowPoints(img: HTMLImageElement): [number, number][] {
+  const w = 256;
+  const h = Math.round((img.height / img.width) * 256);
+  const [, ctx] = canvas(w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h).data;
+  const cell = 8;
+  const cols = Math.ceil(w / cell);
+  const rows = Math.ceil(h / cell);
+  const hits = new Map<number, { n: number; x: number; y: number }>();
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const r = d[i] as number;
+      const g = d[i + 1] as number;
+      const b = d[i + 2] as number;
+      const a = d[i + 3] as number;
+      if (a > 200 && r > 170 && g > 80 && g < 210 && b < 100 && r - b > 110) {
+        const k = Math.floor(y / cell) * cols + Math.floor(x / cell);
+        const e = hits.get(k) ?? { n: 0, x: 0, y: 0 };
+        e.n++;
+        e.x += x;
+        e.y += y;
+        hits.set(k, e);
+      }
+    }
+  }
+  // Merge neighbouring cells into clusters.
+  const seen = new Set<number>();
+  const clusters: { n: number; x: number; y: number }[] = [];
+  for (const [k] of hits) {
+    if (seen.has(k)) continue;
+    const stack = [k];
+    const acc = { n: 0, x: 0, y: 0 };
+    while (stack.length) {
+      const cur = stack.pop() as number;
+      if (seen.has(cur)) continue;
+      const e = hits.get(cur);
+      if (!e) continue;
+      seen.add(cur);
+      acc.n += e.n;
+      acc.x += e.x;
+      acc.y += e.y;
+      const cx = cur % cols;
+      const cy = Math.floor(cur / cols);
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const nx = cx + (dx as number);
+        const ny = cy + (dy as number);
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) stack.push(ny * cols + nx);
+      }
+    }
+    if (acc.n >= 6) clusters.push(acc);
+  }
+  clusters.sort((p, q) => q.n - p.n);
+  return clusters.slice(0, 2).map((e) => [e.x / e.n / w, e.y / e.n / h]);
+}
+
 function rnd(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
@@ -399,7 +483,7 @@ function drawArt(
 }
 
 /** A full card face (512 × 716). Returns the canvas so the DOM hand can reuse it as a data URL. */
-export function drawCardFace(bug: Bug): HTMLCanvasElement {
+export function drawCardFace(bug: Bug, art?: HTMLImageElement | null): HTMLCanvasElement {
   const [c, ctx] = canvas(512, 716);
   const meta = BUGS[bug];
   // Frame.
@@ -410,8 +494,8 @@ export function drawCardFace(bug: Bug): HTMLCanvasElement {
   ctx.fillStyle = '#f7ecd6';
   ctx.fill();
   // Art window with a happy sky.
-  roundRect(ctx, 40, 104, 432, 340, 18);
-  const sky = ctx.createLinearGradient(0, 104, 0, 444);
+  roundRect(ctx, 40, 104, 432, 400, 18);
+  const sky = ctx.createLinearGradient(0, 104, 0, 504);
   sky.addColorStop(0, '#bfe3ff');
   sky.addColorStop(1, '#eaf8d2');
   ctx.fillStyle = sky;
@@ -423,11 +507,19 @@ export function drawCardFace(bug: Bug): HTMLCanvasElement {
   ctx.beginPath();
   ctx.arc(420, 150, 42, 0, Math.PI * 2);
   ctx.fill();
-  drawArt(ctx, bug, 40, 104, 432, 340);
+  if (art) {
+    // Contain-fit the generated art inside the window.
+    const k = Math.min(432 / art.width, 400 / art.height);
+    const dw = art.width * k;
+    const dh = art.height * k;
+    ctx.drawImage(art, 40 + (432 - dw) / 2, 104 + (400 - dh) / 2, dw, dh);
+  } else {
+    drawArt(ctx, bug, 40, 134, 432, 340);
+  }
   ctx.restore();
   ctx.strokeStyle = '#b8862b';
   ctx.lineWidth = 4;
-  roundRect(ctx, 40, 104, 432, 340, 18);
+  roundRect(ctx, 40, 104, 432, 400, 18);
   ctx.stroke();
   // Cost gem: a sun.
   ctx.save();
@@ -462,29 +554,29 @@ export function drawCardFace(bug: Bug): HTMLCanvasElement {
   ctx.fillStyle = '#4a3418';
   ctx.textAlign = 'center';
   ctx.font = 'bold 44px Georgia, serif';
-  ctx.fillText(meta.name, 256, 500);
+  ctx.fillText(meta.name, 256, 552);
   ctx.fillStyle = '#7a6a4a';
   ctx.font = 'italic 24px Georgia, serif';
-  ctx.fillText(meta.type, 256, 540);
+  ctx.fillText(meta.type, 256, 588);
   ctx.fillStyle = '#3a2a18';
-  ctx.font = '30px Georgia, serif';
+  ctx.font = '28px Georgia, serif';
   const words = meta.text.split(' ');
   let line = '';
-  let y = 610;
+  let y = 640;
   for (const w of words) {
     const test = line ? `${line} ${w}` : w;
     if (ctx.measureText(test).width > 400) {
       ctx.fillText(line, 256, y);
       line = w;
-      y += 38;
+      y += 34;
     } else line = test;
   }
   ctx.fillText(line, 256, y);
   return c;
 }
 
-export function cardTexture(bug: Bug): THREE.CanvasTexture {
-  return srgbTexture(drawCardFace(bug));
+export function cardTexture(bug: Bug, art?: HTMLImageElement | null): THREE.CanvasTexture {
+  return srgbTexture(drawCardFace(bug, art));
 }
 
 /** Where the rat's eyes are, in UV space, so emissive planes can sit exactly on them. */

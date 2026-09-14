@@ -7,6 +7,8 @@ const alias = (name: string) => fileURLToPath(new URL(`./src/${name}`, import.me
 export default defineConfig({
   // Relative base so the built site works from any sub-path (itch.io, Pages, local file server).
   base: './',
+  // assets/ is served verbatim: assets/art/<id>.png is reachable as art/<id>.png.
+  publicDir: 'assets',
   resolve: {
     alias: {
       '@engine': alias('engine'),
