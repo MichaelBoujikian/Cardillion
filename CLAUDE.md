@@ -46,5 +46,7 @@ before and after a visual change. Render and UI have no unit tests — the scree
 
 ## Current milestone
 
-See `spec.md` §13. The engine choice (web + three.js) is provisional until the M1 look
-prototype passes review; the fallback is Godot 4 via Godot MCP Pro (`docs/adr/0001-web-threejs-with-godot-fallback.md`).
+M1 (look prototype) passed the owner's review on 2026-09-13; web + three.js is settled. Next is
+**M2, the first playable fight** — see `spec.md` §13 for its done-criteria. The art pipeline is
+live (`docs/art-pipeline.md`); generated PNGs in `assets/art/` are committed only after the
+owner approves them, and `art/out/` holds raw renders and rejected versions.

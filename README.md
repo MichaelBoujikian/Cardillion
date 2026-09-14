@@ -21,8 +21,13 @@ thing CI runs.
 
 ## Status
 
-Milestone **M1 — look prototype** built and awaiting the owner's review; it decides whether web + three.js
-hits the visual bar (see ADR 0001). `npm run dev` shows it; `?t=0.95` freezes the card mid-flight.
+- **M1 look prototype: passed.** Web + three.js is the engine (ADR 0001). `npm run dev` shows the
+  battle table; `?t=0.95` freezes the card mid-flight.
+- **Art pipeline is live.** `OPENAI_API_KEY` is set in the owner's local `.env`. Style anchors
+  and the first two assets (`card-wormillion`, `enemy-rat`) are generated and sit in
+  `assets/art/` **uncommitted, awaiting the owner's approval** — see `docs/art-pipeline.md`.
+- **Next:** M2, the first playable fight (engine, test-first), and/or the remaining art batch on
+  the approved anchors.
 
 ## Licence
 
