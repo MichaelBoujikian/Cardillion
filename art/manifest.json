@@ -12,7 +12,7 @@
       "key": "blue"
     },
     "thicket": {
-      "prefix": "Grim, realistic painted illustration for a folk-horror card game: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is diseased and wrong: mangy wet matted fur, patches of bare greasy skin, visible ribs, crusted eyes that glow amber, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen photographed in a dark cabin: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
       "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
       "key": "green"
     },
@@ -101,7 +101,7 @@
       "id": "enemy-rat",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A gaunt rat in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body, fur matted and patchy with bare greasy skin showing, ribs visible, long naked tail attached at the rump and trailing along the ground behind it, both eyes glowing amber, yellow teeth bared."
+      "prompt": "A gaunt rat in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body. Fur mostly fallen out, showing wet grey skin covered in scabs and sores, ribs and spine visible, a raw pink naked tail attached at the rump and trailing along the ground behind it, both eyes glowing amber, lips pulled back over cracked yellow teeth with a string of drool."
     },
     {
       "id": "enemy-possum",

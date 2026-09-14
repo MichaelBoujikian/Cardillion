@@ -18,7 +18,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && vite build",
-    "art": "node tools/gen-art.mjs"
+    "art": "node tools/gen-art.mjs",
+    "art:preview": "node tools/art-preview.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"
