@@ -10,12 +10,13 @@ import { enemyDef } from '@content/enemies';
 import { formOf, isUpgraded } from '@engine/combat';
 import type { CombatState, EnemyInstance } from '@engine/types';
 import type { BattleScene } from '@render/battle/scene';
-import { drawCardFace, type ArtCache } from '@render/battle/textures';
+import type { CardFaces } from './card-faces';
 
 export interface UIHandlers {
   onPlay(uid: string, target?: string): void;
   onEndTurn(): void;
-  onNewFight(): void;
+  /** The won/lost overlay's button. */
+  onContinue(): void;
   /** A card is being held (dragged, selected or hovered) — or none. */
   onHold(uid: string | null): void;
 }
@@ -168,7 +169,7 @@ export function describeIntent(enemy: EnemyInstance): string {
 export class BattleUI {
   readonly el: HTMLElement;
   private readonly scene: BattleScene;
-  private readonly art: ArtCache;
+  private readonly faces: CardFaces;
   private readonly handlers: UIHandlers;
   private readonly hand: HTMLElement;
   private readonly labels: HTMLElement;
@@ -178,14 +179,13 @@ export class BattleUI {
     string,
     { el: HTMLElement; face: HTMLCanvasElement; targeting: string }
   >();
-  private readonly faces = new Map<string, HTMLCanvasElement>();
   private selected: string | null = null;
   private state: CombatState | null = null;
   private readonly q: (sel: string) => HTMLElement;
 
-  constructor(root: HTMLElement, art: ArtCache, scene: BattleScene, handlers: UIHandlers) {
+  constructor(root: HTMLElement, faces: CardFaces, scene: BattleScene, handlers: UIHandlers) {
     this.scene = scene;
-    this.art = art;
+    this.faces = faces;
     this.handlers = handlers;
     const style = document.createElement('style');
     style.textContent = CSS;
@@ -210,7 +210,7 @@ export class BattleUI {
       <div class="hand"></div>
       <div class="pops"></div>
       <div class="toast"></div>
-      <div class="overlay"><div class="box"><h1></h1><p></p><button class="again">NEW FIGHT</button></div></div>
+      <div class="overlay"><div class="box"><h1></h1><p></p><button class="again">CONTINUE</button></div></div>
     `;
     root.appendChild(this.el);
     this.q = (sel) => {
@@ -222,7 +222,7 @@ export class BattleUI {
     this.labels = this.q('.labels');
     this.pops = this.q('.pops');
     this.q('.turn').addEventListener('click', () => this.handlers.onEndTurn());
-    this.q('.again').addEventListener('click', () => this.handlers.onNewFight());
+    this.q('.again').addEventListener('click', () => this.handlers.onContinue());
     // Clicking the table with a selected card: play untargeted cards, otherwise deselect.
     // Listens on the app root because the overlay itself is pointer-events:none.
     root.addEventListener('pointerdown', (ev) => {
@@ -335,16 +335,7 @@ export class BattleUI {
       (c) => c.uid === uid,
     );
     if (!card) throw new Error(`no card ${uid}`);
-    const def = cardDef(card.def);
-    const upgraded = isUpgraded(state, card);
-    const art = this.art.get(def.art) ?? null;
-    const key = `${def.id}|${upgraded ? 1 : 0}|${art ? 1 : 0}`;
-    let face = this.faces.get(key);
-    if (!face) {
-      face = drawCardFace(def, formOf(state, card), { art, upgraded });
-      this.faces.set(key, face);
-    }
-    return face;
+    return this.faces.face(card.def, isUpgraded(state, card));
   }
 
   private syncHand(state: CombatState): void {
@@ -607,13 +598,23 @@ export class BattleUI {
     }
   }
 
-  showOverlay(kind: 'won' | 'lost', line: string): void {
+  showOverlay(kind: 'won' | 'lost', line: string, button = 'CONTINUE'): void {
     const o = this.q('.overlay');
     const h = this.q('.overlay h1');
     h.textContent = kind === 'won' ? 'VICTORY' : 'THE GARDEN FALLS';
     h.className = kind;
     this.q('.overlay p').textContent = line;
+    this.q('.again').textContent = button;
     o.classList.add('on');
+  }
+
+  show(): void {
+    this.el.hidden = false;
+  }
+
+  hide(): void {
+    this.el.hidden = true;
+    this.select(null);
   }
 
   hideOverlay(): void {

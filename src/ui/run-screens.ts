@@ -1,0 +1,399 @@
+/**
+ * The non-fight screens of a run: title, map, reward, shop, cocoon, result — plus the deck
+ * list used by the map HUD and the shop's removal service. DOM over the battle canvas.
+ */
+import { cardDef } from '@content/cards';
+import { FLAVORS } from '@content/trails';
+import { nodeAt, signposts, visibleNodes, type MapNode } from '@engine/map';
+import { COCOON_HEAL_FRACTION, type RunState } from '@engine/run';
+import type { ArtCache } from '@render/battle/textures';
+import type { CardFaces } from './card-faces';
+
+export interface ScreenHandlers {
+  onNewRun(seed: string | null): void;
+  onTravel(nodeId: string): void;
+  onTakeReward(card: string | null): void;
+  onBuy(index: number): void;
+  onRemove(uid: string): void;
+  onRest(): void;
+  onLeave(): void;
+  onBackToTitle(): void;
+}
+
+const GLYPH: Record<string, string> = {
+  start: '⌂',
+  fight: '⚔',
+  elite: '☠',
+  shop: '🐌',
+  cocoon: '❂',
+  boss: '🐻',
+  unknown: '?',
+};
+
+const CSS = /* css */ `
+.screens { position:absolute; inset:0; pointer-events:none; font-family: Georgia, 'Times New Roman', serif; color:#f3e7c9; }
+.screens * { box-sizing:border-box; }
+.screen { position:absolute; inset:0; display:none; pointer-events:auto; }
+.screen.on { display:block; }
+.screen .panel { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:32px 40px; border-radius:16px;
+  background: linear-gradient(#2a2418, #14100c); border:2px solid #b8862b; box-shadow: 0 24px 70px rgba(0,0,0,.75); text-align:center; min-width:420px; }
+.screen h1 { margin:0 0 6px; font-weight:600; letter-spacing:.14em; font-size:34px; }
+.screen h2 { margin:0 0 14px; font-weight:400; font-size:16px; opacity:.8; }
+.screen p { margin:0 0 16px; opacity:.85; line-height:1.5; }
+.btn { display:inline-block; padding:10px 24px; border-radius:8px; background: linear-gradient(#6b4a2a, #3a2412); color:#f3e7c9; border:2px solid #b8862b;
+  font: 16px Georgia, serif; letter-spacing:.06em; cursor:pointer; margin:6px; }
+.btn:hover { filter:brightness(1.15); }
+.btn.ghost { background:transparent; border-color:rgba(184,134,43,.5); }
+.btn:disabled { opacity:.45; cursor:not-allowed; filter:none; }
+.veil { position:absolute; inset:0; background: rgba(6,5,10,.6); }
+
+/* title */
+.title-screen .panel { background: transparent; border:none; box-shadow:none; }
+.title-screen h1 { font-size:72px; letter-spacing:.22em; color:#ffd27a; text-shadow: 0 0 40px rgba(255,190,80,.35), 0 4px 0 #4a3418; }
+.title-screen h2 { font-size:18px; letter-spacing:.08em; }
+.title-screen input { width:260px; padding:8px 12px; border-radius:6px; border:1px solid rgba(184,134,43,.6); background:rgba(10,8,14,.7); color:#f3e7c9; font: 15px Georgia, serif; text-align:center; margin:6px; }
+
+/* map */
+.map-screen { background:#0b0d09; }
+.map-screen .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.85; filter: saturate(.9); }
+.map-screen .bg-fallback { position:absolute; inset:0; background: linear-gradient(#0a0910, #1d2a14 45%, #3d5a22); }
+.map-screen svg { position:absolute; inset:0; width:100%; height:100%; }
+.map-screen .trail { fill:none; stroke:rgba(255,235,190,.55); stroke-width:6; stroke-linecap:round; stroke-dasharray: 2 14; }
+.map-screen .trail.dim { stroke:rgba(255,235,190,.18); }
+.map-screen .node circle { fill:#2a2418; stroke:#b8862b; stroke-width:3; }
+.map-screen .node text { font: 22px Georgia, serif; fill:#f3e7c9; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+.map-screen .node.unknown circle { fill:#1a1712; stroke:rgba(184,134,43,.35); }
+.map-screen .node.unknown text { fill:rgba(243,231,201,.45); }
+.map-screen .node.visited circle { fill:#3a3020; stroke:rgba(184,134,43,.5); }
+.map-screen .node.visited text { opacity:.55; }
+.map-screen .node.reachable { cursor:pointer; }
+.map-screen .node.reachable circle { stroke:#ffd27a; stroke-width:4; animation: pulse 1.4s ease-in-out infinite; }
+.map-screen .node.reachable:hover circle { fill:#5a4020; }
+.map-screen .node.here circle { fill:#f2b200; stroke:#fff2b8; }
+.map-screen .node.here text { fill:#2a1a08; }
+.map-screen .node.boss circle { fill:#1c0e12; stroke:#b8322b; stroke-width:4; }
+.map-screen .node.elite circle { stroke:#d9534f; }
+@keyframes pulse { 0%,100% { stroke-opacity:1; } 50% { stroke-opacity:.35; } }
+.map-screen .signpost { font: italic 15px Georgia, serif; fill:#ffd27a; text-anchor:middle; paint-order:stroke; stroke:#0b0d09; stroke-width:4px; pointer-events:none; }
+.map-screen .signpost.blurb { font-size:12px; fill:#f3e7c9; opacity:.85; }
+.map-hud { position:absolute; left:26px; top:22px; font-size:16px; line-height:1.9; text-shadow: 0 1px 3px #000; }
+.map-hud b { color:#ffd27a; }
+.map-hud .btn { margin-left:0; padding:6px 14px; font-size:14px; }
+.map-legend { position:absolute; left:26px; bottom:22px; font-size:13px; opacity:.75; line-height:1.7; text-shadow: 0 1px 2px #000; }
+.map-title { position:absolute; right:26px; top:18px; text-align:right; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; line-height:1.8; }
+
+/* cards in panels */
+.cards { display:flex; gap:18px; justify-content:center; margin:14px 0 18px; }
+.pick { width:180px; height:252px; border-radius:10px; background-size:cover; box-shadow: 0 10px 24px rgba(0,0,0,.6); cursor:pointer; position:relative; transition: transform .15s ease, filter .15s ease; }
+.pick:hover { transform: translateY(-10px) scale(1.06); filter: drop-shadow(0 0 16px rgba(255,214,120,.6)); }
+.pick.sold, .pick.poor { cursor:not-allowed; filter: grayscale(.7) brightness(.55); }
+.pick.sold:hover, .pick.poor:hover { transform:none; }
+.pick .price { position:absolute; left:50%; bottom:-14px; transform:translateX(-50%); padding:3px 12px; border-radius:12px; background:#14100c; border:1px solid #b8862b; color:#ffd27a; font-size:14px; white-space:nowrap; }
+.pick .sold-tag { position:absolute; inset:0; display:grid; place-items:center; font-size:26px; letter-spacing:.2em; color:#ff8a7a; text-shadow: 0 2px 4px #000; }
+
+/* shop */
+.shop-screen .snail { width:140px; height:140px; object-fit:contain; float:left; margin:-10px 18px 0 -10px; }
+.shop-screen .stock { overflow:hidden; }
+
+/* deck list */
+.deck-list { position:absolute; inset:0; display:none; background:rgba(6,5,10,.85); overflow:auto; padding:40px; pointer-events:auto; }
+.deck-list.on { display:block; }
+.deck-list .grid { display:flex; flex-wrap:wrap; gap:14px; justify-content:center; max-width:1100px; margin:16px auto; }
+.deck-list .pick { width:130px; height:182px; }
+.deck-list h2 { text-align:center; }
+.deck-list .close { position:absolute; right:26px; top:22px; }
+
+/* result */
+.result-screen h1.victory { color:#ffd27a; }
+.result-screen h1.death { color:#ff8a7a; }
+.result-screen .stats { display:inline-block; text-align:left; margin:0 0 12px; line-height:1.8; }
+.result-screen code { color:#ffd27a; }
+`;
+
+export class RunScreens {
+  readonly el: HTMLElement;
+  private readonly faces: CardFaces;
+  private readonly art: ArtCache;
+  private readonly h: ScreenHandlers;
+  private readonly screens: Record<string, HTMLElement> = {};
+  private readonly deckList: HTMLElement;
+
+  constructor(root: HTMLElement, faces: CardFaces, art: ArtCache, handlers: ScreenHandlers) {
+    this.faces = faces;
+    this.art = art;
+    this.h = handlers;
+    const style = document.createElement('style');
+    style.textContent = CSS;
+    root.appendChild(style);
+    this.el = document.createElement('div');
+    this.el.className = 'screens';
+    root.appendChild(this.el);
+    for (const name of ['title', 'map', 'reward', 'shop', 'cocoon', 'result']) {
+      const s = document.createElement('div');
+      s.className = `screen ${name}-screen`;
+      this.el.appendChild(s);
+      this.screens[name] = s;
+    }
+    this.deckList = document.createElement('div');
+    this.deckList.className = 'deck-list';
+    this.el.appendChild(this.deckList);
+  }
+
+  hideAll(): void {
+    for (const s of Object.values(this.screens)) s.classList.remove('on');
+    this.deckList.classList.remove('on');
+  }
+
+  private show(name: string, html: string): HTMLElement {
+    this.hideAll();
+    const s = this.screens[name] as HTMLElement;
+    s.innerHTML = html;
+    s.classList.add('on');
+    return s;
+  }
+
+  // ---------- title ----------
+
+  showTitle(seedHint: string | null): void {
+    const s = this.show(
+      'title',
+      `<div class="veil"></div>
+       <div class="panel">
+         <h1>CARDILLION</h1>
+         <h2>cyborg garden bugs versus the things in the thicket</h2>
+         <p><input class="seed" placeholder="seed (optional)" value="${seedHint ?? ''}" spellcheck="false"></p>
+         <button class="btn new">NEW RUN</button>
+       </div>`,
+    );
+    const input = s.querySelector<HTMLInputElement>('.seed') as HTMLInputElement;
+    const go = () => this.h.onNewRun(input.value.trim() || null);
+    s.querySelector('.new')?.addEventListener('click', go);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') go();
+    });
+  }
+
+  // ---------- map ----------
+
+  showMap(run: RunState): void {
+    const map = run.map;
+    const here = nodeAt(map, run.position);
+    const visible = visibleNodes(map, run.position, run.visited);
+    const reachable = new Set(here.next.map((e) => e.id));
+    const bg = this.art.get('bg-map');
+    const W = 1000;
+    const H = 1000;
+    const px = (n: MapNode) => ({ x: 120 + n.x * (W - 240), y: H - 60 - n.y * (H - 120) });
+
+    // Trails as dotted curves through their nodes.
+    const trailPaths = map.trails
+      .map((t, i) => {
+        const pts = [map.start, ...t.nodes, map.boss].map((id) => px(nodeAt(map, id)));
+        let d = `M ${pts[0]!.x} ${pts[0]!.y}`;
+        for (let k = 1; k < pts.length; k++) {
+          const a = pts[k - 1]!;
+          const b = pts[k]!;
+          const cx = (a.x + b.x) / 2 + (k % 2 ? 18 : -18);
+          d += ` Q ${cx} ${(a.y + b.y) / 2} ${b.x} ${b.y}`;
+        }
+        const dim = here.trails.length === 1 && here.id !== map.start && !here.trails.includes(i);
+        return `<path class="trail${dim ? ' dim' : ''}" d="${d}"/>`;
+      })
+      .join('');
+
+    const nodesSvg = Object.values(map.nodes)
+      .map((n) => {
+        const p = px(n);
+        const known = visible.has(n.id);
+        const cls = [
+          'node',
+          n.type,
+          known ? '' : 'unknown',
+          run.visited.includes(n.id) && n.id !== run.position ? 'visited' : '',
+          reachable.has(n.id) ? 'reachable' : '',
+          n.id === run.position ? 'here' : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+        const r = n.type === 'boss' ? 30 : known ? 22 : 12;
+        const glyph = n.id === run.position ? '☀' : known ? (GLYPH[n.type] ?? '?') : '';
+        const label = known ? n.type : 'unknown';
+        return `<g class="${cls}" data-id="${n.id}"><title>${label}</title><circle cx="${p.x}" cy="${p.y}" r="${r}"/><text x="${p.x}" y="${p.y + 1}">${glyph}</text></g>`;
+      })
+      .join('');
+
+    // Signposts on the edges leading out of the current node.
+    const posts = signposts(map, run.position)
+      .map((sp) => {
+        const a = px(here);
+        const b = px(nodeAt(map, sp.to));
+        const fl = FLAVORS[sp.flavor];
+        const x = (a.x + b.x) / 2 + (b.x - a.x) * 0.15;
+        const y = (a.y + b.y) / 2 - 12;
+        return `<text class="signpost" x="${x}" y="${y}">${fl.name}</text><text class="signpost blurb" x="${x}" y="${y + 18}">${fl.blurb}</text>`;
+      })
+      .join('');
+
+    const s = this.show(
+      'map',
+      `${bg ? `<img class="bg" src="${bg.src}" alt="">` : '<div class="bg-fallback"></div>'}
+       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${trailPaths}${nodesSvg}${posts}</svg>
+       <div class="map-hud">
+         ❤ <b>${run.hp} / ${run.maxHp}</b><br>
+         🍞 <b>${run.crumbs}</b> crumbs<br>
+         <button class="btn ghost deck">Deck · ${run.deck.length}</button>
+       </div>
+       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown</div>
+       <div class="map-title">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,
+    );
+    for (const g of s.querySelectorAll<SVGGElement>('.node.reachable')) {
+      g.addEventListener('click', () => this.h.onTravel(g.dataset['id'] as string));
+    }
+    s.querySelector('.deck')?.addEventListener('click', () => this.showDeck(run, null));
+  }
+
+  /** The deck as a grid of faces; with `onPick` set, clicking a card selects it (shop removal). */
+  showDeck(run: RunState, onPick: ((uid: string) => void) | null, title = 'Your deck'): void {
+    const sorted = [...run.deck].sort((a, b) =>
+      cardDef(a.def).name.localeCompare(cardDef(b.def).name),
+    );
+    this.deckList.innerHTML = `
+      <button class="btn close">CLOSE</button>
+      <h2>${title} · ${run.deck.length} cards</h2>
+      <div class="grid">${sorted
+        .map((c) => {
+          const up =
+            c.upgraded ||
+            (cardDef(c.def).bug !== null && run.unlocks.includes(cardDef(c.def).bug!));
+          return `<div class="pick" data-uid="${c.uid}" style="background-image:url(${this.faces.url(c.def, up)})"></div>`;
+        })
+        .join('')}</div>`;
+    this.deckList.classList.add('on');
+    this.deckList
+      .querySelector('.close')
+      ?.addEventListener('click', () => this.deckList.classList.remove('on'));
+    if (onPick) {
+      for (const el of this.deckList.querySelectorAll<HTMLElement>('.pick')) {
+        el.addEventListener('click', () => {
+          this.deckList.classList.remove('on');
+          onPick(el.dataset['uid'] as string);
+        });
+      }
+    }
+  }
+
+  // ---------- reward ----------
+
+  showReward(run: RunState): void {
+    const offer = run.reward;
+    if (!offer) return;
+    const s = this.show(
+      'reward',
+      `<div class="veil"></div>
+       <div class="panel">
+         <h1>SPOILS</h1>
+         <h2>🍞 +${offer.crumbs} crumbs · now ${run.crumbs}</h2>
+         <p>Take one card, or leave them all.</p>
+         <div class="cards">${offer.cards
+           .map(
+             (id) =>
+               `<div class="pick" data-def="${id}" style="background-image:url(${this.faces.url(id, run.unlocks.includes(cardDef(id).bug!))})"></div>`,
+           )
+           .join('')}</div>
+         <button class="btn ghost skip">SKIP</button>
+       </div>`,
+    );
+    for (const el of s.querySelectorAll<HTMLElement>('.pick')) {
+      el.addEventListener('click', () => this.h.onTakeReward(el.dataset['def'] as string));
+    }
+    s.querySelector('.skip')?.addEventListener('click', () => this.h.onTakeReward(null));
+  }
+
+  // ---------- shop ----------
+
+  showShop(run: RunState): void {
+    const shop = run.shop;
+    if (!shop) return;
+    const snail = this.art.get('npc-snail');
+    const s = this.show(
+      'shop',
+      `<div class="veil"></div>
+       <div class="panel">
+         ${snail ? `<img class="snail" src="${snail.src}" alt="">` : ''}
+         <div class="stock">
+           <h1>THE SNAIL'S STALL</h1>
+           <h2>🍞 <b>${run.crumbs}</b> crumbs</h2>
+           <div class="cards">${shop.cards
+             .map((c, i) => {
+               const poor = !c.sold && run.crumbs < c.price;
+               const cls = ['pick', c.sold ? 'sold' : '', poor ? 'poor' : '']
+                 .filter(Boolean)
+                 .join(' ');
+               return `<div class="${cls}" data-index="${i}" style="background-image:url(${this.faces.url(c.def, run.unlocks.includes(cardDef(c.def).bug!))})">
+                 ${c.sold ? '<div class="sold-tag">SOLD</div>' : `<div class="price">🍞 ${c.price}</div>`}</div>`;
+             })
+             .join('')}</div>
+           <p style="margin-top:22px">
+             <button class="btn remove" ${run.crumbs < shop.removalPrice || run.deck.length <= 1 ? 'disabled' : ''}>Remove a card · 🍞 ${shop.removalPrice}</button>
+             <button class="btn ghost leave">LEAVE</button>
+           </p>
+         </div>
+       </div>`,
+    );
+    for (const el of s.querySelectorAll<HTMLElement>('.pick')) {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('sold') || el.classList.contains('poor')) return;
+        this.h.onBuy(Number(el.dataset['index']));
+      });
+    }
+    s.querySelector('.remove')?.addEventListener('click', () =>
+      this.showDeck(run, (uid) => this.h.onRemove(uid), 'Remove which card?'),
+    );
+    s.querySelector('.leave')?.addEventListener('click', () => this.h.onLeave());
+  }
+
+  // ---------- cocoon ----------
+
+  showCocoon(run: RunState): void {
+    const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * COCOON_HEAL_FRACTION));
+    const s = this.show(
+      'cocoon',
+      `<div class="veil"></div>
+       <div class="panel">
+         <h1>❂ COCOON</h1>
+         <h2>❤ ${run.hp} / ${run.maxHp}</h2>
+         <p>Warm silk in a sunny fold of leaf. The vermin can't find you here — for a while.</p>
+         <button class="btn rest">REST · heal ${heal}</button>
+         <button class="btn ghost leave">MOVE ON</button>
+       </div>`,
+    );
+    s.querySelector('.rest')?.addEventListener('click', () => this.h.onRest());
+    s.querySelector('.leave')?.addEventListener('click', () => this.h.onLeave());
+  }
+
+  // ---------- result ----------
+
+  showResult(run: RunState, kind: 'victory' | 'death'): void {
+    const st = run.stats;
+    const s = this.show(
+      'result',
+      `<div class="veil"></div>
+       <div class="panel">
+         <h1 class="${kind}">${kind === 'victory' ? 'THE BEAR IS DOWN' : 'THE GARDEN FALLS'}</h1>
+         <h2>${kind === 'victory' ? 'The thicket goes quiet. For now.' : 'Nothing carries over. The garden will be there again tomorrow.'}</h2>
+         <div class="stats">
+           Fights won: <b>${st.fights}</b> (elites ${st.elites})<br>
+           Cards gained: <b>${st.cardsGained}</b> · deck ${run.deck.length}<br>
+           Crumbs earned: <b>${st.crumbsEarned}</b><br>
+           Seed: <code>${run.seed}</code> <button class="btn ghost copy" style="padding:2px 10px;font-size:12px">copy</button>
+         </div>
+         <p><button class="btn title">BACK TO THE GARDEN GATE</button></p>
+       </div>`,
+    );
+    s.querySelector('.copy')?.addEventListener(
+      'click',
+      () => void navigator.clipboard?.writeText(run.seed),
+    );
+    s.querySelector('.title')?.addEventListener('click', () => this.h.onBackToTitle());
+  }
+}

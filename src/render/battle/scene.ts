@@ -588,16 +588,26 @@ export class BattleScene {
     const D = 520;
     const t0 = performance.now();
     await new Promise<void>((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        card.position.copy(end);
+        resolve();
+      };
       const step = () => {
+        if (done) return;
         const k = Math.min(1, (performance.now() - t0) / D);
         const ease = k * k * (3 - 2 * k);
         card.position.lerpVectors(start, end, ease);
         card.position.y += Math.sin(ease * Math.PI) * 1.1;
         card.rotation.set(-0.5 - ease * 0.6, ease * Math.PI * 2, 0.15 + ease * 0.5);
         if (k < 1) requestAnimationFrame(step);
-        else resolve();
+        else finish();
       };
       step();
+      // rAF pauses in a hidden tab; the timer guarantees the flight still lands.
+      setTimeout(finish, D + 60);
     });
     this.flash.position.copy(end).add(new THREE.Vector3(0, 0.1, 0.3));
     this.flash.scale.setScalar(1.1);
@@ -627,16 +637,24 @@ export class BattleScene {
     s.dead = true;
     const t0 = performance.now();
     await new Promise<void>((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
       const step = () => {
+        if (done) return;
         const k = Math.min(1, (performance.now() - t0) / 600);
         s.plane.material.opacity = (1 - k) * (s.unseen ? 0.5 : 1);
         s.plane.rotation.x = -k * 1.2;
         s.plane.position.y = s.height / 2 - 0.08 - k * s.height * 0.45;
         for (const e of s.eyes) e.scale.setScalar(0.3 * (1 - k));
         if (k < 1) requestAnimationFrame(step);
-        else resolve();
+        else finish();
       };
       step();
+      setTimeout(finish, 660);
     });
     s.root.visible = false;
   }

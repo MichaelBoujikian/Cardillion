@@ -46,7 +46,8 @@ before and after a visual change. Render and UI have no unit tests — the scree
 
 ## Current milestone
 
-M1 (look prototype) passed the owner's review on 2026-09-13; web + three.js is settled. Next is
-**M2, the first playable fight** — see `spec.md` §13 for its done-criteria. The art pipeline is
-live (`docs/art-pipeline.md`); generated PNGs in `assets/art/` are committed only after the
-owner approves them, and `art/out/` holds raw renders and rejected versions.
+M1–M3 are done (2026-09-13): the engine choice is settled, a fight plays, and a full run goes
+title → map → fights/rewards/shops/cocoons → the Bear → result. Next is **M4 content** — see
+`spec.md` §13. The engine has `run.ts` (map + run reducer) over `combat.ts`; screens live in
+`src/ui/run-screens.ts`; `src/app/run-controller.ts` sequences events into animations. In dev,
+`window.__cardillion.autoRun()` / `autoFight()` play the game from the console for verification.
