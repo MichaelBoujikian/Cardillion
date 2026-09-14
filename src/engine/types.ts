@@ -95,6 +95,12 @@ export interface EnemyDef {
   tier: 'common' | 'elite' | 'boss';
   moves: EnemyMove[];
   traits: EnemyTrait[];
+  /** When set, intents follow this cycle of move ids instead of weighted rolls (the Bear). */
+  pattern?: string[];
+  /** Boss enrage: at or below this HP fraction, attacks gain the bonus and the cycle switches. */
+  enrage?: { atHpFraction: number; bonusDamage: number; pattern: string[] };
+  /** HP the creature gets back up with when Play Dead triggers. */
+  reviveHp?: number;
   art: string;
 }
 
@@ -110,6 +116,10 @@ export interface EnemyInstance {
   uses: Record<string, number>;
   /** Play Dead has been spent. */
   playedDead: boolean;
+  /** Position in a boss's move cycle. */
+  patternIndex: number;
+  /** Boss enrage has triggered. */
+  enraged: boolean;
 }
 
 export interface PlayerState {
@@ -137,6 +147,8 @@ export interface CombatState {
   crumbs: number;
   /** Crumbs currently held by Greebles; returned if they die, lost if they escape. */
   stolen: number;
+  /** Crumbs recovered from Greeble kills this fight (bonus included). */
+  recovered: number;
   nextUid: number;
 }
 
@@ -163,6 +175,7 @@ export type CombatEvent =
   | { type: 'enemyActed'; uid: string; move: string }
   | { type: 'intentRolled'; uid: string; move: string }
   | { type: 'crumbsStolen'; uid: string; amount: number }
+  | { type: 'crumbsRecovered'; uid: string; amount: number }
   | { type: 'greebleEscaped'; uid: string; amount: number }
   | { type: 'playerDamaged'; amount: number; blocked: number }
   | { type: 'combatWon'; crumbsRecovered: number }
