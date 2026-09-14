@@ -523,15 +523,15 @@ DOM globals, or any outer layer.
 
 ## 13. Milestones
 
-| #      | Name                 | Done when                                                                                                                                                                                                   |
-| ------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M0** | Scaffold             | Repo, toolchain, CI, this spec, `CLAUDE.md`. ✅                                                                                                                                                             |
-| **M1** | Look prototype       | A throwaway three.js scene: table, fog, warm light, two card planes, one enemy with glowing eyes, vignette + grain. **Gate:** you judge it in the browser. Pass → continue on web. Fail → Godot (ADR 0001). |
-| **M2** | First playable fight | Seven base cards, Rat pack, Charge, statuses, intents, drag-to-target, hit feedback, win/lose. Engine fully tested.                                                                                         |
-| **M3** | Run loop             | Map generation (trails, fog, signposts), rewards, fixed shops, cocoon, the Bear, death/victory, title screen.                                                                                               |
-| **M4** | Content              | Families (14 cards), elites, Greeble + roaming marker, Snail travelling stall, titled unlocks, general upgrades, Wormillionaire.                                                                            |
-| **M5** | Systems              | Save/resume, seeds on title, settings menu, reduce-motion path.                                                                                                                                             |
-| **M6** | Art                  | OpenAI Images pipeline, style anchors approved, all placeholders replaced, contact sheets in `docs/`.                                                                                                       |
+| #      | Name                 | Done when                                                                                                                                                                                                                         |
+| ------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M0** | Scaffold             | Repo, toolchain, CI, this spec, `CLAUDE.md`. ✅                                                                                                                                                                                   |
+| **M1** | Look prototype       | A throwaway three.js scene: table, fog, warm light, two card planes, one enemy with glowing eyes, vignette + grain. **Gate:** you judge it in the browser. Pass → continue on web. Fail → Godot (ADR 0001). ✅ Passed 2026-09-13. |
+| **M2** | First playable fight | Seven base cards, Rat pack, Charge, statuses, intents, drag-to-target, hit feedback, win/lose. Engine fully tested. ✅ 2026-09-13.                                                                                                |
+| **M3** | Run loop             | Map generation (trails, fog, signposts), rewards, fixed shops, cocoon, the Bear, death/victory, title screen.                                                                                                                     |
+| **M4** | Content              | Families (14 cards), elites, Greeble + roaming marker, Snail travelling stall, titled unlocks, general upgrades, Wormillionaire.                                                                                                  |
+| **M5** | Systems              | Save/resume, seeds on title, settings menu, reduce-motion path.                                                                                                                                                                   |
+| **M6** | Art                  | OpenAI Images pipeline, style anchors approved, all placeholders replaced, contact sheets in `docs/`.                                                                                                                             |
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * Post-processing: bloom on emissive (eyes, sun gem, flash), then one custom pass that adds
+ * Battle post-processing: bloom on emissive (eyes, sun gem, flash), then one custom pass that adds
  * film grain, a vignette and a warm-near / cool-far colour split.
  */
 import * as THREE from 'three';

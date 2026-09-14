@@ -21,13 +21,12 @@ thing CI runs.
 
 ## Status
 
-- **M1 look prototype: passed.** Web + three.js is the engine (ADR 0001). `npm run dev` shows the
-  battle table; `?t=0.95` freezes the card mid-flight.
-- **Art pipeline is live.** `OPENAI_API_KEY` is set in the owner's local `.env`. Style anchors
-  and the first two assets (`card-wormillion`, `enemy-rat`) are generated and sit in
-  `assets/art/` **uncommitted, awaiting the owner's approval** — see `docs/art-pipeline.md`.
-- **Next:** M2, the first playable fight (engine, test-first), and/or the remaining art batch on
-  the approved anchors.
+- **M1 look prototype: passed.** Web + three.js is the engine (ADR 0001).
+- **M2 first playable fight: done.** `npm run dev` starts a seeded early-trail fight:
+  drag a card onto an enemy (or click the card, then the enemy), End Turn, win or lose, New
+  Fight. `?seed=abc` fixes the encounter; `?deck=cat,cat,roly-poly` overrides the deck for
+  testing. Engine rules are fully tested (`npm test`).
+- **Art pipeline is live**; generated PNGs land in `assets/art/` and are picked up automatically.
 
 ## Licence
 
