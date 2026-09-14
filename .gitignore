@@ -26,3 +26,6 @@ coverage/
 
 # generated art contact sheets and scratch renders
 art/out/
+
+# personal reference photos used by the art tool (local only)
+art/refs/

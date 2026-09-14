@@ -219,8 +219,13 @@ async function generate(asset, prompt) {
     form.append('quality', quality);
     form.append('background', background);
     for (const ref of [].concat(asset.reference)) {
-      const refPath = path.join(OUT_DIR, `${ref}.png`);
-      if (!fs.existsSync(refPath)) throw new Error(`reference ${ref} not generated yet`);
+      // A reference is a generated asset, or a local photo in art/refs (gitignored).
+      const candidates = [
+        path.join(OUT_DIR, `${ref}.png`),
+        path.join(ROOT, 'art', 'refs', `${ref}.png`),
+      ];
+      const refPath = candidates.find((f) => fs.existsSync(f));
+      if (!refPath) throw new Error(`reference ${ref} not found in assets/art or art/refs`);
       form.append(
         'image[]',
         new Blob([fs.readFileSync(refPath)], { type: 'image/png' }),

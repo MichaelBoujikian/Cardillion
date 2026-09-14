@@ -1,5 +1,5 @@
 {
-  "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md. Styles with `key` are rendered opaque on that chroma colour and keyed out by the tool (see tools/gen-art.mjs).",
+  "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md. Styles with `key` are rendered opaque on that chroma colour and keyed out by the tool (see tools/gen-art.mjs). `owner-cat` is a personal photo in art/refs (gitignored, not in the repo).",
   "defaults": {
     "size": "1024x1024",
     "quality": "high",
@@ -86,15 +86,15 @@
     {
       "id": "card-cat",
       "style": "garden",
-      "reference": "style-anchor-garden",
-      "prompt": "A small cyborg cat with one glowing robotic eye lens, brass ear, alert and staring at something no one else can see.",
+      "reference": ["style-anchor-garden", "owner-cat"],
+      "prompt": "The cat is a real ginger tabby: warm orange fur with darker tabby stripes on the forehead and cheeks, a white chin and a white bib on the chest, a pink nose, big round dark eyes, and a slightly wide head with large ears, looking down at the viewer with mild curiosity, as in the second reference photo. Cyborg touches: one eye replaced by a glowing brass-rimmed lens, a small brass plate on one ear, a gear and copper wire at the collar. Sitting upright, tail curled around its paws.",
       "size": "1024x1024"
     },
     {
       "id": "card-cat-plus",
       "style": "garden",
-      "reference": "style-anchor-garden",
-      "prompt": "Sir Reginald V: a small cyborg cat with one glowing robotic eye lens and a brass ear, wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
+      "reference": ["style-anchor-garden", "owner-cat"],
+      "prompt": "The cat is a real ginger tabby: warm orange fur with darker tabby stripes on the forehead and cheeks, a white chin and a white bib on the chest, a pink nose, big round dark eyes, and a slightly wide head with large ears, looking down at the viewer with mild curiosity, as in the second reference photo. Cyborg touches: one eye replaced by a glowing brass-rimmed lens, a small brass plate on one ear, a gear and copper wire at the collar. Sir Reginald V: the same cat wearing a black top hat and a gold monocle over its lens eye, sitting very straight, dignified and unimpressed.",
       "size": "1024x1024"
     },
     {
