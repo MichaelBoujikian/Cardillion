@@ -493,122 +493,192 @@ export const RAT_EYES: [number, number][] = [
   [402 / 512, 256 / 512],
 ];
 
-/** A gaunt rat silhouette with matted fur and faint amber rim light. Transparent background. */
+/** A mangy rat: spiky matted fur, bald patches, sores, ribs, a naked tail. Transparent background. */
 export function makeRatTexture(): THREE.CanvasTexture {
   const [c, ctx] = canvas(512, 512);
   const r = rnd(23);
   ctx.clearRect(0, 0, 512, 512);
   const body = '#3a3346';
-  // Tail.
-  ctx.strokeStyle = '#1d1620';
+  const bodyDark = '#241f2c';
+  // Naked tail: segmented, pinkish-grey, too long.
   ctx.lineCap = 'round';
-  ctx.lineWidth = 11;
-  ctx.beginPath();
-  ctx.moveTo(120, 350);
-  ctx.bezierCurveTo(60, 330, 30, 400, 24, 470);
-  ctx.stroke();
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(40, 420);
-  ctx.bezierCurveTo(30, 450, 20, 480, 10, 500);
-  ctx.stroke();
-  // Body with a ragged edge.
-  ctx.fillStyle = body;
-  for (let i = 0; i < 5; i++) {
+  for (let k = 0; k < 18; k++) {
+    const t = k / 18;
+    const x = 130 - t * 118 + Math.sin(t * 6) * 8;
+    const y = 352 + t * 120 + Math.cos(t * 4) * 6;
+    ctx.fillStyle = k % 2 ? '#7a6470' : '#5e4a58';
     ctx.beginPath();
-    ctx.ellipse(250 + r() * 10 - 5, 335 + r() * 10 - 5, 150, 92, -0.1, 0, Math.PI * 2);
+    ctx.ellipse(x, y, 7 - t * 4, 5 - t * 2.5, t * 1.2, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Head, ears, snout.
+  // Fur: many overlapping jagged strokes build a spiky, greasy silhouette.
+  const bodyCx = 250;
+  const bodyCy = 335;
+  const spike = (cx: number, cy: number, rx: number, ry: number, count: number, len: number) => {
+    for (let i = 0; i < count; i++) {
+      const a = r() * Math.PI * 2;
+      const x0 = cx + Math.cos(a) * rx * (0.9 + r() * 0.15);
+      const y0 = cy + Math.sin(a) * ry * (0.9 + r() * 0.15);
+      const l = len * (0.4 + r());
+      ctx.strokeStyle = r() < 0.6 ? bodyDark : body;
+      ctx.lineWidth = 2 + r() * 3;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(
+        x0 + Math.cos(a + (r() - 0.5) * 0.8) * l,
+        y0 + Math.sin(a + (r() - 0.5) * 0.8) * l,
+      );
+      ctx.stroke();
+    }
+  };
+  ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.arc(368, 285, 66, 0, Math.PI * 2);
+  ctx.ellipse(bodyCx, bodyCy, 150, 92, -0.1, 0, Math.PI * 2);
   ctx.fill();
+  spike(bodyCx, bodyCy, 150, 92, 420, 26);
+  // Hunched spine ridge.
+  ctx.strokeStyle = bodyDark;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(110, 300);
+  ctx.quadraticCurveTo(230, 210, 330, 250);
+  ctx.stroke();
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8;
+    const x = 120 + t * 200;
+    const y = 296 - Math.sin(t * Math.PI) * 60;
+    ctx.fillStyle = '#4c4358';
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Ribs showing through.
+  ctx.strokeStyle = '#4a4156';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    ctx.arc(190 + i * 24, 322, 52, Math.PI * 0.18, Math.PI * 0.82);
+    ctx.stroke();
+  }
+  // Bald patches: greasy pink-grey skin.
+  for (const [px, py, pr] of [
+    [200, 300, 24],
+    [290, 370, 20],
+    [160, 360, 16],
+  ] as const) {
+    const g = ctx.createRadialGradient(px, py, 2, px, py, pr);
+    g.addColorStop(0, 'rgba(150,110,120,0.95)');
+    g.addColorStop(0.7, 'rgba(120,88,100,0.7)');
+    g.addColorStop(1, 'rgba(120,88,100,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Sores.
+  for (const [sx, sy] of [
+    [206, 306],
+    [296, 376],
+    [232, 400],
+  ] as const) {
+    ctx.fillStyle = '#5a1d22';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#a8393a';
+    ctx.beginPath();
+    ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Head: narrow, snout long, ears torn.
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(372, 288, 68, 58, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  spike(372, 288, 68, 58, 140, 18);
   ctx.beginPath();
   ctx.moveTo(400, 250);
-  ctx.lineTo(462, 300);
-  ctx.lineTo(392, 330);
+  ctx.lineTo(470, 300);
+  ctx.lineTo(392, 334);
   ctx.closePath();
   ctx.fill();
   for (const [ex, ey] of [
-    [340, 222],
-    [392, 210],
+    [338, 222],
+    [394, 208],
   ] as const) {
     ctx.fillStyle = body;
     ctx.beginPath();
-    ctx.arc(ex, ey, 28, 0, Math.PI * 2);
+    ctx.moveTo(ex - 26, ey + 20);
+    ctx.lineTo(ex - 8, ey - 28);
+    ctx.lineTo(ex + 6, ey - 12);
+    ctx.lineTo(ex + 22, ey - 26);
+    ctx.lineTo(ex + 26, ey + 22);
+    ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#2d1f2c';
+    ctx.fillStyle = '#6a4a58';
     ctx.beginPath();
-    ctx.arc(ex, ey, 16, 0, Math.PI * 2);
+    ctx.ellipse(ex, ey + 2, 12, 16, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Legs.
-  ctx.fillStyle = body;
-  for (const lx of [170, 230, 300, 350]) {
+  // Legs and claws.
+  for (const lx of [172, 232, 300, 350]) {
+    ctx.fillStyle = bodyDark;
     ctx.beginPath();
-    ctx.ellipse(lx, 428, 14, 34, 0.1 * (lx > 250 ? -1 : 1), 0, Math.PI * 2);
+    ctx.ellipse(lx, 428, 13, 36, 0.1 * (lx > 250 ? -1 : 1), 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#0d0b12';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#8d8494';
+    ctx.lineWidth = 2.5;
     for (let k = -1; k <= 1; k++) {
       ctx.beginPath();
-      ctx.moveTo(lx + k * 6, 455);
-      ctx.lineTo(lx + k * 12, 476);
+      ctx.moveTo(lx + k * 6, 458);
+      ctx.lineTo(lx + k * 13, 482);
       ctx.stroke();
     }
   }
-  // Fur strokes radiating from the body edge.
-  ctx.strokeStyle = '#0d0b12';
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 160; i++) {
-    const a = r() * Math.PI * 2;
-    const rx = 150 + r() * 14;
-    const ry = 92 + r() * 10;
-    const x0 = 250 + Math.cos(a) * rx;
-    const y0 = 335 + Math.sin(a) * ry;
-    const len = 6 + r() * 16;
-    ctx.strokeStyle = r() < 0.5 ? '#0d0b12' : '#241f2c';
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x0 + Math.cos(a - 0.4) * len, y0 + Math.sin(a - 0.4) * len);
-    ctx.stroke();
-  }
-  // Ribs.
-  ctx.strokeStyle = '#221c28';
-  ctx.lineWidth = 3;
-  for (let i = 0; i < 5; i++) {
-    ctx.beginPath();
-    ctx.arc(200 + i * 26, 330, 50, Math.PI * 0.2, Math.PI * 0.8);
-    ctx.stroke();
-  }
-  // Amber rim light on the right edge (the warm garden light spills onto it).
-  ctx.strokeStyle = 'rgba(255,170,80,0.45)';
-  ctx.lineWidth = 6;
+  // Nose, teeth, drool.
+  ctx.fillStyle = '#7a4a58';
   ctx.beginPath();
-  ctx.arc(368, 285, 64, -0.6, 1.1);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(250, 335, 148, 90, -0.1, -0.9, -0.2);
-  ctx.stroke();
-  // Teeth.
+  ctx.arc(468, 300, 6, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = '#d9cf9a';
-  for (const tx of [430, 442]) {
+  for (const tx of [428, 441, 452]) {
     ctx.beginPath();
-    ctx.moveTo(tx, 306);
-    ctx.lineTo(tx + 5, 306);
-    ctx.lineTo(tx + 2, 320);
+    ctx.moveTo(tx, 314);
+    ctx.lineTo(tx + 6, 314);
+    ctx.lineTo(tx + 2, 332);
     ctx.closePath();
     ctx.fill();
   }
-  // Eye glow baked in softly; emissive planes provide the bloom.
+  ctx.strokeStyle = 'rgba(190,200,190,0.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(446, 330);
+  ctx.quadraticCurveTo(448, 350, 444, 366);
+  ctx.stroke();
+  // Warm rim light spilling from the garden onto its right edge.
+  ctx.strokeStyle = 'rgba(255,170,80,0.4)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(372, 288, 66, 56, 0.2, -0.7, 1.0);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(bodyCx, bodyCy, 148, 90, -0.1, -0.9, -0.25);
+  ctx.stroke();
+  // Eyes: crusted rims, amber glow (emissive sprites sit on top).
   for (const [u, v] of RAT_EYES) {
-    const g = ctx.createRadialGradient(u * 512, v * 512, 1, u * 512, v * 512, 14);
+    const x = u * 512;
+    const y = v * 512;
+    ctx.fillStyle = '#1a0f12';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 1, 11, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const g = ctx.createRadialGradient(x, y, 1, x, y, 12);
     g.addColorStop(0, 'rgba(255,190,80,1)');
-    g.addColorStop(0.4, 'rgba(255,150,40,0.6)');
+    g.addColorStop(0.45, 'rgba(255,150,40,0.6)');
     g.addColorStop(1, 'rgba(255,150,40,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(u * 512, v * 512, 14, 0, Math.PI * 2);
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
     ctx.fill();
   }
   return srgbTexture(c);

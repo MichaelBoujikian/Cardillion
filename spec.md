@@ -418,10 +418,13 @@ Stored in `localStorage` (`cardillion.settings.v1`). A volume slider arrives wit
 
 Two palettes on one screen.
 
-| World       | Palette                                                    | Texture & light                                     | Reference   |
-| ----------- | ---------------------------------------------------------- | --------------------------------------------------- | ----------- |
-| **Garden**  | buttery yellow, leaf green, cream, sky blue, copper/brass  | painterly, soft edges, warm key light               | Diceomancer |
-| **Thicket** | near-black green, umber, bruised purple, amber (eyes only) | heavy grain, high contrast, one cold rim light, fog | Inscryption |
+| World       | Palette                                                    | Texture & light                                                                            | Reference   |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------- |
+| **Garden**  | buttery yellow, leaf green, cream, sky blue, copper/brass  | painterly, soft edges, warm key light                                                      | Diceomancer |
+| **Thicket** | near-black green, umber, bruised purple, amber (eyes only) | painted realism, photobashed texture, heavy grain, crushed blacks, one cold rim light, fog | Inscryption |
+
+The Thicket's creatures are **gross, never gory**: mange, wet matted fur, bare greasy skin, ribs,
+crusted glowing eyes, one joint too many. Realistic rendering, diseased subject.
 
 The two must never be fully separated: the Garden's warm light spills a little onto the nearest
 enemy; the Thicket's fog creeps a little onto the table.

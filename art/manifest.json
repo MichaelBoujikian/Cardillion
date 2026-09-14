@@ -11,11 +11,11 @@
       "suffix": "Transparent background."
     },
     "thicket": {
-      "prefix": "Dark, unsettling illustration for a creepy folk-horror card game. Muted desaturated palette of near-black greens, umber and bruised purple; heavy film grain; high contrast; a single warm rim light; glowing amber eyes. Menacing, wrong, slightly too many joints - but no gore. Centered, full body, no text, no border.",
+      "prefix": "Grim, realistic painted illustration for a folk-horror card game: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is diseased and wrong: mangy wet matted fur, patches of bare greasy skin, visible ribs, crusted eyes that glow amber, joints that bend one time too many. Gross, never gory. Centered, full body, no text, no border.",
       "suffix": "Transparent background."
     },
     "scene": {
-      "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit garden of flowers, moss and pebbles; it fades with depth into a dark, tangled thicket of roots, thorns and shadow where faint amber eyes watch. Film grain, vignette, no characters, no text.",
+      "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit storybook garden of flowers, moss and pebbles; with depth it turns into grim painted realism: wet black soil, tangled roots, thorns, cobwebs and shadow where faint amber eyes watch. Heavy film grain on the far half only, vignette, no characters, no text.",
       "suffix": ""
     }
   },
@@ -32,7 +32,6 @@
       "prompt": "A gaunt rat crouched low, fur matted, ribs showing, long naked tail curling behind, eyes glowing amber.",
       "size": "1024x1024"
     },
-
     {
       "id": "card-wormillion",
       "style": "garden",
@@ -96,7 +95,6 @@
       "prompt": "Sir Reginald V: the same cyborg cat now wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
       "size": "1024x1536"
     },
-
     {
       "id": "enemy-rat",
       "style": "thicket",
@@ -153,7 +151,6 @@
       "prompt": "A gaunt moose with antlers like dead branches strung with cobweb, breath steaming, amber eyes, looming.",
       "size": "1024x1536"
     },
-
     {
       "id": "npc-snail",
       "style": "garden",
@@ -161,7 +158,6 @@
       "prompt": "A friendly elderly cyborg snail carrying a tiny wooden market stall on its shell, lanterns hanging from the awning, wearing spectacles.",
       "size": "1024x1024"
     },
-
     {
       "id": "bg-battle",
       "style": "scene",

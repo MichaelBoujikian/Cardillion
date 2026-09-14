@@ -37,18 +37,27 @@ const GrainVignetteShader = {
     }
 
     void main() {
-      vec4 c = texture2D(tDiffuse, vUv);
-
-      // Depth grade: the far side (top of screen) goes colder and darker; the near side warms.
-      float far = smoothstep(0.42, 1.0, vUv.y);
+      float far = smoothstep(0.40, 1.0, vUv.y);
       float near = smoothstep(0.55, 0.0, vUv.y);
-      c.rgb = mix(c.rgb, c.rgb * vec3(0.80, 0.86, 1.02), far * 0.7);
-      c.rgb = mix(c.rgb, c.rgb * vec3(1.06, 1.0, 0.92), near * 0.5);
 
-      // Grain: heavier in the dark, animated.
-      float n = hash(floor(vUv * resolution * 0.75) + fract(time * 7.0) * 100.0) - 0.5;
+      // Chromatic fringing creeps in on the far side, like a cheap lens in a dark room.
+      vec2 dir = (vUv - 0.5) * far * 0.006;
+      vec4 c = texture2D(tDiffuse, vUv);
+      c.r = texture2D(tDiffuse, vUv + dir).r;
+      c.b = texture2D(tDiffuse, vUv - dir).b;
+
+      // Depth grade. Near: warm and soft. Far: desaturated, crushed blacks, cold.
       float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-      c.rgb += n * grain * (1.15 - clamp(lum, 0.0, 1.0));
+      c.rgb = mix(c.rgb, c.rgb * vec3(1.06, 1.0, 0.92), near * 0.5);
+      c.rgb = mix(c.rgb, vec3(lum), far * 0.55);
+      c.rgb = mix(c.rgb, c.rgb * vec3(0.78, 0.84, 1.0), far * 0.7);
+      c.rgb = mix(c.rgb, (c.rgb - 0.025) * 1.22, far * 0.8);
+
+      // Grain: fine and gentle in the garden, coarse and heavy in the thicket.
+      float g1 = hash(floor(vUv * resolution * 0.75) + fract(time * 7.0) * 100.0) - 0.5;
+      float g2 = hash(floor(vUv * resolution * 0.33) + fract(time * 5.0) * 77.0) - 0.5;
+      float amount = grain * (1.15 - clamp(lum, 0.0, 1.0)) * (1.0 + far * 0.9);
+      c.rgb += mix(g1, g2, far * 0.45) * amount;
 
       // Vignette.
       vec2 d = (vUv - 0.5) * vec2(1.0, 1.15);

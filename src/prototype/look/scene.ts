@@ -32,7 +32,7 @@ export interface LookScene {
   resize(aspect: number): void;
 }
 
-const FOG_COLOR = 0x0e0d16;
+const FOG_COLOR = 0x0d0c12;
 
 function rnd(seed: number): () => number {
   let s = seed >>> 0;
@@ -84,7 +84,7 @@ export function buildScene(): LookScene {
   scene.add(warm);
 
   // Cold moonlight from behind the thicket: silhouettes separate from the dark.
-  const moon = new THREE.DirectionalLight(0x8090ff, 1.4);
+  const moon = new THREE.DirectionalLight(0x8090ff, 2.2);
   moon.position.set(4, 9, -18);
   moon.target.position.set(0, 0, -6);
   scene.add(moon, moon.target);
@@ -96,7 +96,7 @@ export function buildScene(): LookScene {
   scene.add(spill, spill.target);
 
   // Cold fill over the thicket so roots and trees read as silhouettes, not void.
-  const gloom = new THREE.PointLight(0x5a6aa8, 260, 30, 1.6);
+  const gloom = new THREE.PointLight(0x6a76a8, 480, 34, 1.6);
   gloom.position.set(0, 7, -10);
   scene.add(gloom);
 
@@ -210,7 +210,7 @@ export function buildScene(): LookScene {
   // ---------- thicket props (far) ----------
   const thicket = new THREE.Group();
   scene.add(thicket);
-  const rootMat = new THREE.MeshStandardMaterial({ color: 0x2b2636, roughness: 1 });
+  const rootMat = new THREE.MeshStandardMaterial({ color: 0x3a3442, roughness: 1 });
   for (let i = 0; i < 16; i++) {
     const x0 = (r() - 0.5) * 16;
     const z0 = -7 - r() * 12;
@@ -265,14 +265,74 @@ export function buildScene(): LookScene {
   // Something very large, far back, that is only eyes and a shape.
   const bear = new THREE.Mesh(
     new THREE.SphereGeometry(2.6, 16, 12),
-    new THREE.MeshStandardMaterial({ color: 0x1c1826, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: 0x262030, roughness: 1 }),
   );
   bear.scale.set(1.3, 1.1, 1);
   bear.position.set(0.8, 1.8, -15.5);
   thicket.add(bear);
 
-  // Eyes in the dark: pairs of emissive dots that blink.
   const glow = makeGlowTexture();
+
+  // Cobwebs strung between the roots and trees.
+  const webMat = new THREE.LineBasicMaterial({ color: 0xb9b6c6, transparent: true, opacity: 0.4 });
+  const anchors: THREE.Vector3[] = [];
+  thicket.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.geometry instanceof THREE.CylinderGeometry) {
+      anchors.push(o.position.clone().add(new THREE.Vector3(0, 1.2 + r() * 2, 0)));
+    }
+  });
+  for (let i = 0; i < 26 && anchors.length > 1; i++) {
+    const a = anchors[Math.floor(r() * anchors.length)] as THREE.Vector3;
+    const b = anchors[Math.floor(r() * anchors.length)] as THREE.Vector3;
+    if (a === b || a.distanceTo(b) > 9) continue;
+    const pts: THREE.Vector3[] = [];
+    const sag = 0.4 + r() * 1.2;
+    for (let k = 0; k <= 8; k++) {
+      const t = k / 8;
+      pts.push(
+        new THREE.Vector3()
+          .lerpVectors(a, b, t)
+          .add(new THREE.Vector3(0, -Math.sin(t * Math.PI) * sag, 0)),
+      );
+    }
+    thicket.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), webMat));
+    // A few threads hanging off it.
+    for (let k = 0; k < 3; k++) {
+      const at = pts[1 + Math.floor(r() * 6)] as THREE.Vector3;
+      const hang = [
+        at.clone(),
+        at.clone().add(new THREE.Vector3((r() - 0.5) * 0.3, -(0.3 + r() * 1.4), 0)),
+      ];
+      thicket.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(hang), webMat));
+    }
+  }
+
+  // Ash drifting in the thicket: cold, slow, sparse.
+  const ashCount = 220;
+  const ashPos = new Float32Array(ashCount * 3);
+  const ashSeed = new Float32Array(ashCount);
+  for (let i = 0; i < ashCount; i++) {
+    ashPos[i * 3] = (r() - 0.5) * 18;
+    ashPos[i * 3 + 1] = r() * 6;
+    ashPos[i * 3 + 2] = -5 - r() * 15;
+    ashSeed[i] = r() * 100;
+  }
+  const ashGeo = new THREE.BufferGeometry();
+  ashGeo.setAttribute('position', new THREE.BufferAttribute(ashPos, 3));
+  const ash = new THREE.Points(
+    ashGeo,
+    new THREE.PointsMaterial({
+      color: 0x8c8a99,
+      size: 0.07,
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      map: glow,
+    }),
+  );
+  scene.add(ash);
+
+  // Eyes in the dark: pairs of emissive dots that blink.
   const eyeMat = new THREE.SpriteMaterial({
     map: glow,
     color: new THREE.Color(1.0, 0.62, 0.18).multiplyScalar(6),
@@ -409,6 +469,15 @@ export function buildScene(): LookScene {
       arr.setY(i, arr.getY(i) + Math.cos(t * 0.3 + s * 1.3) * 0.0018);
     }
     arr.needsUpdate = true;
+    const ap = ashGeo.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < ashCount; i++) {
+      const s = ashSeed[i] as number;
+      let y = ap.getY(i) - 0.004 - Math.sin(t * 0.5 + s) * 0.002;
+      if (y < 0) y = 6;
+      ap.setY(i, y);
+      ap.setX(i, ap.getX(i) + Math.sin(t * 0.25 + s) * 0.002);
+    }
+    ap.needsUpdate = true;
     // Rats breathe and shift their weight.
     enemies.forEach((e, i) => {
       const s = 1 + Math.sin(t * 1.7 + i * 2.1) * 0.02;
