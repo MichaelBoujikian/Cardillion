@@ -81,10 +81,15 @@ function buildPrompt(asset) {
   const style = manifest.styles[asset.style];
   if (!style) throw new Error(`asset ${asset.id}: unknown style "${asset.style}"`);
   const key = keyFor(asset);
+  // With a reference image the edits endpoint tends to redraw the reference's subject, so the
+  // prompt says what the reference is for.
+  const refHint = asset.reference
+    ? 'Use the reference image only for its painting technique; the subject is described below.'
+    : '';
   const suffix = key
-    ? `The background is a flat, solid, BRIGHT, fully saturated neon ${key.name} chroma-key screen filling the entire frame - unaffected by the scene's lighting or palette; no ground, no shadow, no vignette, nothing else behind the subject.`
+    ? `IMPORTANT: the subject is shown floating in empty space against a flat, evenly lit, bright neon ${key.name} chroma-key screen, cut out like a sticker, with a generous margin of the same colour on every side including below its feet; the bottom edge of the image is exactly the same colour as the top edge. The screen is a perfectly flat digital colour fill, as if the subject had been pasted onto a solid colour layer in an image editor: no ambient occlusion, no cast shadow, no glow and no darkening of the screen anywhere, not even right next to the outline. There is NO floor, NO ground, NO shadow, NO gradient, NO wall, table or room anywhere - only the subject itself is painted.`
     : style.suffix;
-  return [style.prefix, asset.prompt, suffix].filter(Boolean).join(' ');
+  return [refHint, style.prefix, asset.prompt, suffix].filter(Boolean).join(' ');
 }
 
 /**

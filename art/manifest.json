@@ -12,7 +12,7 @@
       "key": "blue"
     },
     "thicket": {
-      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen photographed in a dark cabin: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
       "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
       "key": "green"
     },
@@ -94,7 +94,7 @@
       "id": "card-cat-plus",
       "style": "garden",
       "reference": "style-anchor-garden",
-      "prompt": "Sir Reginald V: the same cyborg cat now wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
+      "prompt": "Sir Reginald V: a small cyborg cat with one glowing robotic eye lens and a brass ear, wearing a black top hat and a gold monocle over its robotic eye, dignified and unimpressed.",
       "size": "1024x1024"
     },
     {
@@ -107,50 +107,56 @@
       "id": "enemy-possum",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A possum with a rictus grin of too many needle teeth, pale face, black eyes with an amber glint, playing dead on its back but watching."
+      "prompt": "A Virginia opossum in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body, long pointed pale face, coarse grizzled grey fur falling out in patches showing greasy skin, a rictus grin of too many needle teeth with drool, black eyes with an amber glint, its long naked tail attached at the rump and trailing along the ground behind it."
+    },
+    {
+      "id": "enemy-possum-dead",
+      "style": "thicket",
+      "reference": "style-anchor-thicket",
+      "prompt": "A Virginia opossum with a long pointed pale face, coarse grizzled grey fur falling out in patches, a rictus grin of too many needle teeth, black eyes with an amber glint, lying on its back playing dead with all four legs drawn up against its belly and clearly attached, its long naked tail attached at the rump and curled beside it, watching."
     },
     {
       "id": "enemy-spider",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A spindly spider with legs too long and jointed one time too many, eight amber eyes, strands of web trailing from it."
+      "prompt": "A spindly spider seen from the front and slightly above, its body bloated and glistening, with eight very long thin legs that all radiate from and clearly attach to its body, eight amber eyes, strands of dirty web trailing from it."
     },
     {
       "id": "enemy-scorpion",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A scorpion of black chitin with a tail raised high, venom bead glowing faintly green at the sting, amber eyes."
+      "prompt": "A scorpion of black chitin seen in side view, its shell crusted with grime and pale fungal blotches, tail raised high over its back and clearly attached, all eight legs and both pincers attached to its body, a bead of venom glowing faintly at the sting, amber eyes."
     },
     {
       "id": "enemy-greeble",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "The Greeble: a hunched, indistinct creature made of shadow and static, only a pair of amber eyes and a wide grin are certain, clutching a stolen breadcrumb."
+      "prompt": "The Greeble: a small hunched creature made of shadow and television static, its outline smeared and indistinct but forming one single connected shape, only a pair of amber eyes and a wide grin of small teeth are certain, clutching a stolen breadcrumb in two thin hands."
     },
     {
       "id": "enemy-rat-king",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A rat king: several rats fused at the tail into a writhing crown-shaped mass, many amber eyes, one wearing a tiny bent crown."
+      "prompt": "A rat king: five or six gaunt mangy rats fused at their knotted tails into one writhing crown-shaped mass, their bodies radiating outward from the knot, seen from the front, many amber eyes, one rat wearing a tiny bent tin crown. IMPORTANT: the mass is shown floating in empty space against a flat, evenly lit, bright neon green chroma-key screen, cut out like a sticker, with a generous margin of the same green on every side including below it; the bottom edge of the image is exactly the same bright green as the top edge. The green is a perfectly flat digital colour fill, as if the mass had been pasted onto a solid colour layer in an image editor: no ambient occlusion, no cast shadow, no glow and no darkening of the green anywhere, not even right next to the outline. There is NO floor, NO ground, NO shadow, NO dark gradient, NO wall, table or cabin anywhere - only the creatures themselves are dark."
     },
     {
       "id": "enemy-wolf-spider",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A huge hairy wolf spider, forelegs raised, fangs dripping, eight amber eyes in two rows, cloaked in web."
+      "prompt": "A huge hairy wolf spider seen from the front, forelegs raised, all eight legs clearly attached to its body, coarse wet bristles, fangs dripping, eight amber eyes in two rows. No web, no cobweb, no fog, no mist and nothing translucent anywhere in the image."
     },
     {
       "id": "boss-bear",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "An enormous bear rearing on its hind legs, fur hanging in ragged clumps, one eye milky, one eye amber, claws catching the light, filling the frame.",
+      "prompt": "An enormous bear rearing upright on its hind legs and facing the viewer, front paws raised with claws catching the light, all four limbs clearly attached to its body, fur hanging in ragged wet clumps with large bare patches of greasy grey skin and weeping sores on its chest and belly, ribs showing, muzzle open over cracked yellow teeth with a string of drool, both eyes clearly visible: one milky white, one glowing amber; whole body visible from head to hind paws with a margin around it.",
       "size": "1024x1536"
     },
     {
       "id": "boss-moose",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A gaunt moose with antlers like dead branches strung with cobweb, breath steaming, amber eyes, looming.",
+      "prompt": "A gaunt moose standing in three-quarter view, all four legs clearly attached and planted, antlers like dead branches strung with cobweb, hide hanging off its ribs in patches, amber eyes, looming, whole body visible from antler tips to hooves with a margin around it.",
       "size": "1024x1536"
     },
     {
@@ -163,7 +169,7 @@
     {
       "id": "bg-battle",
       "style": "scene",
-      "prompt": "The view across a garden table toward the woods: sunlit foreground of flowers and moss, fading into a dark thicket in the distance.",
+      "prompt": "The view across a low garden bed toward the woods, seen from a bug's height: a sunlit foreground of flowers, moss and pebbles that recedes into a dark thicket in the distance. No furniture, no wooden table, no man-made objects.",
       "size": "1536x1024",
       "background": "opaque"
     },
