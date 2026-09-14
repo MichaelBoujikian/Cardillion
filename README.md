@@ -21,8 +21,8 @@ thing CI runs.
 
 ## Status
 
-Milestone **M0 — scaffold**. Next: the M1 look prototype that decides whether web + three.js
-hits the visual bar (see ADR 0001).
+Milestone **M1 — look prototype** built and awaiting the owner's review; it decides whether web + three.js
+hits the visual bar (see ADR 0001). `npm run dev` shows it; `?t=0.95` freezes the card mid-flight.
 
 ## Licence
 
