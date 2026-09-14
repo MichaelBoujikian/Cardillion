@@ -50,11 +50,15 @@ export function loadImage(url: string): Promise<HTMLImageElement | null> {
 /** Generated art keyed by asset id; missing entries mean "use the placeholder". */
 export type ArtCache = Map<string, HTMLImageElement>;
 
+/**
+ * Loads the web-sized copies in public/art (see tools/art-optimize.mjs); the PNG masters in
+ * assets/art never ship.
+ */
 export async function loadArt(ids: readonly string[]): Promise<ArtCache> {
   const cache: ArtCache = new Map();
   await Promise.all(
     ids.map(async (id) => {
-      const img = await loadImage(`art/${id}.png`);
+      const img = await loadImage(`art/${id}.webp`);
       if (img) cache.set(id, img);
     }),
   );

@@ -37,7 +37,9 @@ That is the entire setup. From here the agent runs the pipeline.
 3. **Re-roll misses.** Edit the prompt in the manifest, then `npm run art -- --only <id> --force`.
 4. **Contact sheet for approval.** Assemble the batch into one image (`art/out/` is gitignored
    scratch space), send it to the owner, and record approved ids in the commit message.
-5. **Commit approved PNGs** to `assets/art/`. Placeholders for those ids become unused.
+5. **Commit approved PNGs** to `assets/art/`, then run `npm run art:optimize` and commit the
+   web-sized `public/art/<id>.webp` copies it writes — those are what the game loads; the PNG
+   masters never ship. Placeholders for those ids become unused.
 
 Costs: roughly $0.02 / $0.07 / $0.19 per image at low / medium / high quality. Use
 `--quality medium` while iterating on prompts, `high` for the final render.

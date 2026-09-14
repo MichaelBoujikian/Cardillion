@@ -9,7 +9,12 @@ side, and a worm called Wormillion.
 - **Why it's built this way:** [`docs/adr/`](docs/adr/).
 - **For agents working in this repo:** [`CLAUDE.md`](CLAUDE.md).
 
-## Run it
+## Play it
+
+**https://michaelboujikian.github.io/Cardillion/** — deployed from `main` by GitHub Actions on
+every push.
+
+## Run it locally
 
 ```bash
 npm install
@@ -34,4 +39,5 @@ thing CI runs.
 
 ## Licence
 
-Private, all rights reserved (for now).
+All rights reserved. The source and art are public so the game can be played and read; no
+licence is granted to reuse the code or the artwork.

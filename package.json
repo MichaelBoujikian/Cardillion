@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && vite build",
     "art": "node tools/gen-art.mjs",
-    "art:preview": "node tools/art-preview.mjs"
+    "art:preview": "node tools/art-preview.mjs",
+    "art:optimize": "node tools/art-optimize.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"
@@ -34,6 +35,7 @@
     "globals": "^17.12.0",
     "pngjs": "^7.0.0",
     "prettier": "^3.9.6",
+    "sharp": "^0.35.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.0",
     "vite": "^8.3.0",

@@ -457,9 +457,10 @@ Boss node in it. Fogged nodes are drawn as faint pebbles. Markers: Snail (visibl
 
 ### 11.4 Asset contract
 
-Every visual asset is keyed by a stable **id** matching its content entry. The loader tries
-`assets/art/<id>.png` and falls back to `assets/placeholders/<id>.svg`, which is generated
-procedurally so the game is always fully playable without any generated art.
+Every visual asset is keyed by a stable **id** matching its content entry. Masters live in
+`assets/art/<id>.png`; `npm run art:optimize` writes the web-sized `public/art/<id>.webp` the
+game loads. A missing asset falls back to a procedurally drawn placeholder, so the game is
+always fully playable without any generated art.
 
 | Kind          | Id pattern        | Generated size  | Displayed as                  | Background  |
 | ------------- | ----------------- | --------------- | ----------------------------- | ----------- |
