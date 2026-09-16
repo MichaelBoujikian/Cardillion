@@ -46,6 +46,9 @@ before and after a visual change. Render and UI have no unit tests — the scree
 
 ## Current milestone
 
+**New to this repo? Read `HANDOFF.md` first** — where things stand, how the owner works, the
+tool gotchas, and what to build next.
+
 M1–M4 are done (2026-09-15). Next is **M5 systems** — save/resume, seeds, settings — see
 `spec.md` §13 and §10. Engine: `combat.ts` (fight reducer, `CombatMods` for upgrade effects),
 `map.ts`, `run.ts` (run reducer: shops, upgrades, the two map markers). Screens live in

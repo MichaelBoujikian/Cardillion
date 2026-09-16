@@ -7,7 +7,7 @@ side, and a worm called Wormillion.
 - **Design:** [`spec.md`](spec.md) — rules, numbers, content, milestones.
 - **Vocabulary:** [`CONTEXT.md`](CONTEXT.md).
 - **Why it's built this way:** [`docs/adr/`](docs/adr/).
-- **For agents working in this repo:** [`CLAUDE.md`](CLAUDE.md).
+- **For agents working in this repo:** [`HANDOFF.md`](HANDOFF.md) (start here), then [`CLAUDE.md`](CLAUDE.md).
 
 ## Play it
 
