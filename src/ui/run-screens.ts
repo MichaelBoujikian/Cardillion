@@ -2,11 +2,16 @@
  * The non-fight screens of a run: title, map, reward, shop, cocoon, result — plus the deck
  * list used by the map HUD and the shop's removal service. DOM over the battle canvas.
  */
-import { cardDef } from '@content/cards';
+import { PUPATION, cardDef } from '@content/cards';
 import { FLAVORS } from '@content/trails';
 import { TITLED_UNLOCKS, upgradeDef } from '@content/upgrades';
 import { nodeAt, signposts, visibleNodes, type MapNode } from '@engine/map';
-import { COCOON_HEAL_FRACTION, canSeeGreebleMarker, type RunState } from '@engine/run';
+import {
+  COCOON_HEAL_FRACTION,
+  FORAGE_CRUMBS,
+  canSeeGreebleMarker,
+  type RunState,
+} from '@engine/run';
 import type { ArtCache } from '@render/battle/textures';
 import type { CardFaces } from './card-faces';
 
@@ -20,6 +25,8 @@ export interface ScreenHandlers {
   onBuyUpgrade(index: number): void;
   onBuyWormillionaire(): void;
   onRest(): void;
+  onForage(): void;
+  onPupate(uid: string): void;
   onLeave(): void;
   onBackToTitle(): void;
 }
@@ -134,6 +141,7 @@ const CSS = /* css */ `
 /* result */
 .result-screen h1.victory { color:#ffd27a; }
 .result-screen h1.death { color:#ff8a7a; }
+.reward-screen .note { color:#ffd27a; margin:0 0 8px; }
 .result-screen .stats { display:inline-block; text-align:left; margin:0 0 12px; line-height:1.8; }
 .result-screen code { color:#ffd27a; }
 `;
@@ -302,8 +310,16 @@ export class RunScreens {
     s.querySelector('.deck')?.addEventListener('click', () => this.showDeck(run, null));
   }
 
-  /** The deck as a grid of faces; with `onPick` set, clicking a card selects it (shop removal). */
-  showDeck(run: RunState, onPick: ((uid: string) => void) | null, title = 'Your deck'): void {
+  /**
+   * The deck as a grid of faces; with `onPick` set, clicking a card selects it (shop removal,
+   * pupation). `pickable` limits which cards can be chosen; the rest are dimmed.
+   */
+  showDeck(
+    run: RunState,
+    onPick: ((uid: string) => void) | null,
+    title = 'Your deck',
+    pickable: ((def: string) => boolean) | null = null,
+  ): void {
     const sorted = [...run.deck].sort((a, b) =>
       cardDef(a.def).name.localeCompare(cardDef(b.def).name),
     );
@@ -315,7 +331,8 @@ export class RunScreens {
           const up =
             c.upgraded ||
             (cardDef(c.def).bug !== null && run.unlocks.includes(cardDef(c.def).bug!));
-          return `<div class="pick" data-uid="${c.uid}" style="background-image:url(${this.faces.url(c.def, up)})"></div>`;
+          const dim = onPick && pickable && !pickable(c.def) ? ' poor' : '';
+          return `<div class="pick${dim}" data-uid="${c.uid}" style="background-image:url(${this.faces.url(c.def, up)})"></div>`;
         })
         .join('')}</div>`;
     this.deckList.classList.add('on');
@@ -324,6 +341,7 @@ export class RunScreens {
       ?.addEventListener('click', () => this.deckList.classList.remove('on'));
     if (onPick) {
       for (const el of this.deckList.querySelectorAll<HTMLElement>('.pick')) {
+        if (el.classList.contains('poor')) continue;
         el.addEventListener('click', () => {
           this.deckList.classList.remove('on');
           onPick(el.dataset['uid'] as string);
@@ -334,7 +352,8 @@ export class RunScreens {
 
   // ---------- reward ----------
 
-  showReward(run: RunState): void {
+  /** `notes` are one-line announcements from the fight's aftermath (a Chrysalis emerging). */
+  showReward(run: RunState, notes: string[] = []): void {
     const offer = run.reward;
     if (!offer) return;
     const s = this.show(
@@ -343,6 +362,7 @@ export class RunScreens {
        <div class="panel">
          <h1>SPOILS</h1>
          <h2>🍞 +${offer.crumbs} crumbs · now ${run.crumbs}</h2>
+         ${notes.map((n) => `<p class="note">✦ ${n}</p>`).join('')}
          <p>Take one card, or leave them all.</p>
          <div class="cards">${offer.cards
            .map(
@@ -456,18 +476,30 @@ export class RunScreens {
 
   showCocoon(run: RunState): void {
     const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * COCOON_HEAL_FRACTION));
+    const canPupate = run.deck.some((c) => c.def in PUPATION);
     const s = this.show(
       'cocoon',
       `<div class="veil"></div>
        <div class="panel">
          <h1>❂ COCOON</h1>
-         <h2>❤ ${run.hp} / ${run.maxHp}</h2>
-         <p>Warm silk in a sunny fold of leaf. The vermin can't find you here — for a while.</p>
+         <h2>❤ ${run.hp} / ${run.maxHp} · 🍞 ${run.crumbs}</h2>
+         <p>Warm silk in a sunny fold of leaf. The vermin can't find you here — for a while.<br>Choose one.</p>
          <button class="btn rest">REST · heal ${heal}</button>
-         <button class="btn ghost leave">MOVE ON</button>
+         <button class="btn forage">FORAGE · ${FORAGE_CRUMBS[0]}–${FORAGE_CRUMBS[1]} crumbs</button>
+         <button class="btn pupate" ${canPupate ? '' : 'disabled title="Needs a Caterpillar-family card"'}>PUPATE · a Caterpillar</button>
+         <br><button class="btn ghost leave">MOVE ON</button>
        </div>`,
     );
     s.querySelector('.rest')?.addEventListener('click', () => this.h.onRest());
+    s.querySelector('.forage')?.addEventListener('click', () => this.h.onForage());
+    s.querySelector('.pupate')?.addEventListener('click', () =>
+      this.showDeck(
+        run,
+        (uid) => this.h.onPupate(uid),
+        'Pupate which card?',
+        (def) => def in PUPATION,
+      ),
+    );
     s.querySelector('.leave')?.addEventListener('click', () => this.h.onLeave());
   }
 

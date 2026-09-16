@@ -278,7 +278,27 @@ const CARD_LIST: CardDef[] = [
     upgraded: null,
     art: 'card-cobweb',
   },
+  // Metamorphosis (spec §8.8): a pupated Caterpillar-family card, until its next won fight.
+  {
+    id: 'chrysalis',
+    name: 'Chrysalis',
+    bug: 'butterfly',
+    rarity: 'uncommon',
+    type: 'skill',
+    targeting: 'none',
+    exhaust: true,
+    special: true,
+    base: { cost: 0, text: 'Gain 6 Block. Exhaust.', effects: [{ kind: 'block', amount: 6 }] },
+    upgraded: { cost: 0, text: 'Gain 8 Block. Exhaust.', effects: [{ kind: 'block', amount: 8 }] },
+    art: 'card-chrysalis',
+  },
 ];
+
+/** Pupate at a Cocoon: Caterpillar-family card → the Butterfly-family card it emerges as (spec §8.8). */
+export const PUPATION: Readonly<Record<string, string>> = {
+  caterpillar: 'butterfly',
+  munch: 'flutter',
+};
 
 export const CARDS: Readonly<Record<string, CardDef>> = Object.fromEntries(
   CARD_LIST.map((c) => [c.id, c]),

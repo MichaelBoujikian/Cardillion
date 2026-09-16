@@ -67,7 +67,7 @@ Title ──► New Run ──► Map ──► [Fight | Elite | Shop | Cocoon] 
 - **Reward:** crumbs, then pick 1 of 3 cards (skip allowed). Elites add a choice of 1 of 2
   general upgrades.
 - **Shop:** stock in §9. Leaving is free.
-- **Cocoon:** heal 30% max HP _(tuning)_. Leave.
+- **Cocoon:** choose one of Rest, Forage or Pupate (§8.8), or leave.
 - **Victory / Death:** stats (turns, damage, crumbs, cards), seed shown with copy button, back
   to Title. The save is deleted either way.
 
@@ -324,7 +324,7 @@ v1: **one act**, one map, the Bear at the end. Later acts get their own map and 
 | **Fight**  | Encounter from §7.5. Reward: 12–18 crumbs + card pick. |
 | **Elite**  | Rat King or Wolf Spider. Reward per §7.3.              |
 | **Shop**   | The Snail's stall (§9).                                |
-| **Cocoon** | Heal 30% max HP _(tuning)_.                            |
+| **Cocoon** | One of Rest, Forage, Pupate (§8.8).                    |
 | **Boss**   | The Bear.                                              |
 
 ### 8.4 Fog & signposts
@@ -360,6 +360,21 @@ unknown markers along the trail. At every branch, a **signpost** names each trai
 ### 8.7 Win & death
 
 Kill the Bear → Victory. HP ≤ 0 anywhere → Death. Both end the run and delete the save.
+
+### 8.8 The Cocoon: Rest, Forage, Pupate
+
+A Cocoon offers one of three, once per visit. Leaving without choosing is allowed.
+
+| Choice     | Effect                                                                                                                                                                                                                                                                                                                 |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rest**   | Heal 30% max HP _(tuning)_.                                                                                                                                                                                                                                                                                            |
+| **Forage** | Root through the leaf litter: gain 18–28 crumbs _(tuning)_, rolled from the `rewards` stream.                                                                                                                                                                                                                          |
+| **Pupate** | Choose a Caterpillar-family card in your deck. It becomes a **Chrysalis** (Butterfly family, cost 0 Skill: _Gain 6 Block. Exhaust._; + _Gain 8 Block_) and cannot attack while in that phase. When you next **win a fight**, it emerges as its Butterfly-family counterpart: Caterpillar → Butterfly, Munch → Flutter. |
+
+Metamorphosis is how a common Caterpillar becomes an uncommon Butterfly: one Cocoon visit and
+the fight after it. The Chrysalis belongs to the Butterfly family, so Madame Butterfly upgrades
+it and the card it becomes. A Chrysalis is never offered by rewards or shops. One still in the
+deck at the Bear simply never emerges.
 
 ---
 
@@ -552,7 +567,6 @@ DOM globals, or any outer layer.
 - Difficulty levels.
 - Map ideas held back: **Dandelion spin** (random branch choice you can bribe with crumbs),
   **Trapdoor spider** node, **Weather** reshuffles, **Scout** (pay crumbs to peek through fog).
-- Cocoon **metamorphosis**: transform a Caterpillar into a Butterfly at a Cocoon.
 - More families, more titled unlocks with second tiers, more vermin.
 
 ---
@@ -562,7 +576,8 @@ DOM globals, or any outer layer.
 Record balance changes here with a date and a one-line reason, so numbers in this document stay
 the source of truth.
 
-| Date       | Change                     | Why                                                                                                    |
-| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 2026-09-13 | Initial numbers            | First pass from design session.                                                                        |
-| 2026-09-15 | Family card upgraded forms | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta). |
+| Date       | Change                                    | Why                                                                                                                                                       |
+| ---------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-13 | Initial numbers                           | First pass from design session.                                                                                                                           |
+| 2026-09-15 | Family card upgraded forms                | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta).                                                    |
+| 2026-09-15 | Cocoon: Forage 18–28, Chrysalis Block 6/8 | New §8.8 from the owner's idea list. Forage sits between a fight's bounty and a common card's price; Chrysalis is a Roly Poly with the attack taken away. |

@@ -63,6 +63,8 @@ export interface CardDef {
   /** Exhausts at end of turn if still in hand (Cobweb). */
   ethereal?: boolean;
   unplayable?: boolean;
+  /** Never offered by rewards or shops; enters the deck another way (Chrysalis via Pupate). */
+  special?: boolean;
   /** Asset id for the art contract (spec §11.4). */
   art: string;
   /** Art for the upgraded form when it has its own (Sir Reginald V's top hat); else `art`. */
@@ -74,6 +76,8 @@ export interface CardInstance {
   def: string;
   /** Injected upgraded copies (Wormillionaire) carry their own flag; titled unlocks upgrade by bug. */
   upgraded: boolean;
+  /** A Chrysalis: the card def it becomes after the next won fight (spec §8.8). */
+  emerges?: string;
 }
 
 export type EnemyEffect =

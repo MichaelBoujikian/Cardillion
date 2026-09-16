@@ -36,6 +36,8 @@ export class RunController {
   private queue: Promise<void> = Promise.resolve();
   /** A fight just ended: the battle overlay is up and waits for the player's click. */
   private awaitingContinue = false;
+  /** One-line announcements gathered from the last batch of events, shown on the next screen. */
+  private notes: string[] = [];
 
   constructor(
     private readonly scene: BattleScene,
@@ -165,6 +167,9 @@ export class RunController {
           // The animator has put the battle overlay up; the player's click continues.
           this.awaitingContinue = true;
           break;
+        case 'emerged':
+          this.notes.push(`Your Chrysalis emerged as a ${cardDef(ev.to).name}.`);
+          break;
         default:
           break;
       }
@@ -186,7 +191,8 @@ export class RunController {
         break;
       case 'reward':
         this.battle.hide();
-        this.screens.showReward(run);
+        this.screens.showReward(run, this.notes);
+        this.notes = [];
         break;
       case 'shop':
         this.battle.hide();

@@ -3,7 +3,7 @@
  * reducer over RunState that owns the map, the deck, HP and crumbs, and delegates fights to
  * `combat.ts`. Same seed, same actions, same run.
  */
-import { CARDS, STARTING_DECK, cardDef } from '@content/cards';
+import { CARDS, PUPATION, STARTING_DECK, cardDef } from '@content/cards';
 import { ENCOUNTERS, encounterPool } from '@content/encounters';
 import { FLAVORS } from '@content/trails';
 import {
@@ -133,6 +133,8 @@ export type RunAction =
   | { type: 'buyUpgrade'; index: number }
   | { type: 'buyWormillionaire' }
   | { type: 'rest' }
+  | { type: 'forage' }
+  | { type: 'pupate'; uid: string }
   | { type: 'leave' };
 
 export type RunEvent =
@@ -150,6 +152,10 @@ export type RunEvent =
   | { type: 'upgradeBought'; id: UpgradeId; price: number }
   | { type: 'wormillionaireBought'; price: number; added: number }
   | { type: 'rested'; healed: number }
+  | { type: 'foraged'; crumbs: number }
+  | { type: 'pupated'; uid: string; from: string }
+  /** A Chrysalis became its Butterfly-family card after a won fight (spec §8.8). */
+  | { type: 'emerged'; uid: string; to: string }
   | { type: 'left' }
   | { type: 'runWon' }
   | { type: 'runLost' };
@@ -166,6 +172,8 @@ export const STARTING_HP = 60;
 export const STARTING_CRUMBS = 25;
 export const CHARGE_PER_TURN = 3;
 export const COCOON_HEAL_FRACTION = 0.3;
+/** Forage at a Cocoon (spec §8.8). */
+export const FORAGE_CRUMBS: [number, number] = [18, 28];
 export const FIGHT_CRUMBS: [number, number] = [12, 18];
 export const ELITE_CRUMBS = 35;
 export const SHOP_CARD_PRICES: Record<Rarity, number> = { common: 35, uncommon: 55, rare: 90 };
@@ -392,6 +400,29 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
       returnToMap(r, events);
       break;
     }
+    case 'forage': {
+      need('cocoon');
+      const rewards = Rng.fromState(r.rng.rewards);
+      const crumbs = rewards.int(FORAGE_CRUMBS[0], FORAGE_CRUMBS[1]);
+      r.rng.rewards = rewards.state;
+      r.crumbs += crumbs;
+      r.stats.crumbsEarned += crumbs;
+      events.push({ type: 'foraged', crumbs });
+      returnToMap(r, events);
+      break;
+    }
+    case 'pupate': {
+      need('cocoon');
+      const card = r.deck.find((c) => c.uid === action.uid);
+      if (!card) throw new IllegalRunAction('that card is not in the deck');
+      const emerges = PUPATION[card.def];
+      if (!emerges) throw new IllegalRunAction('only a Caterpillar-family card can pupate');
+      events.push({ type: 'pupated', uid: card.uid, from: card.def });
+      card.def = 'chrysalis';
+      card.emerges = emerges;
+      returnToMap(r, events);
+      break;
+    }
     case 'leave': {
       if (r.phase !== 'shop' && r.phase !== 'cocoon')
         throw new IllegalRunAction('nothing to leave');
@@ -499,6 +530,7 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   if (node.type === 'elite') r.stats.elites++;
   if (node.type === 'boss') {
     events.push({ type: 'fightWon', crumbs: 0 });
+    emerge(r, events);
     r.phase = 'victory';
     events.push({ type: 'runWon' });
     return;
@@ -516,7 +548,19 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   r.reward = { crumbs, cards };
   r.phase = 'reward';
   events.push({ type: 'fightWon', crumbs });
+  emerge(r, events);
   events.push({ type: 'rewardOffered', offer: r.reward });
+}
+
+/** Every Chrysalis in the deck becomes its Butterfly-family card (spec §8.8). */
+function emerge(r: RunState, events: RunEvent[]): void {
+  for (const card of r.deck) {
+    if (!card.emerges) continue;
+    const to = card.emerges;
+    card.def = to;
+    delete card.emerges;
+    events.push({ type: 'emerged', uid: card.uid, to });
+  }
 }
 
 function openShop(r: RunState, events: RunEvent[], traveling: boolean): void {
@@ -561,7 +605,7 @@ export function rollCards(
   rareBonus: number,
   n: number,
 ): string[] {
-  const pool = Object.values(CARDS).filter((c) => c.type !== 'status');
+  const pool = Object.values(CARDS).filter((c) => c.type !== 'status' && !c.special);
   const [common, uncommon, rare] = RARITY_ODDS[tier];
   const weights = [Math.max(0, common - rareBonus), uncommon, rare + rareBonus];
   const rarities: Rarity[] = ['common', 'uncommon', 'rare'];

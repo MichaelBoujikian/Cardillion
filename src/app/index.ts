@@ -75,6 +75,8 @@ export async function boot(root: HTMLElement): Promise<void> {
     onBuyUpgrade: (index) => controller.dispatch({ type: 'buyUpgrade', index }),
     onBuyWormillionaire: () => controller.dispatch({ type: 'buyWormillionaire' }),
     onRest: () => controller.dispatch({ type: 'rest' }),
+    onForage: () => controller.dispatch({ type: 'forage' }),
+    onPupate: (uid) => controller.dispatch({ type: 'pupate', uid }),
     onLeave: () => controller.dispatch({ type: 'leave' }),
     onBackToTitle() {
       battle.hide();
