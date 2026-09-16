@@ -40,7 +40,21 @@ export type CardEffect =
     }
   | { kind: 'draw'; amount: number }
   /** Scavenge: crumbs found mid-fight. */
-  | { kind: 'crumbs'; amount: number };
+  | { kind: 'crumbs'; amount: number }
+  /** Burrow: a hit that lands at the start of the next turn on a random seen enemy. */
+  | { kind: 'delayedDamage'; amount: number; ignoreBlock?: boolean };
+
+/** A Burrow waiting underground (spec §5.4): resolved at the start of the player's turn. */
+export interface PendingEffect {
+  /** The player turn on which it resolves. */
+  turn: number;
+  /** Card that set it up: reported as the damage source. */
+  uid: string;
+  def: string;
+  bug: BugId | null;
+  amount: number;
+  ignoreBlock: boolean;
+}
 
 /** One playable form of a card: the base form or the upgraded form. */
 export interface CardForm {
@@ -195,6 +209,8 @@ export interface CombatState {
   recovered: number;
   /** The habitat's family refund has been used this turn. */
   refundUsed: boolean;
+  /** Delayed effects waiting to resolve (Burrow). */
+  pending: PendingEffect[];
   nextUid: number;
 }
 
@@ -226,6 +242,8 @@ export type CombatEvent =
   | { type: 'crumbsRecovered'; uid: string; amount: number }
   /** Crumbs found by a card (Scavenge). */
   | { type: 'crumbsFound'; amount: number }
+  /** A delayed effect (Burrow) is resolving; the damageDealt that follows carries its uid. */
+  | { type: 'delayedEffect'; uid: string; def: string }
   | { type: 'greebleEscaped'; uid: string; amount: number }
   | { type: 'playerDamaged'; amount: number; blocked: number }
   | { type: 'combatWon'; crumbsRecovered: number }

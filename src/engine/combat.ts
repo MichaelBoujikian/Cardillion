@@ -129,6 +129,7 @@ export function createCombat(setup: CombatSetup): StepResult {
     stolen: 0,
     recovered: 0,
     refundUsed: false,
+    pending: [],
     nextUid: 1,
   };
   for (const entry of setup.deck) {
@@ -224,7 +225,29 @@ function startPlayerTurn(s: CombatState, events: CombatEvent[], rng: Rng): void 
       return;
     }
   }
+  resolvePending(s, events, rng);
+  if (s.phase !== 'player') return;
   drawCards(s, events, rng, HAND_SIZE);
+}
+
+/** Burrows strike at the start of the turn: a random seen enemy, with today's bonuses. */
+function resolvePending(s: CombatState, events: CombatEvent[], rng: Rng): void {
+  const due = s.pending.filter((p) => p.turn <= s.turn);
+  s.pending = s.pending.filter((p) => p.turn > s.turn);
+  const weakMult = s.player.statuses.weak > 0 ? WEAK_MULTIPLIER : 1;
+  for (const p of due) {
+    const pool = seenEnemies(s);
+    if (pool.length === 0) break;
+    events.push({ type: 'delayedEffect', uid: p.uid, def: p.def });
+    const familyAttack = p.bug ? (s.mods.familyAttackBonus[p.bug] ?? 0) : 0;
+    const amount = Math.floor((p.amount + s.mods.attackBonus + familyAttack) * weakMult);
+    damageEnemy(s, events, rng.pick(pool), amount, p.uid, {
+      ignoreBlock: p.ignoreBlock,
+      doubleStolen: false,
+    });
+    checkWin(s, events);
+    if (s.phase !== 'player') return;
+  }
 }
 
 function drawCards(s: CombatState, events: CombatEvent[], rng: Rng, n: number): void {
@@ -338,6 +361,16 @@ function playCard(
       case 'crumbs':
         s.crumbs += effect.amount;
         events.push({ type: 'crumbsFound', amount: effect.amount });
+        break;
+      case 'delayedDamage':
+        s.pending.push({
+          turn: s.turn + 1,
+          uid,
+          def: card.def,
+          bug: def.bug,
+          amount: effect.amount,
+          ignoreBlock: effect.ignoreBlock ?? false,
+        });
         break;
     }
   }

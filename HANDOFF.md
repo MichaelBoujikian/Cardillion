@@ -133,7 +133,7 @@ status here in the same commit as the work**, so a fresh session resumes from th
 | D   | Habitats on fight nodes (spec §8.9): map gen, combat mods, map + HUD display               | done                                                                                                                             |
 | E   | New cards: Molt, Worm Swarm, Stink Cloud, Scavenge, Chrysalis (+ art batch, contact sheet) | done — card art also uncommitted pending approval (second contact sheet sent)                                                    |
 | F   | Snail pheromone trail on the map (spec §8.6)                                               | done                                                                                                                             |
-| G   | Burrow (delayed damage) — only if time allows                                              | todo                                                                                                                             |
+| G   | Burrow (delayed damage) — only if time allows                                              | done — art uncommitted pending approval                                                                                          |
 | H   | M5: save/resume, settings, reduce motion (spec §10)                                        | todo                                                                                                                             |
 | I   | Bug testing: engine fuzz over many seeds, browser smoke of every screen, fixes             | todo                                                                                                                             |
 

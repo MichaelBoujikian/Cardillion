@@ -192,16 +192,20 @@ All numbers _(tuning)_.
 Second wave (2026-09-15, from the owner's "insect behaviours" list — molting, swarming, chemical
 warfare, foraging):
 
-| Card        | Family      | Rarity   | Type   | Cost | Effect                                                                    | Upgraded form (+)       |
-| ----------- | ----------- | -------- | ------ | ---- | ------------------------------------------------------------------------- | ----------------------- |
-| Molt        | Roly Poly   | Common   | Skill  | 1    | Gain 11 Block. Exhaust. (Shed the shell; it's gone.)                      | Gain 15 Block. Exhaust. |
-| Scavenge    | Roly Poly   | Common   | Skill  | 0    | Gain 5 crumbs. Exhaust. (Forage mid-fight.)                               | Gain 8 crumbs. Exhaust. |
-| Worm Swarm  | Wormillion  | Uncommon | Attack | 1    | Deal 2, once per Wormillion-family card in your hand (this one included). | Deal 3, once per …      |
-| Stink Cloud | Caterpillar | Uncommon | Skill  | 1    | Apply 2 Poison to ALL enemies.                                            | Apply 3 Poison to ALL.  |
-| Chrysalis   | Butterfly   | special  | Skill  | 0    | Gain 6 Block. Exhaust. Only via Pupate (§8.8); never offered.             | Gain 8 Block. Exhaust.  |
+| Card        | Family      | Rarity   | Type   | Cost | Effect                                                                        | Upgraded form (+)       |
+| ----------- | ----------- | -------- | ------ | ---- | ----------------------------------------------------------------------------- | ----------------------- |
+| Molt        | Roly Poly   | Common   | Skill  | 1    | Gain 11 Block. Exhaust. (Shed the shell; it's gone.)                          | Gain 15 Block. Exhaust. |
+| Scavenge    | Roly Poly   | Common   | Skill  | 0    | Gain 5 crumbs. Exhaust. (Forage mid-fight.)                                   | Gain 8 crumbs. Exhaust. |
+| Worm Swarm  | Wormillion  | Uncommon | Attack | 1    | Deal 2, once per Wormillion-family card in your hand (this one included).     | Deal 3, once per …      |
+| Burrow      | Wormillion  | Uncommon | Skill  | 1    | Gain 4 Block. Next turn: deal 8 to a random enemy from below, ignoring Block. | Gain 6 Block; deal 11.  |
+| Stink Cloud | Caterpillar | Uncommon | Skill  | 1    | Apply 2 Poison to ALL enemies.                                                | Apply 3 Poison to ALL.  |
+| Chrysalis   | Butterfly   | special  | Skill  | 0    | Gain 6 Block. Exhaust. Only via Pupate (§8.8); never offered.                 | Gain 8 Block. Exhaust.  |
 
 _Swarm_ is the first family-count mechanic (ADR 0007): it rewards holding many of one bug,
-which Wormillionaire and Mr. Wormsley already encourage. All numbers _(tuning)_.
+which Wormillionaire and Mr. Wormsley already encourage. _Burrow_ is the first **delayed**
+effect: it resolves at the start of your next turn, after Poison ticks and before you draw,
+against a random seen enemy, with the family and habitat bonuses of the moment it strikes. A
+fight that ends first simply buries it. All numbers _(tuning)_.
 
 Family cards are upgraded by the same titled unlock as their bug (Mr. Wormsley upgrades Drill
 Worm too), and by Wormillionaire/whole-family injection where applicable. Each family card has

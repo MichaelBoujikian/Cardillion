@@ -3,6 +3,7 @@
  * Keeps a small ledger of displayed numbers (HP, Block, crumbs) so the HUD can count down hit
  * by hit instead of jumping to the final state, which the caller applies afterwards.
  */
+import { cardDef } from '@content/cards';
 import { enemyDef } from '@content/enemies';
 import { PLAYER, type CombatEvent, type CombatState, type EnemyInstance } from '@engine/types';
 import type { BattleScene } from '@render/battle/scene';
@@ -201,6 +202,11 @@ export async function animateEvents(
         ui.setCrumbs(crumbs);
         ui.pop(ev.uid, `🍞 +${ev.amount}`, 'crumbs');
         await sleep(300);
+        break;
+
+      case 'delayedEffect':
+        ui.pop(PLAYER, `${cardDef(ev.def).name}!`, 'info');
+        await sleep(240);
         break;
 
       case 'crumbsFound':

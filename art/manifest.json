@@ -289,6 +289,13 @@
       "reference": "style-anchor-garden",
       "prompt": "A cyborg chrysalis hanging from a leaf stem by a small brass hook: a teardrop of pale gold silk wrapped in fine brass bands, a tiny round glass porthole showing a sleeping smiling face inside, a small clockwork dial on its side ticking, soft glow.",
       "size": "1024x1024"
+    },
+    {
+      "id": "card-burrow",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cheerful cyborg earthworm diving head-first into dark garden soil: only the back half of its segmented pink body and a small copper spring at the tail tip still show above ground, a spray of soil crumbs and pebbles flying up, a tiny brass 'danger' sign planted beside the hole.",
+      "size": "1024x1024"
     }
   ]
 }

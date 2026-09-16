@@ -331,6 +331,31 @@ const CARD_LIST: CardDef[] = [
     art: 'card-worm-swarm',
   },
   {
+    id: 'burrow',
+    name: 'Burrow',
+    bug: 'wormillion',
+    rarity: 'uncommon',
+    type: 'skill',
+    targeting: 'none',
+    base: {
+      cost: 1,
+      text: 'Gain 4 Block. Next turn: deal 8 to a random enemy from below, ignoring Block.',
+      effects: [
+        { kind: 'block', amount: 4 },
+        { kind: 'delayedDamage', amount: 8, ignoreBlock: true },
+      ],
+    },
+    upgraded: {
+      cost: 1,
+      text: 'Gain 6 Block. Next turn: deal 11 to a random enemy from below, ignoring Block.',
+      effects: [
+        { kind: 'block', amount: 6 },
+        { kind: 'delayedDamage', amount: 11, ignoreBlock: true },
+      ],
+    },
+    art: 'card-burrow',
+  },
+  {
     id: 'stink-cloud',
     name: 'Stink Cloud',
     bug: 'caterpillar',

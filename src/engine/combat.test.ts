@@ -652,3 +652,46 @@ describe('second card wave (spec §5.4)', () => {
     }
   });
 });
+
+describe('Burrow: delayed damage (spec §5.4)', () => {
+  it('blocks now and strikes a random seen enemy at the start of the next turn, ignoring Block', () => {
+    const { state } = start({
+      deck: ['burrow', 'roly-poly', 'roly-poly', 'roly-poly', 'roly-poly'],
+      enemies: ['rat', 'greeble'],
+      mods: { familyAttackBonus: { wormillion: 1 } },
+    });
+    const burrow = state.hand.find((c) => c.def === 'burrow')!;
+    const a = applyAction(state, { type: 'playCard', uid: burrow.uid });
+    expect(a.state.player.statuses.block).toBe(4);
+    expect(ofType(a.events, 'damageDealt')).toHaveLength(0);
+    expect(a.state.pending).toHaveLength(1);
+    // Give the rat Block it would normally have lost, to prove the strike ignores it.
+    const b = applyAction(a.state, { type: 'endTurn' });
+    const rat = b.state.enemies.find((e) => e.def === 'rat')!;
+    const strike = ofType(b.events, 'damageDealt').find((e) => e.source === burrow.uid)!;
+    expect(strike).toMatchObject({ target: rat.uid, amount: 9, blocked: 0 });
+    expect(rat.hp).toBe(11 - 9);
+    expect(ofType(b.events, 'delayedEffect')).toEqual([
+      { type: 'delayedEffect', uid: burrow.uid, def: 'burrow' },
+    ]);
+    // It resolves before the draw and only once.
+    const order = b.events.map((e) => e.type);
+    expect(order.indexOf('delayedEffect')).toBeLessThan(order.indexOf('cardDrawn'));
+    expect(b.state.pending).toHaveLength(0);
+    const c = applyAction(b.state, { type: 'endTurn' });
+    expect(ofType(c.events, 'damageDealt').filter((e) => e.source === burrow.uid)).toHaveLength(0);
+  });
+
+  it('a strike that kills the last seen enemy wins the fight', () => {
+    const { state } = start({
+      deck: ['burrow', 'burrow', 'burrow', 'burrow', 'burrow'],
+      enemies: ['rat'],
+    });
+    let s = state;
+    for (const card of s.hand.slice(0, 2))
+      s = applyAction(s, { type: 'playCard', uid: card.uid }).state;
+    const { state: after, events } = applyAction(s, { type: 'endTurn' });
+    expect(after.phase).toBe('won');
+    expect(ofType(events, 'combatWon')).toHaveLength(1);
+  });
+});
