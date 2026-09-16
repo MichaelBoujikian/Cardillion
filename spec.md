@@ -386,11 +386,11 @@ Kill the Bear → Victory. HP ≤ 0 anywhere → Death. Both end the run and del
 
 A Cocoon offers one of three, once per visit. Leaving without choosing is allowed.
 
-| Choice     | Effect                                                                                                                                                                                                                                                                                                                 |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rest**   | Heal 30% max HP _(tuning)_.                                                                                                                                                                                                                                                                                            |
-| **Forage** | Root through the leaf litter: gain 18–28 crumbs _(tuning)_, rolled from the `rewards` stream.                                                                                                                                                                                                                          |
-| **Pupate** | Choose a Caterpillar-family card in your deck. It becomes a **Chrysalis** (Butterfly family, cost 0 Skill: _Gain 6 Block. Exhaust._; + _Gain 8 Block_) and cannot attack while in that phase. When you next **win a fight**, it emerges as its Butterfly-family counterpart: Caterpillar → Butterfly, Munch → Flutter. |
+| Choice     | Effect                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Rest**   | Heal 30% max HP _(tuning)_.                                                                                                                                                                                                                                                                                                                                                       |
+| **Forage** | Root through the leaf litter: gain 18–28 crumbs _(tuning)_, rolled from the `rewards` stream.                                                                                                                                                                                                                                                                                     |
+| **Pupate** | Choose a card in your deck that has a Butterfly-family counterpart (Caterpillar → Butterfly, Munch → Flutter; Stink Cloud has none and stays a caterpillar's trick). It becomes a **Chrysalis** (Butterfly family, cost 0 Skill: _Gain 6 Block. Exhaust._; + _Gain 8 Block_) and cannot attack while in that phase. When you next **win a fight**, it emerges as its counterpart. |
 
 Metamorphosis is how a common Caterpillar becomes an uncommon Butterfly: one Cocoon visit and
 the fight after it. The Chrysalis belongs to the Butterfly family, so Madame Butterfly upgrades
@@ -412,7 +412,9 @@ one bug family and, sometimes, one kind of vermin. Habitats are rolled at map cr
 
 You can only **smell** a habitat: its glyph shows on nodes **one step ahead** (and on visited
 nodes), one step nearer than the fog reveals node types (§8.4). In the fight, the habitat and
-its effects are named under the crumbs. All numbers _(tuning)_.
+its effects are named under the crumbs, and **intents show the modified numbers** (§4.6 stays
+honest: a scorpion on Dry Stone telegraphs ☠ 4). A Dark Crevice on a Shadow Path makes a
+Greeble certain (0.5 × 2). All numbers _(tuning)_.
 
 ---
 

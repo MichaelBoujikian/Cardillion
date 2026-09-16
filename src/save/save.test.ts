@@ -70,3 +70,16 @@ describe('the autosave slot', () => {
     expect(() => clearSave(store)).not.toThrow();
   });
 });
+
+describe('save shape', () => {
+  it('a save missing a field the current RunState has is set aside as outdated', () => {
+    const store = new MemoryStore();
+    const run = createRun('save-7') as unknown as Record<string, unknown>;
+    delete run['snailTrail'];
+    writeSave(store, run as unknown as ReturnType<typeof createRun>);
+    const back = readSave(store);
+    expect(back.ok).toBe(false);
+    if (!back.ok) expect(back.reason).toBe('outdated');
+    expect(store.getItem(SAVE_KEY)).toBeNull();
+  });
+});

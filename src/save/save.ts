@@ -5,7 +5,7 @@
  * does not look like a run, is discarded with a reason the title screen can show.
  */
 import { CARDS } from '@content/cards';
-import type { RunPhase, RunState } from '@engine/run';
+import { createRun, type RunPhase, type RunState } from '@engine/run';
 import type { KeyValueStore } from './store';
 
 export const SAVE_KEY = 'cardillion.save.v1';
@@ -77,6 +77,12 @@ export function readSave(store: KeyValueStore): ReadResult {
     clearSave(store);
     return { ok: false, reason: 'corrupt' };
   }
+  // A run from a build whose RunState had fewer fields would crash the screens; that is an
+  // "outdated" save even when nobody remembered to bump SAVE_VERSION.
+  if (missingRunKeys(run).length > 0) {
+    clearSave(store);
+    return { ok: false, reason: 'outdated', version: SAVE_VERSION };
+  }
   if (FINISHED.includes(run.phase)) {
     clearSave(store);
     return { ok: false, reason: 'none' };
@@ -86,6 +92,14 @@ export function readSave(store: KeyValueStore): ReadResult {
 
 function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null;
+}
+
+let runKeys: string[] | null = null;
+
+/** Top-level RunState fields the saved run lacks, against a freshly created run. */
+function missingRunKeys(run: RunState): string[] {
+  runKeys ??= Object.keys(createRun('shape-probe'));
+  return runKeys.filter((k) => !(k in run));
 }
 
 /** A shallow shape check plus the one reference that breaks everything: card ids. */

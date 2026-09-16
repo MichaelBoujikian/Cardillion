@@ -39,7 +39,7 @@ const HABITAT_LIST: HabitatDef[] = [
   {
     id: 'stone',
     name: 'Dry Stone',
-    glyph: '☀',
+    glyph: '◆',
     blurb: 'Chameleon attacks +2 · Poison on you +1',
     mods: { familyAttackBonus: { chameleon: 2 }, enemyPoisonBonus: 1 },
     greebleMultiplier: 1,

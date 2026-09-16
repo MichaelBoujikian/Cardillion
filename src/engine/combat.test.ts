@@ -695,3 +695,28 @@ describe('Burrow: delayed damage (spec §5.4)', () => {
     expect(ofType(events, 'combatWon')).toHaveLength(1);
   });
 });
+
+describe('Play Dead is visible in state', () => {
+  it('marks the Possum as playing dead from the revive until it next acts', () => {
+    const { state } = start({ deck: Array<string>(10).fill('chameleon'), enemies: ['possum'] });
+    const possum = state.enemies[0]!;
+    expect(possum.playingDead).toBe(false);
+    // One Chameleon a turn (2 of 3 Charge) until the Possum drops and plays dead.
+    let s = state;
+    let revived = false;
+    for (let turn = 0; turn < 8 && !revived; turn++) {
+      const r = play(s, 'chameleon', possum.uid);
+      s = r.state;
+      revived = ofType(r.events, 'enemyRevived').length === 1;
+      if (!revived) {
+        expect(s.enemies[0]!.playingDead).toBe(false);
+        s = endTurn(s).state;
+      }
+    }
+    expect(revived).toBe(true);
+    expect(s.enemies[0]!.playingDead).toBe(true);
+    const acted = endTurn(s);
+    expect(ofType(acted.events, 'enemyActed')).toHaveLength(1);
+    expect(acted.state.enemies[0]!.playingDead).toBe(false);
+  });
+});

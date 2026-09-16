@@ -150,6 +150,8 @@ export interface EnemyInstance {
   uses: Record<string, number>;
   /** Play Dead has been spent. */
   playedDead: boolean;
+  /** Lying in the Play Dead pose right now: from the revive until it next acts. */
+  playingDead: boolean;
   /** Position in a boss's move cycle. */
   patternIndex: number;
   /** Boss enrage has triggered. */

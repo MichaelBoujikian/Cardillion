@@ -429,7 +429,8 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
       const card = r.deck.find((c) => c.uid === action.uid);
       if (!card) throw new IllegalRunAction('that card is not in the deck');
       const emerges = PUPATION[card.def];
-      if (!emerges) throw new IllegalRunAction('only a Caterpillar-family card can pupate');
+      if (!emerges)
+        throw new IllegalRunAction('only a card with a Butterfly counterpart can pupate');
       events.push({ type: 'pupated', uid: card.uid, from: card.def });
       card.def = 'chrysalis';
       card.emerges = emerges;
@@ -545,15 +546,17 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   const combat = r.combat as CombatState;
   const node = currentNode(r);
   r.hp = combat.player.hp;
-  r.crumbs = combat.crumbs; // theft and recoveries already applied
+  // Theft, recoveries and Scavenge are already applied; a net gain counts as earned.
+  r.stats.crumbsEarned += Math.max(0, combat.crumbs - r.crumbs);
+  r.crumbs = combat.crumbs;
   if (r.upgrades.includes('spare-parts')) r.hp = Math.min(r.maxHp, r.hp + SPARE_PARTS_HEAL);
   r.lastCombat = combat;
   r.combat = null;
   r.stats.fights++;
   if (node.type === 'elite') r.stats.elites++;
   if (node.type === 'boss') {
+    // A Chrysalis still in the deck here never emerges (spec §8.8); the run is over.
     events.push({ type: 'fightWon', crumbs: 0 });
-    emerge(r, events);
     r.phase = 'victory';
     events.push({ type: 'runWon' });
     return;

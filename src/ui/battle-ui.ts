@@ -8,7 +8,7 @@
 import { cardDef } from '@content/cards';
 import { enemyDef } from '@content/enemies';
 import { formOf, isUpgraded } from '@engine/combat';
-import type { CombatState, EnemyInstance } from '@engine/types';
+import type { CombatMods, CombatState, EnemyInstance } from '@engine/types';
 import type { BattleScene } from '@render/battle/scene';
 import type { CardFaces } from './card-faces';
 
@@ -134,7 +134,8 @@ interface EnemyEls {
 }
 
 /** Human-readable intent for a label, honouring boss enrage. */
-export function describeIntent(enemy: EnemyInstance): string {
+/** The intent as the rules will resolve it: habitat and upgrade mods included (spec §4.6). */
+export function describeIntent(enemy: EnemyInstance, mods?: CombatMods): string {
   const def = enemyDef(enemy.def);
   const move = def.moves.find((m) => m.id === enemy.intent);
   if (!move) return '';
@@ -152,13 +153,17 @@ export function describeIntent(enemy: EnemyInstance): string {
         parts.push(`🛡 ${e.amount}`);
         break;
       case 'apply':
-        parts.push(e.status === 'weak' ? `Weak ${e.amount}` : `☠ ${e.amount}`);
+        parts.push(
+          e.status === 'weak'
+            ? `Weak ${e.amount}`
+            : `☠ ${e.amount + (mods?.enemyPoisonBonus ?? 0)}`,
+        );
         break;
       case 'cobweb':
-        parts.push(`🕸 ${e.count}`);
+        parts.push(`🕸 ${e.count + (mods?.enemyCobwebBonus ?? 0)}`);
         break;
       case 'pilfer':
-        parts.push(`🍞 ${e.amount}`);
+        parts.push(`🍞 ${Math.max(0, e.amount - (mods?.pilferReduction ?? 0))}`);
         break;
       case 'summon':
         parts.push('Summon');
@@ -233,6 +238,8 @@ export class BattleUI {
       if (!this.selected) return;
       const t = ev.target as HTMLElement;
       if (t.closest('.card') || t.closest('.enemy-hit') || t.closest('button')) return;
+      // Anything in the screens layer (settings, deck list, the gear) is not the table.
+      if (t.closest('.screens')) return;
       const card = this.cards.get(this.selected);
       if (card && card.targeting !== 'enemy' && ev.clientY < window.innerHeight * 0.68) {
         const uid = this.selected;
@@ -279,7 +286,7 @@ export class BattleUI {
       els.poison = enemy.statuses.poison;
       els.weak = enemy.statuses.weak;
       this.paintEnemy(enemy.uid);
-      els.intent.textContent = describeIntent(enemy);
+      els.intent.textContent = describeIntent(enemy, state.mods);
       els.root.style.display = enemy.hp > 0 ? '' : 'none';
     }
   }
@@ -317,7 +324,7 @@ export class BattleUI {
       weak: enemy.statuses.weak,
     };
     this.enemies.set(enemy.uid, els);
-    els.intent.textContent = describeIntent(enemy);
+    els.intent.textContent = describeIntent(enemy, this.state?.mods);
     this.paintEnemy(enemy.uid);
     return els;
   }

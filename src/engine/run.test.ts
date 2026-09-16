@@ -127,6 +127,45 @@ const firstOfType = (run: RunState, type: string): string => {
   throw new Error(`no ${type} node`);
 };
 
+/** A Cocoon that is not the one before the Boss, so "the next fight" is not the Bear. */
+const midTrailCocoon = (run: RunState): string | null => {
+  for (const t of run.map.trails) {
+    const id = t.nodes.find(
+      (n) =>
+        nodeAt(run.map, n).type === 'cocoon' && !nodeAt(run.map, n).next.some((e) => e.id === BOSS),
+    );
+    if (id) return id;
+  }
+  return null;
+};
+
+/** The first seed (from `base`) whose map has a mid-trail Cocoon, with the run parked on it. */
+function runAtMidCocoon(base: string, deck: string[]): RunState {
+  for (let i = 0; i < 50; i++) {
+    const run = createRun(`${base}-${i}`, { deck, hp: 999 });
+    const cocoon = midTrailCocoon(run);
+    if (cocoon) return arriveAt(run, cocoon);
+  }
+  throw new Error('no seed with a mid-trail cocoon');
+}
+
+/** The nearest Fight/Elite node ahead of the current position (breadth-first). */
+function nextFightFrom(run: RunState): string {
+  const queue = [run.position];
+  const seen = new Set(queue);
+  while (queue.length) {
+    const id = queue.shift()!;
+    const n = nodeAt(run.map, id);
+    if (id !== run.position && (n.type === 'fight' || n.type === 'elite')) return id;
+    for (const e of n.next)
+      if (!seen.has(e.id)) {
+        seen.add(e.id);
+        queue.push(e.id);
+      }
+  }
+  throw new Error('no fight ahead');
+}
+
 /** Undirected shortest-path distance, the metric the Greeble's relocation rule uses. */
 function dist(map: GameMap, a: string, b: string): number {
   const seen = new Map<string, number>([[a, 0]]);
@@ -631,8 +670,7 @@ describe('cocoons', () => {
   });
 
   it('pupate turns a Caterpillar-family card into a Chrysalis that emerges after the next won fight', () => {
-    const run = createRun('cocoon-3', { deck: [...STRONG_DECK, 'caterpillar', 'munch'], hp: 999 });
-    const r = arriveAt(run, firstOfType(run, 'cocoon'));
+    const r = runAtMidCocoon('cocoon-3', [...STRONG_DECK, 'caterpillar', 'munch']);
     const cat = r.deck.find((c) => c.def === 'caterpillar')!;
     const munch = r.deck.find((c) => c.def === 'munch')!;
     const worm = r.deck.find((c) => c.def === 'chameleon')!;
@@ -650,44 +688,57 @@ describe('cocoons', () => {
     expect(() => step(p.run, { type: 'pupate', uid: munch.uid })).toThrow(IllegalRunAction);
 
     // Win the next fight: the Chrysalis emerges before the reward is offered.
-    const events: RunEvent[] = [];
     let q = p.run;
-    const fight = q.map.nodes[q.position]!.next.find((e) =>
-      ['fight', 'elite'].includes(nodeAt(q.map, e.id).type),
-    );
-    if (fight) {
-      q = step(q, { type: 'travel', to: fight.id }).run;
-      q = winFight(q).run;
-      expect(q.phase).toBe('reward');
-    } else {
-      // Pre-boss cocoon: the Bear is the next fight; it emerges on victory too.
-      q = step(q, { type: 'travel', to: BOSS }).run;
-      const w = winFight(q);
-      q = w.run;
-      events.push(...w.events);
-    }
+    q = advanceTo(q, nextFightFrom(q));
+    q = winFight(q).run;
+    expect(q.phase).toBe('reward');
     const emerged = q.deck.find((c) => c.uid === cat.uid)!;
     expect(emerged.def).toBe('butterfly');
     expect(emerged.emerges).toBeUndefined();
   });
 
   it('Munch pupates into Flutter, and the emergence is announced with the fight', () => {
-    const run = createRun('cocoon-4', { deck: [...STRONG_DECK, 'munch'], hp: 999 });
-    let r = arriveAt(run, firstOfType(run, 'cocoon'));
+    let r = runAtMidCocoon('cocoon-4', [...STRONG_DECK, 'munch']);
     const munch = r.deck.find((c) => c.def === 'munch')!;
     r = step(r, { type: 'pupate', uid: munch.uid }).run;
     expect(r.deck.find((c) => c.uid === munch.uid)!.emerges).toBe('flutter');
-    const next = r.map.nodes[r.position]!.next[0]!;
     const events: RunEvent[] = [];
-    const t = step(r, { type: 'travel', to: next.id });
-    events.push(...t.events);
-    const w = winFight(t.run);
+    r = advanceTo(r, nextFightFrom(r), events);
+    const w = winFight(r);
     events.push(...w.events);
     const fightWon = events.findIndex((e) => e.type === 'fightWon');
     const emerged = events.findIndex((e) => e.type === 'emerged');
     expect(emerged).toBeGreaterThanOrEqual(0);
     expect(emerged).toBeGreaterThan(fightWon);
     expect(events[emerged]).toEqual({ type: 'emerged', uid: munch.uid, to: 'flutter' });
+  });
+
+  it('a Chrysalis still in the deck at the Bear never emerges (spec §8.8)', () => {
+    let r = createRun('cocoon-5', { deck: [...STRONG_DECK, 'caterpillar'], hp: 9999 });
+    const cocoon = r.map.trails[0]!.nodes.at(-1)!; // the cocoon before the Boss
+    r = arriveAt(r, cocoon);
+    const cat = r.deck.find((c) => c.def === 'caterpillar')!;
+    r = step(r, { type: 'pupate', uid: cat.uid }).run;
+    r = step(r, { type: 'travel', to: BOSS }).run;
+    const w = winFight(r);
+    expect(w.run.phase).toBe('victory');
+    expect(w.run.deck.find((c) => c.uid === cat.uid)!.def).toBe('chrysalis');
+    expect(w.events.some((e) => e.type === 'emerged')).toBe(false);
+  });
+
+  it('crumbs found or recovered during a fight count as earned', () => {
+    const run = createRun('earned-1', { deck: [...STRONG_DECK, 'scavenge', 'scavenge'], hp: 999 });
+    const s = step(run, { type: 'travel', to: nodeAt(run.map, START).next[0]!.id });
+    let r = s.run;
+    const scav = r.combat!.hand.find((c) => c.def === 'scavenge');
+    if (scav) r = step(r, { type: 'combat', action: { type: 'playCard', uid: scav.uid } }).run;
+    const before = r.stats.crumbsEarned;
+    const crumbsBefore = run.crumbs;
+    const w = winFight(r);
+    const bounty = w.events.find((e) => e.type === 'fightWon')!;
+    expect(bounty.type).toBe('fightWon');
+    const earnedNow = w.run.stats.crumbsEarned - before;
+    expect(earnedNow).toBe(w.run.crumbs - crumbsBefore);
   });
 
   it('a Chrysalis is never offered by rewards or shops', () => {

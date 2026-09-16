@@ -457,7 +457,8 @@ export class BattleScene {
 
   private makeSprite(enemy: EnemyInstance): EnemySprite {
     const def = enemyDef(enemy.def);
-    const img = this.art.get(def.art);
+    const poseArt = enemy.playingDead && def.deadArt ? def.deadArt : def.art;
+    const img = this.art.get(poseArt);
     const unseen = def.traits.includes('unseen');
     const texture = img ? imageTexture(img) : makeVerminPlaceholder(enemy.def);
     const aspect = img ? img.height / img.width : 1;
@@ -501,7 +502,7 @@ export class BattleScene {
     const sprite: EnemySprite = {
       uid: enemy.uid,
       def: enemy.def,
-      pose: def.art,
+      pose: poseArt,
       root,
       plane,
       eyes,

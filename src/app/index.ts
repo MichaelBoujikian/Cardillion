@@ -41,6 +41,12 @@ function randomSeed(): string {
   return Math.floor(Math.random() * 0xffffffff).toString(36);
 }
 
+/** A seed is a short token: letters, digits, dash, underscore. Anything else is dropped. */
+export function sanitizeSeed(raw: string | null): string | null {
+  const s = (raw ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32);
+  return s.length > 0 ? s : null;
+}
+
 /** localStorage when the browser allows it; otherwise the game runs with a session-only store. */
 function storage(): KeyValueStore {
   try {
@@ -98,7 +104,7 @@ export async function boot(root: HTMLElement): Promise<void> {
 
   const screens = new RunScreens(root, faces, art, {
     onNewRun(seed) {
-      const s = seed ?? randomSeed();
+      const s = sanitizeSeed(seed) ?? randomSeed();
       const url = new URL(window.location.href);
       url.searchParams.set('seed', s);
       window.history.replaceState(null, '', url);
@@ -154,7 +160,7 @@ export async function boot(root: HTMLElement): Promise<void> {
     clear: () => clearSave(store),
   });
   applySettings();
-  showTitle(new URLSearchParams(window.location.search).get('seed'));
+  showTitle(sanitizeSeed(new URLSearchParams(window.location.search).get('seed')));
   if (import.meta.env.DEV) installDevHooks(controller, screens);
 
   // Frame loop: the scene always renders (it is the backdrop of every screen).

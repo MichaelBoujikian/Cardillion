@@ -166,7 +166,11 @@ export class RunController {
     // Busy from this instant, not from when the animation task starts: two handlers firing for
     // one input event must not both slip through before the queued playback sets the flag.
     this.busy = true;
-    this.queue = this.queue.then(() => this.play_(prev, step.run, step.events));
+    // A rejected link would poison the chain (nothing after it would run), so failures are
+    // logged and swallowed here; play_ has already unlocked and re-rendered in its finally.
+    this.queue = this.queue
+      .then(() => this.play_(prev, step.run, step.events))
+      .catch((err: unknown) => console.error('[run] playback failed', err));
   }
 
   private async play_(prev: RunState, next: RunState, events: RunEvent[]): Promise<void> {
@@ -175,16 +179,21 @@ export class RunController {
     try {
       await this.animate(prev, next, events);
     } finally {
-      // A throwing animation must not leave the game frozen with input locked.
+      // Whatever happened, the game must not stay frozen. If the run was abandoned or replaced
+      // meanwhile, the screen belongs to whoever did that.
       this.busy = false;
+      if (this.run === next) {
+        this.battle.setInputEnabled(next.phase === 'fight' && next.combat?.phase === 'player');
+        this.render();
+      }
     }
-    this.battle.setInputEnabled(next.phase === 'fight' && next.combat?.phase === 'player');
-    this.render();
   }
 
   private async animate(prev: RunState, next: RunState, events: RunEvent[]): Promise<void> {
     let before: CombatState | null = prev.combat;
     for (const ev of events) {
+      // Abandoned (or replaced) while this batch was playing: stop driving the old screens.
+      if (this.run !== next) return;
       switch (ev.type) {
         case 'fightStarted': {
           const combat = next.combat ?? next.lastCombat;
@@ -250,6 +259,7 @@ export class RunController {
         break;
       case 'victory':
       case 'death':
+        this.notes = [];
         this.battle.hide();
         this.screens.showResult(run, run.phase);
         break;

@@ -185,7 +185,7 @@ export async function animateEvents(
         if (e)
           ui.setEnemyIntent(
             ev.uid,
-            describeIntent({ ...e, intent: ev.move, hp: hp.get(ev.uid) ?? e.hp }),
+            describeIntent({ ...e, intent: ev.move, hp: hp.get(ev.uid) ?? e.hp }, next.mods),
           );
         break;
       }

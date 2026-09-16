@@ -160,6 +160,7 @@ function spawnEnemy(state: CombatState, def: string): EnemyInstance {
     lastMove: null,
     uses: {},
     playedDead: false,
+    playingDead: false,
     patternIndex: 0,
     enraged: false,
   };
@@ -496,6 +497,7 @@ function enemyTurn(s: CombatState, events: CombatEvent[], rng: Rng, enemy: Enemy
   enemy.uses[move.id] = (enemy.uses[move.id] ?? 0) + 1;
   enemy.lastMove = move.id;
   enemy.patternIndex++;
+  enemy.playingDead = false;
   events.push({ type: 'enemyActed', uid: enemy.uid, move: move.id });
   rollIntent(s, events, rng, enemy);
   if (enemy.statuses.weak > 0) enemy.statuses.weak--;
@@ -574,6 +576,7 @@ function resolveDeath(
   const def = enemyDef(enemy.def);
   if (def.traits.includes('playDead') && !enemy.playedDead) {
     enemy.playedDead = true;
+    enemy.playingDead = true;
     enemy.hp = def.reviveHp ?? 1;
     events.push({ type: 'enemyRevived', uid: enemy.uid, hp: enemy.hp });
     return false;

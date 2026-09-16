@@ -57,6 +57,9 @@ export interface SettingsView {
   inRun: boolean;
 }
 
+/** For the few places user-controlled text (the seed) lands in a template. */
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 const GLYPH: Record<string, string> = {
   start: '⌂',
   fight: '⚔',
@@ -274,7 +277,7 @@ export class RunScreens {
         <div class="row"><div><b>Fullscreen</b><small>Toggle the browser's fullscreen mode.</small></div><button class="btn ghost fullscreen">TOGGLE</button></div>
         ${
           seed
-            ? `<div class="row"><div><b>Run seed</b><small><code>${seed}</code> — same seed, same run.</small></div><button class="btn ghost copy">COPY</button></div>`
+            ? `<div class="row"><div><b>Run seed</b><small><code>${esc(seed)}</code> — same seed, same run.</small></div><button class="btn ghost copy">COPY</button></div>`
             : ''
         }
         ${
@@ -347,7 +350,7 @@ export class RunScreens {
          <h2>cyborg garden bugs versus the things in the thicket</h2>
          ${opts.notice ? `<p class="notice">${opts.notice}</p>` : ''}
          ${opts.canContinue ? '<p><button class="btn continue">CONTINUE</button></p>' : ''}
-         <p><input class="seed" placeholder="seed (optional)" value="${seedHint ?? ''}" spellcheck="false"></p>
+         <p><input class="seed" placeholder="seed (optional)" value="${esc(seedHint ?? '')}" spellcheck="false"></p>
          <button class="btn${opts.canContinue ? ' ghost' : ''} new">NEW RUN</button>
        </div>`,
     );
@@ -464,10 +467,10 @@ export class RunScreens {
          <button class="btn ghost deck">Deck · ${run.deck.length}</button>
          ${owned.length ? `<div class="who">${owned.map((n) => `<span>✦ ${n}</span>`).join('')}</div>` : ''}
        </div>
-       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown · <span style="color:#9be37a">⛰ ❀ ☀ ◐</span> habitat, smelled a step ahead${
+       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown · <span style="color:#9be37a">⛰ ❀ ◆ ◐</span> habitat, smelled a step ahead${
          run.snailNode ? ' · 🐌 the Snail wanders' : ''
        }${seesGreeble ? ' · 👀 the Greeble' : ''}</div>
-       <div class="map-title topright-room">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,
+       <div class="map-title topright-room">Cardillion · the garden<br>seed <b>${esc(run.seed)}</b></div>`,
     );
     for (const g of s.querySelectorAll<SVGGElement>('.node.reachable')) {
       g.addEventListener('click', () => this.h.onTravel(g.dataset['id'] as string));
@@ -685,7 +688,7 @@ export class RunScreens {
            Fights won: <b>${st.fights}</b> (elites ${st.elites})<br>
            Cards gained: <b>${st.cardsGained}</b> · deck ${run.deck.length}<br>
            Crumbs earned: <b>${st.crumbsEarned}</b><br>
-           Seed: <code>${run.seed}</code> <button class="btn ghost copy" style="padding:2px 10px;font-size:12px">copy</button>
+           Seed: <code>${esc(run.seed)}</code> <button class="btn ghost copy" style="padding:2px 10px;font-size:12px">copy</button>
          </div>
          <p><button class="btn title">BACK TO THE GARDEN GATE</button></p>
        </div>`,
