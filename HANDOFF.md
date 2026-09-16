@@ -49,13 +49,29 @@ The owner reviewed the overnight run on 2026-09-16: **all nine images approved a
 all the new mechanics approved** (spec §5.4 second wave, §8.6 trail, §8.8, §8.9). Standing
 requests from that review:
 
-1. **Metamorphosis for more bugs.** He wants it to be a mechanic across the roster, not a
-   Caterpillar-only trick. Today `PUPATION` in `src/content/cards.ts` maps Caterpillar →
-   Butterfly and Munch → Flutter; the engine is already generic (any card with a mapping can
-   pupate at a Cocoon and emerges after the next won fight). The design work is deciding what
-   each bug becomes — Wormillion, Roly Poly, Ladybug, Chameleon and Cat have no "next stage"
-   yet — and whether every stage is a Cocoon visit. Spec §14 (Roadmap) carries the note; grill
-   him on the shapes before building.
+1. **NEXT: a grilling session on roster-wide metamorphosis.** The owner wants metamorphosis
+   to be a mechanic for multiple bugs, not just the Caterpillar — and he wants it _designed
+   with him_, the way the original spec was (the `grilling` skill, one recommendation per
+   question, he answers "go with your recommendation" when he agrees). **Do not build stages
+   for other bugs until that session has happened and its answers are in `spec.md` §8.8.**
+   What exists: `PUPATION` in `src/content/cards.ts` maps Caterpillar → Butterfly and Munch →
+   Flutter; the engine is generic (any card with a mapping pupates at a Cocoon and emerges
+   after the next won fight), so new stages are content rows once decided. Questions the
+   session has to settle:
+   - What does each bug become? Real insects give free answers for some (a grub → a beetle;
+     Ladybug already _is_ the adult form — does she have a larva stage instead, i.e. do some
+     bugs start as the later stage?) and none for others (Roly Poly, Chameleon, Cat — the Cat
+     is his real cat; "kitten → Sir Reginald" is the obvious joke).
+   - Is a stage always an upgrade, or a sideways change (a different family, like Caterpillar →
+     Butterfly today)? Does it interact with titled unlocks?
+   - Do stages chain (larva → pupa → adult), and is the Cocoon node the only place it happens,
+     or can some bugs molt mid-run (Molt already exists as a card)?
+   - What does the Chrysalis-equivalent look like for each — one shared "pupa" card, or one per
+     bug, each with its own art (the family-art rule from §5.4 says one per bug)?
+   - How many Cocoon visits does a run have (1–2 on most trails)? If every bug can pupate,
+     Pupate competes with Rest and Forage far more often — does the Cocoon need more slots, or
+     is scarcity the point?
+     Record the outcome in spec §8.8, add a tuning-log line, and only then add rows.
 2. **Balance** — dedicated test sessions later, nothing in passing (see the data above).
 3. Ideas from his list not built: collectable cyborg parts, card lifespan (reasons in the
    overnight table).
