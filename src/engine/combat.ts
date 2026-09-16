@@ -15,6 +15,7 @@ import {
   type CardInstance,
   type CombatAction,
   type CombatEvent,
+  type CombatMods,
   type CombatState,
   type EnemyDef,
   type EnemyInstance,
@@ -38,7 +39,11 @@ export interface CombatSetup {
   chargePerTurn: number;
   crumbs: number;
   unlocks: BugId[];
+  /** General-upgrade effects (spec §6.2). Any field left out defaults to 0. */
+  mods?: Partial<CombatMods>;
 }
+
+const DEFAULT_MODS: CombatMods = { attackBonus: 0, firstTurnCharge: 0, pilferReduction: 0 };
 
 export class IllegalAction extends Error {}
 
@@ -97,6 +102,7 @@ export function createCombat(setup: CombatSetup): StepResult {
     rng: rng.state,
     turn: 0,
     phase: 'player',
+    mods: { ...DEFAULT_MODS, ...setup.mods },
     player: {
       hp: setup.hp,
       maxHp: setup.maxHp ?? setup.hp,
@@ -195,7 +201,7 @@ function startPlayerTurn(s: CombatState, events: CombatEvent[], rng: Rng): void 
   s.turn++;
   events.push({ type: 'turnStarted', turn: s.turn });
   s.player.statuses.block = 0;
-  s.player.charge = s.player.chargePerTurn;
+  s.player.charge = s.player.chargePerTurn + (s.turn === 1 ? s.mods.firstTurnCharge : 0);
   events.push({ type: 'chargeChanged', charge: s.player.charge });
   if (s.player.statuses.poison > 0) {
     const amount = s.player.statuses.poison;
@@ -257,13 +263,23 @@ function playCard(
     switch (effect.kind) {
       case 'damage': {
         const times = effect.times ?? 1;
-        for (const enemy of targetsFor('target')) {
-          for (let i = 0; i < times && enemy.hp > 0; i++) {
-            const amount = Math.floor(effect.amount * weakMult);
-            damageEnemy(s, events, enemy, amount, uid, {
-              ignoreBlock: effect.ignoreBlock ?? false,
-              doubleStolen: effect.doubleStolenOnKill ?? false,
-            });
+        const amount = Math.floor((effect.amount + s.mods.attackBonus) * weakMult);
+        const opts = {
+          ignoreBlock: effect.ignoreBlock ?? false,
+          doubleStolen: effect.doubleStolenOnKill ?? false,
+        };
+        if (effect.randomTarget) {
+          // Spot Barrage: each hit re-picks among the seen enemies (Unseen is never a random target).
+          for (let i = 0; i < times; i++) {
+            const pool = seenEnemies(s);
+            if (pool.length === 0) break;
+            damageEnemy(s, events, rng.pick(pool), amount, uid, opts);
+          }
+        } else {
+          for (const enemy of targetsFor('target')) {
+            for (let i = 0; i < times && enemy.hp > 0; i++) {
+              damageEnemy(s, events, enemy, amount, uid, opts);
+            }
           }
         }
         break;
@@ -272,8 +288,16 @@ function playCard(
         s.player.statuses.block += effect.amount;
         events.push({ type: 'blockGained', target: PLAYER, amount: effect.amount });
         break;
-      case 'apply':
-        for (const enemy of targetsFor(effect.to)) {
+      case 'apply': {
+        // Flutter: 'random-enemy' picks once at play time, not once per target.
+        const targets =
+          effect.to === 'random-enemy'
+            ? (() => {
+                const pool = seenEnemies(s);
+                return pool.length > 0 ? [rng.pick(pool)] : [];
+              })()
+            : targetsFor(effect.to);
+        for (const enemy of targets) {
           enemy.statuses[effect.status] += effect.amount;
           events.push({
             type: 'statusApplied',
@@ -283,6 +307,7 @@ function playCard(
           });
         }
         break;
+      }
       case 'draw':
         drawCards(s, events, rng, effect.amount);
         break;
@@ -386,7 +411,8 @@ function enemyTurn(s: CombatState, events: CombatEvent[], rng: Rng, enemy: Enemy
         }
         break;
       case 'pilfer': {
-        const take = Math.min(effect.amount, s.crumbs);
+        const wanted = Math.max(0, effect.amount - s.mods.pilferReduction);
+        const take = Math.min(wanted, s.crumbs);
         if (take > 0) {
           s.crumbs -= take;
           s.stolen += take;

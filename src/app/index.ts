@@ -71,6 +71,9 @@ export async function boot(root: HTMLElement): Promise<void> {
     onTakeReward: (card) => controller.dispatch({ type: 'takeReward', card }),
     onBuy: (index) => controller.dispatch({ type: 'buyCard', index }),
     onRemove: (uid) => controller.dispatch({ type: 'removeCard', uid }),
+    onBuyUnlock: (index) => controller.dispatch({ type: 'buyUnlock', index }),
+    onBuyUpgrade: (index) => controller.dispatch({ type: 'buyUpgrade', index }),
+    onBuyWormillionaire: () => controller.dispatch({ type: 'buyWormillionaire' }),
     onRest: () => controller.dispatch({ type: 'rest' }),
     onLeave: () => controller.dispatch({ type: 'leave' }),
     onBackToTitle() {

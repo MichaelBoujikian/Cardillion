@@ -1,13 +1,22 @@
 /**
- * The run — spec.md §3 (screen flow), §8 (map & markers), §9 (economy). A pure reducer over
- * RunState that owns the map, the deck, HP and crumbs, and delegates fights to `combat.ts`.
- * Same seed, same actions, same run.
+ * The run — spec.md §3 (screen flow), §6 (upgrades), §8 (map & markers), §9 (economy). A pure
+ * reducer over RunState that owns the map, the deck, HP and crumbs, and delegates fights to
+ * `combat.ts`. Same seed, same actions, same run.
  */
 import { CARDS, STARTING_DECK, cardDef } from '@content/cards';
 import { ENCOUNTERS, encounterPool } from '@content/encounters';
 import { FLAVORS } from '@content/trails';
+import {
+  GENERAL_UPGRADE_PRICE,
+  TITLED_UNLOCK_PRICE,
+  UPGRADE_IDS,
+  WORMILLIONAIRE_COUNT,
+  WORMILLIONAIRE_PRICE,
+  type UpgradeId,
+} from '@content/upgrades';
 import { applyAction as applyCombatAction, createCombat } from './combat';
 import {
+  BOSS,
   START,
   canTravel,
   depthOf,
@@ -35,9 +44,34 @@ export interface ShopCard {
   sold: boolean;
 }
 
+export interface ShopUnlock {
+  bug: BugId;
+  price: number;
+  sold: boolean;
+}
+
+export interface ShopUpgrade {
+  id: UpgradeId;
+  price: number;
+  sold: boolean;
+}
+
+export interface ShopWormillionaire {
+  price: number;
+  sold: boolean;
+}
+
 export interface ShopStock {
   cards: ShopCard[];
-  removalPrice: number;
+  /** null at a travelling stall — no removal on the road (spec §8.6). */
+  removalPrice: number | null;
+  /** Empty at a travelling stall — titled unlocks are sold at fixed stalls only. */
+  unlocks: ShopUnlock[];
+  upgrades: ShopUpgrade[];
+  /** null at a travelling stall. */
+  wormillionaire: ShopWormillionaire | null;
+  /** The Snail's discounted roadside stall (spec §8.6) rather than a fixed Shop node. */
+  traveling: boolean;
 }
 
 export interface RunStats {
@@ -49,12 +83,15 @@ export interface RunStats {
 
 export interface RunState {
   seed: string;
-  rng: { encounters: RngState; rewards: RngState; shop: RngState };
+  rng: { encounters: RngState; rewards: RngState; shop: RngState; markers: RngState };
   hp: number;
   maxHp: number;
   chargePerTurn: number;
   deck: CardInstance[];
+  /** Titled unlocks owned: every card of these bugs plays upgraded (spec §6.1). */
   unlocks: BugId[];
+  /** General upgrades owned (spec §6.2). */
+  upgrades: UpgradeId[];
   crumbs: number;
   map: GameMap;
   position: string;
@@ -70,6 +107,20 @@ export interface RunState {
   removalsBought: number;
   nextUid: number;
   stats: RunStats;
+
+  // ---- map markers (spec §8.5, §8.6) ----
+  /** Node the roaming Greeble marker is on. Never Start or Boss. */
+  greebleNode: string;
+  /** Node the wandering Snail is on, or null while it is off the map after a travelling stall. */
+  snailNode: string | null;
+  /** Moves left until the Snail reappears; meaningful only while `snailNode` is null. */
+  snailReturnIn: number;
+  /** Set by a move onto the Greeble's node; consumed by the node's fight. */
+  pendingGreeble: boolean;
+  /** The Greeble ambushed a Shop/Cocoon: open that content once the ambush fight resolves. */
+  deferredNodeType: 'shop' | 'cocoon' | null;
+  /** The Snail was on this non-Shop node: open its travelling stall once the node resolves. */
+  pendingTravelingStall: boolean;
 }
 
 export type RunAction =
@@ -78,12 +129,15 @@ export type RunAction =
   | { type: 'takeReward'; card: string | null }
   | { type: 'buyCard'; index: number }
   | { type: 'removeCard'; uid: string }
+  | { type: 'buyUnlock'; index: number }
+  | { type: 'buyUpgrade'; index: number }
+  | { type: 'buyWormillionaire' }
   | { type: 'rest' }
   | { type: 'leave' };
 
 export type RunEvent =
   | { type: 'traveled'; to: string; nodeType: NodeType }
-  | { type: 'fightStarted'; enemies: string[]; elite: boolean; boss: boolean }
+  | { type: 'fightStarted'; enemies: string[]; elite: boolean; boss: boolean; ambush: boolean }
   | { type: 'combat'; events: CombatEvent[] }
   | { type: 'fightWon'; crumbs: number }
   | { type: 'rewardOffered'; offer: RewardOffer }
@@ -92,6 +146,9 @@ export type RunEvent =
   | { type: 'shopOpened'; stock: ShopStock }
   | { type: 'cardBought'; def: string; price: number }
   | { type: 'cardRemoved'; uid: string; price: number }
+  | { type: 'unlockBought'; bug: BugId; price: number }
+  | { type: 'upgradeBought'; id: UpgradeId; price: number }
+  | { type: 'wormillionaireBought'; price: number; added: number }
   | { type: 'rested'; healed: number }
   | { type: 'left' }
   | { type: 'runWon' }
@@ -104,7 +161,7 @@ export interface RunStep {
 
 export class IllegalRunAction extends Error {}
 
-// Spec §4.2, §8.3, §9 — all (tuning).
+// Spec §4.2, §6, §8, §9 — all (tuning).
 export const STARTING_HP = 60;
 export const STARTING_CRUMBS = 25;
 export const CHARGE_PER_TURN = 3;
@@ -115,7 +172,20 @@ export const SHOP_CARD_PRICES: Record<Rarity, number> = { common: 35, uncommon: 
 export const SHOP_REMOVAL_PRICE = 50;
 export const SHOP_REMOVAL_STEP = 15;
 export const SHOP_CARD_COUNT = 3;
+export const SHOP_UNLOCK_COUNT = 2;
+export const SHOP_UPGRADE_COUNT = 2;
 export const REWARD_CARD_COUNT = 3;
+/** The Snail's travelling stall: 2 cards + 1 general upgrade at 20% off (spec §8.6). */
+export const TRAVELING_CARD_COUNT = 2;
+export const TRAVELING_DISCOUNT = 0.8;
+/** Moves the Snail spends off the map after a travelling stall (spec §8.6). */
+export const SNAIL_ABSENCE = 4;
+/** The Greeble marker relocates at least this far after an ambush (spec §8.5). */
+export const GREEBLE_RELOCATE_DISTANCE = 4;
+/** General upgrades that act outside combat (spec §6.2). */
+export const THICK_THORAX_HP = 10;
+export const SPARE_PARTS_HEAL = 4;
+export const CRUMB_MAGNET_MULTIPLIER = 1.25;
 /** Common / uncommon / rare weights — spec §5.2. */
 export const RARITY_ODDS = {
   fight: [60, 33, 7],
@@ -132,18 +202,21 @@ export interface RunOptions {
 export function createRun(seed: string, options: RunOptions = {}): RunState {
   const root = new Rng(seed);
   const map = generateMap(root.fork('map'));
+  const markers = root.fork('markers');
   const run: RunState = {
     seed,
     rng: {
       encounters: root.fork('encounters').state,
       rewards: root.fork('rewards').state,
       shop: root.fork('shop').state,
+      markers: 0,
     },
     hp: options.hp ?? STARTING_HP,
     maxHp: options.hp ?? STARTING_HP,
     chargePerTurn: CHARGE_PER_TURN,
     deck: [],
     unlocks: [],
+    upgrades: [],
     crumbs: options.crumbs ?? STARTING_CRUMBS,
     map,
     position: START,
@@ -157,7 +230,14 @@ export function createRun(seed: string, options: RunOptions = {}): RunState {
     removalsBought: 0,
     nextUid: 1,
     stats: { fights: 0, elites: 0, cardsGained: 0, crumbsEarned: 0 },
+    greebleNode: pickAnyNode(map, markers),
+    snailNode: pickMiddleThirdNode(map, markers),
+    snailReturnIn: 0,
+    pendingGreeble: false,
+    deferredNodeType: null,
+    pendingTravelingStall: false,
   };
+  run.rng.markers = markers.state;
   for (const entry of options.deck ?? [...STARTING_DECK]) {
     const { def, upgraded } = typeof entry === 'string' ? { def: entry, upgraded: false } : entry;
     addCard(run, def, upgraded);
@@ -176,6 +256,21 @@ export function currentNode(run: RunState): MapNode {
   return nodeAt(run.map, run.position);
 }
 
+/** The distinct bugs the deck holds at least one card of. */
+export function bugsInDeck(run: RunState): BugId[] {
+  const seen = new Set<BugId>();
+  for (const c of run.deck) {
+    const bug = cardDef(c.def).bug;
+    if (bug) seen.add(bug);
+  }
+  return [...seen];
+}
+
+/** Whether the roaming Greeble marker shows on the map: a Cat in the deck, or Cat's Whisker. */
+export function canSeeGreebleMarker(run: RunState): boolean {
+  return run.upgrades.includes('cats-whisker') || bugsInDeck(run).includes('cat');
+}
+
 // ---------- actions ----------
 
 export function applyRunAction(run: RunState, action: RunAction): RunStep {
@@ -183,6 +278,12 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
   const events: RunEvent[] = [];
   const need = (phase: RunPhase) => {
     if (r.phase !== phase) throw new IllegalRunAction(`not in the ${phase} phase`);
+  };
+  const shopItem = <T extends { sold: boolean; price: number }>(item: T | null | undefined): T => {
+    need('shop');
+    if (!item || item.sold) throw new IllegalRunAction('nothing to buy there');
+    if (r.crumbs < item.price) throw new IllegalRunAction('not enough crumbs');
+    return item;
   };
   switch (action.type) {
     case 'travel': {
@@ -193,6 +294,7 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
       r.position = action.to;
       r.arrivedBy = edge ? edge.trail : null;
       r.visited.push(action.to);
+      updateMarkers(r);
       const node = currentNode(r);
       events.push({ type: 'traveled', to: node.id, nodeType: node.type });
       enterNode(r, events);
@@ -225,14 +327,11 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
         events.push({ type: 'cardGained', def: card.def, uid: card.uid });
       } else events.push({ type: 'rewardSkipped' });
       r.reward = null;
-      r.phase = 'map';
+      returnToMap(r, events);
       break;
     }
     case 'buyCard': {
-      need('shop');
-      const item = r.shop?.cards[action.index];
-      if (!item || item.sold) throw new IllegalRunAction('nothing to buy there');
-      if (r.crumbs < item.price) throw new IllegalRunAction('not enough crumbs');
+      const item = shopItem(r.shop?.cards[action.index]);
       r.crumbs -= item.price;
       item.sold = true;
       const card = addCard(r, item.def);
@@ -242,7 +341,8 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
     }
     case 'removeCard': {
       need('shop');
-      if (!r.shop) throw new IllegalRunAction('no shop open');
+      if (!r.shop || r.shop.removalPrice === null)
+        throw new IllegalRunAction('no removal service here');
       const idx = r.deck.findIndex((c) => c.uid === action.uid);
       if (idx < 0) throw new IllegalRunAction('that card is not in the deck');
       if (r.deck.length <= 1) throw new IllegalRunAction('the deck cannot be emptied');
@@ -255,48 +355,103 @@ export function applyRunAction(run: RunState, action: RunAction): RunStep {
       events.push({ type: 'cardRemoved', uid: action.uid, price });
       break;
     }
+    case 'buyUnlock': {
+      const item = shopItem(r.shop?.unlocks[action.index]);
+      r.crumbs -= item.price;
+      item.sold = true;
+      r.unlocks.push(item.bug);
+      events.push({ type: 'unlockBought', bug: item.bug, price: item.price });
+      break;
+    }
+    case 'buyUpgrade': {
+      const item = shopItem(r.shop?.upgrades[action.index]);
+      r.crumbs -= item.price;
+      item.sold = true;
+      r.upgrades.push(item.id);
+      if (item.id === 'thick-thorax') {
+        r.maxHp += THICK_THORAX_HP;
+        r.hp = Math.min(r.maxHp, r.hp + THICK_THORAX_HP);
+      }
+      events.push({ type: 'upgradeBought', id: item.id, price: item.price });
+      break;
+    }
+    case 'buyWormillionaire': {
+      const item = shopItem(r.shop?.wormillionaire);
+      r.crumbs -= item.price;
+      item.sold = true;
+      for (let i = 0; i < WORMILLIONAIRE_COUNT; i++) addCard(r, 'wormillion', true);
+      r.stats.cardsGained += WORMILLIONAIRE_COUNT;
+      events.push({ type: 'wormillionaireBought', price: item.price, added: WORMILLIONAIRE_COUNT });
+      break;
+    }
     case 'rest': {
       need('cocoon');
       const healed = Math.min(r.maxHp - r.hp, Math.ceil(r.maxHp * COCOON_HEAL_FRACTION));
       r.hp += healed;
       events.push({ type: 'rested', healed });
-      r.phase = 'map';
+      returnToMap(r, events);
       break;
     }
     case 'leave': {
       if (r.phase !== 'shop' && r.phase !== 'cocoon')
         throw new IllegalRunAction('nothing to leave');
       r.shop = null;
-      r.phase = 'map';
       events.push({ type: 'left' });
+      returnToMap(r, events);
       break;
     }
   }
   return { run: r, events };
 }
 
+/**
+ * Where a node hands control back. Usually the map — unless a Greeble ambushed a Shop/Cocoon
+ * (that content still has to open) or the Snail was standing here (its stall opens last).
+ */
+function returnToMap(r: RunState, events: RunEvent[]): void {
+  if (r.deferredNodeType) {
+    const deferred = r.deferredNodeType;
+    r.deferredNodeType = null;
+    if (deferred === 'shop') openShop(r, events, false);
+    else r.phase = 'cocoon';
+    return;
+  }
+  if (r.pendingTravelingStall) {
+    r.pendingTravelingStall = false;
+    openShop(r, events, true);
+    return;
+  }
+  r.phase = 'map';
+}
+
 // ---------- nodes ----------
 
 function enterNode(r: RunState, events: RunEvent[]): void {
   const node = currentNode(r);
+  const ambush = r.pendingGreeble;
+  r.pendingGreeble = false;
   switch (node.type) {
     case 'fight':
     case 'elite':
     case 'boss':
-      startFight(r, events);
+      startFight(r, events, ambush);
       break;
     case 'shop':
-      openShop(r, events);
-      break;
     case 'cocoon':
-      r.phase = 'cocoon';
+      // The Greeble ambushes a stop: a fight for this depth (plus the Greeble) comes first,
+      // and the node's own content opens once it is over (see returnToMap).
+      if (ambush) {
+        r.deferredNodeType = node.type;
+        startFight(r, events, true);
+      } else if (node.type === 'shop') openShop(r, events, false);
+      else r.phase = 'cocoon';
       break;
     case 'start':
       break;
   }
 }
 
-function startFight(r: RunState, events: RunEvent[]): void {
+function startFight(r: RunState, events: RunEvent[], ambush: boolean): void {
   const node = currentNode(r);
   const boss = node.type === 'boss';
   const elite = node.type === 'elite';
@@ -308,6 +463,8 @@ function startFight(r: RunState, events: RunEvent[]): void {
   if (!boss && enc.chance(FLAVORS[flavorOf(r.map, node, r.arrivedBy)].greebleChance))
     enemies.push('greeble');
   r.rng.encounters = enc.state;
+  // The roaming Greeble joins the fight on its node; never at the Boss, never twice.
+  if (ambush && !boss && !enemies.includes('greeble')) enemies.push('greeble');
 
   const { state, events: ce } = createCombat({
     seed: `${r.seed}:combat:${node.id}`,
@@ -318,10 +475,15 @@ function startFight(r: RunState, events: RunEvent[]): void {
     chargePerTurn: r.chargePerTurn,
     crumbs: r.crumbs,
     unlocks: r.unlocks,
+    mods: {
+      attackBonus: r.upgrades.includes('sharpened-mandibles') ? 1 : 0,
+      firstTurnCharge: r.upgrades.includes('solar-panel') ? 1 : 0,
+      pilferReduction: r.upgrades.includes('cats-whisker') ? 1 : 0,
+    },
   });
   r.combat = state;
   r.phase = 'fight';
-  events.push({ type: 'fightStarted', enemies, elite, boss });
+  events.push({ type: 'fightStarted', enemies, elite, boss, ambush: ambush && !boss });
   events.push({ type: 'combat', events: ce });
 }
 
@@ -330,6 +492,7 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   const node = currentNode(r);
   r.hp = combat.player.hp;
   r.crumbs = combat.crumbs; // theft and recoveries already applied
+  if (r.upgrades.includes('spare-parts')) r.hp = Math.min(r.maxHp, r.hp + SPARE_PARTS_HEAL);
   r.lastCombat = combat;
   r.combat = null;
   r.stats.fights++;
@@ -344,7 +507,8 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   const rewards = Rng.fromState(r.rng.rewards);
   const elite = node.type === 'elite';
   const base = elite ? ELITE_CRUMBS : rewards.int(FIGHT_CRUMBS[0], FIGHT_CRUMBS[1]);
-  const crumbs = Math.round(base * flavor.crumbMultiplier);
+  const magnet = r.upgrades.includes('crumb-magnet') ? CRUMB_MAGNET_MULTIPLIER : 1;
+  const crumbs = Math.round(base * flavor.crumbMultiplier * magnet);
   r.crumbs += crumbs;
   r.stats.crumbsEarned += crumbs;
   const cards = rollCards(rewards, elite ? 'elite' : 'fight', flavor.rareBonus, REWARD_CARD_COUNT);
@@ -355,15 +519,37 @@ function afterFight(r: RunState, events: RunEvent[]): void {
   events.push({ type: 'rewardOffered', offer: r.reward });
 }
 
-function openShop(r: RunState, events: RunEvent[]): void {
+function openShop(r: RunState, events: RunEvent[], traveling: boolean): void {
   const shop = Rng.fromState(r.rng.shop);
-  const cards = rollCards(shop, 'shop', 0, SHOP_CARD_COUNT).map((def) => ({
-    def,
-    price: SHOP_CARD_PRICES[cardDef(def).rarity],
-    sold: false,
-  }));
+  const price = (p: number) => (traveling ? Math.round(p * TRAVELING_DISCOUNT) : p);
+  const cards = rollCards(shop, 'shop', 0, traveling ? TRAVELING_CARD_COUNT : SHOP_CARD_COUNT).map(
+    (def) => ({ def, price: price(SHOP_CARD_PRICES[cardDef(def).rarity]), sold: false }),
+  );
+  const availableUpgrades = UPGRADE_IDS.filter((id) => !r.upgrades.includes(id));
+  const upgrades = shop
+    .shuffle(availableUpgrades)
+    .slice(0, traveling ? 1 : SHOP_UPGRADE_COUNT)
+    .map((id) => ({ id, price: price(GENERAL_UPGRADE_PRICE), sold: false }));
+  let unlocks: ShopUnlock[] = [];
+  let wormillionaire: ShopWormillionaire | null = null;
+  if (!traveling) {
+    // Titled unlocks are drawn from bugs the deck actually holds and doesn't already own.
+    const eligibleBugs = bugsInDeck(r).filter((b) => !r.unlocks.includes(b));
+    unlocks = shop
+      .shuffle(eligibleBugs)
+      .slice(0, SHOP_UNLOCK_COUNT)
+      .map((bug) => ({ bug, price: TITLED_UNLOCK_PRICE, sold: false }));
+    wormillionaire = { price: WORMILLIONAIRE_PRICE, sold: false };
+  }
   r.rng.shop = shop.state;
-  r.shop = { cards, removalPrice: SHOP_REMOVAL_PRICE + SHOP_REMOVAL_STEP * r.removalsBought };
+  r.shop = {
+    cards,
+    removalPrice: traveling ? null : SHOP_REMOVAL_PRICE + SHOP_REMOVAL_STEP * r.removalsBought,
+    unlocks,
+    upgrades,
+    wormillionaire,
+    traveling,
+  };
   r.phase = 'shop';
   events.push({ type: 'shopOpened', stock: r.shop });
 }
@@ -387,4 +573,92 @@ export function rollCards(
     picked.push(rng.pick(candidates).id);
   }
   return picked;
+}
+
+// ---------- map markers (spec §8.5, §8.6) ----------
+
+/** Nodes one step away in either direction along a trail (the map is a DAG; markers ignore that). */
+function neighborsOf(map: GameMap, id: string): string[] {
+  const node = nodeAt(map, id);
+  return [...new Set([...node.next.map((e) => e.id), ...node.prev])];
+}
+
+const isMarkerNode = (id: string) => id !== START && id !== BOSS;
+
+function pickAnyNode(map: GameMap, rng: Rng, exclude?: string): string {
+  const candidates = Object.keys(map.nodes).filter((id) => isMarkerNode(id) && id !== exclude);
+  return rng.pick(candidates);
+}
+
+/** A node from the middle third of the map by depth (spec §8.6). */
+function pickMiddleThirdNode(map: GameMap, rng: Rng): string {
+  const ids = Object.values(map.nodes)
+    .filter((n) => isMarkerNode(n.id))
+    .sort((a, b) => a.index - b.index || a.id.localeCompare(b.id))
+    .map((n) => n.id);
+  const third = Math.floor(ids.length / 3);
+  const middle = ids.slice(third, ids.length - third);
+  return rng.pick(middle.length > 0 ? middle : ids);
+}
+
+function stepMarker(map: GameMap, rng: Rng, from: string): string {
+  const candidates = neighborsOf(map, from).filter(isMarkerNode);
+  return candidates.length > 0 ? rng.pick(candidates) : from;
+}
+
+/** Shortest-path distance in nodes from `from` to every node, over next and prev edges. */
+function distancesFrom(map: GameMap, from: string): Map<string, number> {
+  const dist = new Map<string, number>([[from, 0]]);
+  let frontier = [from];
+  while (frontier.length > 0) {
+    const next: string[] = [];
+    for (const id of frontier) {
+      for (const n of neighborsOf(map, id)) {
+        if (dist.has(n)) continue;
+        dist.set(n, (dist.get(id) as number) + 1);
+        next.push(n);
+      }
+    }
+    frontier = next;
+  }
+  return dist;
+}
+
+/** After an ambush the Greeble relocates at least GREEBLE_RELOCATE_DISTANCE away, or as far as the map allows. */
+function relocateGreeble(map: GameMap, rng: Rng, from: string): string {
+  const valid = [...distancesFrom(map, from)].filter(([id]) => isMarkerNode(id) && id !== from);
+  const far = valid.filter(([, d]) => d >= GREEBLE_RELOCATE_DISTANCE).map(([id]) => id);
+  if (far.length > 0) return rng.pick(far);
+  if (valid.length === 0) return from;
+  const maxDist = Math.max(...valid.map(([, d]) => d));
+  return rng.pick(valid.filter(([, d]) => d === maxDist).map(([id]) => id));
+}
+
+/**
+ * Advance both markers by one player move. Called once per travel, after `r.position` moved.
+ * Landing on the Greeble sets `pendingGreeble` for `enterNode`; landing on the Snail at a
+ * non-Shop node sets `pendingTravelingStall` for `returnToMap`.
+ */
+function updateMarkers(r: RunState): void {
+  const rng = Rng.fromState(r.rng.markers);
+
+  if (r.position === r.greebleNode) {
+    r.pendingGreeble = true;
+    r.greebleNode = relocateGreeble(r.map, rng, r.greebleNode);
+  } else {
+    r.greebleNode = stepMarker(r.map, rng, r.greebleNode);
+  }
+
+  if (r.snailNode === null) {
+    r.snailReturnIn--;
+    if (r.snailReturnIn <= 0) r.snailNode = pickAnyNode(r.map, rng, r.position);
+  } else if (r.position === r.snailNode && currentNode(r).type !== 'shop') {
+    r.pendingTravelingStall = true;
+    r.snailNode = null;
+    r.snailReturnIn = SNAIL_ABSENCE;
+  } else {
+    r.snailNode = stepMarker(r.map, rng, r.snailNode);
+  }
+
+  r.rng.markers = rng.state;
 }

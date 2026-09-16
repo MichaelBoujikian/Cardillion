@@ -177,22 +177,25 @@ Cat's upgraded art: top hat and gold monocle over the robotic eye.
 
 All numbers _(tuning)_.
 
-### 5.4 Families (v1 target — one extra card per bug, 14 cards total) _(draft)_
+### 5.4 Families (v1 — one extra card per bug, 14 cards total)
 
-| Card         | Family      | Rarity   | Type   | Cost | Effect                              |
-| ------------ | ----------- | -------- | ------ | ---- | ----------------------------------- |
-| Drill Worm   | Wormillion  | Common   | Attack | 1    | Deal 3. Ignores Block.              |
-| Roly Pounce  | Roly Poly   | Common   | Attack | 1    | Deal 3. Gain 3 Block.               |
-| Munch        | Caterpillar | Common   | Attack | 0    | Deal 2. Apply 1 Poison.             |
-| Spot Barrage | Ladybug     | Uncommon | Attack | 1    | Deal 2 to a random enemy, 3 times.  |
-| Flutter      | Butterfly   | Common   | Skill  | 0    | Draw 1. Apply 1 Weak to an enemy.   |
-| Tongue Lash  | Chameleon   | Common   | Attack | 1    | Deal 5.                             |
-| Pounce       | Cat         | Rare     | Attack | 2    | Deal 10. Can target Unseen enemies. |
+| Card         | Family      | Rarity   | Type   | Cost | Effect                              | Upgraded form (+)                   |
+| ------------ | ----------- | -------- | ------ | ---- | ----------------------------------- | ----------------------------------- |
+| Drill Worm   | Wormillion  | Common   | Attack | 1    | Deal 3. Ignores Block.              | Deal 5. Ignores Block.              |
+| Roly Pounce  | Roly Poly   | Common   | Attack | 1    | Deal 3. Gain 3 Block.               | Deal 3. Gain 5 Block.               |
+| Munch        | Caterpillar | Common   | Attack | 0    | Deal 2. Apply 1 Poison.             | Deal 3. Apply 2 Poison.             |
+| Spot Barrage | Ladybug     | Uncommon | Attack | 1    | Deal 2 to a random enemy, 3 times.  | Deal 3 to a random enemy, 3 times.  |
+| Flutter      | Butterfly   | Common   | Skill  | 0    | Draw 1. Apply 1 Weak to an enemy.   | Draw 2. Apply 2 Weak to an enemy.   |
+| Tongue Lash  | Chameleon   | Common   | Attack | 1    | Deal 5.                             | Deal 7.                             |
+| Pounce       | Cat         | Rare     | Attack | 2    | Deal 10. Can target Unseen enemies. | Deal 14. Can target Unseen enemies. |
 
 Family cards are upgraded by the same titled unlock as their bug (Mr. Wormsley upgrades Drill
-Worm too). Their upgraded forms are defined when the family ships (milestone M4).
+Worm too), and by Wormillionaire/whole-family injection where applicable. They carry the same
+"+" rivet as the base card but reuse its art (no separate art slot) — the rivet and title
+banner are the only visual difference, matching the general rule in §5.1. All numbers
+_(tuning)_.
 
-**First playable (M2) ships with only the seven base cards.**
+**First playable (M2) shipped with only the seven base cards; families ship in M4.**
 
 ### 5.5 Starting deck
 
@@ -555,6 +558,7 @@ DOM globals, or any outer layer.
 Record balance changes here with a date and a one-line reason, so numbers in this document stay
 the source of truth.
 
-| Date       | Change          | Why                             |
-| ---------- | --------------- | ------------------------------- |
-| 2026-09-13 | Initial numbers | First pass from design session. |
+| Date       | Change                     | Why                                                                                                    |
+| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 2026-09-13 | Initial numbers            | First pass from design session.                                                                        |
+| 2026-09-15 | Family card upgraded forms | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta). |

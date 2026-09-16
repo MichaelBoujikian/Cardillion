@@ -4,8 +4,9 @@
  */
 import { cardDef } from '@content/cards';
 import { FLAVORS } from '@content/trails';
+import { TITLED_UNLOCKS, upgradeDef } from '@content/upgrades';
 import { nodeAt, signposts, visibleNodes, type MapNode } from '@engine/map';
-import { COCOON_HEAL_FRACTION, type RunState } from '@engine/run';
+import { COCOON_HEAL_FRACTION, canSeeGreebleMarker, type RunState } from '@engine/run';
 import type { ArtCache } from '@render/battle/textures';
 import type { CardFaces } from './card-faces';
 
@@ -15,6 +16,9 @@ export interface ScreenHandlers {
   onTakeReward(card: string | null): void;
   onBuy(index: number): void;
   onRemove(uid: string): void;
+  onBuyUnlock(index: number): void;
+  onBuyUpgrade(index: number): void;
+  onBuyWormillionaire(): void;
   onRest(): void;
   onLeave(): void;
   onBackToTitle(): void;
@@ -92,8 +96,32 @@ const CSS = /* css */ `
 .pick .sold-tag { position:absolute; inset:0; display:grid; place-items:center; font-size:26px; letter-spacing:.2em; color:#ff8a7a; text-shadow: 0 2px 4px #000; }
 
 /* shop */
-.shop-screen .snail { width:140px; height:140px; object-fit:contain; float:left; margin:-10px 18px 0 -10px; }
+.shop-screen .panel { min-width:760px; max-width:1000px; padding:18px 30px 16px; max-height:94vh; overflow-y:auto; }
+.shop-screen h1 { font-size:28px; margin-bottom:2px; }
+.shop-screen h2 { margin-bottom:6px; }
+.shop-screen .snail { width:110px; height:110px; object-fit:contain; float:left; margin:-6px 14px 0 -8px; }
 .shop-screen .stock { overflow:hidden; }
+.shop-screen .cards { margin:6px 0 22px; gap:14px; }
+.shop-screen .pick { width:140px; height:196px; }
+.wares { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:0 0 6px; }
+.ware { width:196px; text-align:left; padding:8px 10px; border-radius:10px; background:rgba(10,8,14,.55); border:1px solid rgba(184,134,43,.5); cursor:pointer; transition: transform .15s ease, filter .15s ease; }
+.ware:hover { transform:translateY(-3px); filter: drop-shadow(0 0 12px rgba(255,214,120,.45)); border-color:#ffd27a; }
+.ware b { display:block; color:#ffd27a; font-size:15px; }
+.ware small { display:block; opacity:.85; font-size:12px; line-height:1.35; margin:3px 0 4px; }
+.ware .tag { font-size:13px; color:#ffd27a; }
+.ware.sold, .ware.poor { cursor:not-allowed; filter: grayscale(.7) brightness(.6); }
+.ware.sold:hover, .ware.poor:hover { transform:none; border-color:rgba(184,134,43,.5); }
+.ware.sold .tag { color:#ff8a7a; }
+.discount { display:inline-block; margin-left:10px; padding:2px 8px; border-radius:10px; background:#5a3a10; color:#ffd27a; font-size:12px; letter-spacing:.06em; vertical-align:middle; }
+
+/* map markers */
+.map-screen .marker { pointer-events:none; }
+.map-screen .marker.snail image { filter: drop-shadow(0 3px 6px rgba(0,0,0,.7)); }
+.map-screen .marker.snail text { font: 28px Georgia, serif; text-anchor:middle; dominant-baseline:central; }
+.map-screen .marker.greeble circle { fill:#ffb347; filter: drop-shadow(0 0 6px #ff9a3c); animation: blink 3.2s ease-in-out infinite; }
+@keyframes blink { 0%,44%,52%,100% { opacity:1; } 48% { opacity:0; } }
+.map-hud .who { font-size:12px; opacity:.85; margin-top:2px; max-width:260px; line-height:1.6; }
+.map-hud .who span { display:inline-block; margin-right:10px; }
 
 /* deck list */
 .deck-list { position:absolute; inset:0; display:none; background:rgba(6,5,10,.85); overflow:auto; padding:40px; pointer-events:auto; }
@@ -234,16 +262,38 @@ export class RunScreens {
       })
       .join('');
 
+    // Markers: the Snail is always shown; the Greeble only to a Cat owner (spec §8.5, §8.6).
+    const snailArt = this.art.get('npc-snail');
+    let markers = '';
+    if (run.snailNode) {
+      const p = px(nodeAt(map, run.snailNode));
+      markers += snailArt
+        ? `<g class="marker snail"><image href="${snailArt.src}" x="${p.x + 14}" y="${p.y - 58}" width="56" height="56"/></g>`
+        : `<g class="marker snail"><text x="${p.x + 30}" y="${p.y - 30}">🐌</text></g>`;
+    }
+    const seesGreeble = canSeeGreebleMarker(run);
+    if (seesGreeble) {
+      const p = px(nodeAt(map, run.greebleNode));
+      markers += `<g class="marker greeble"><circle cx="${p.x - 9}" cy="${p.y - 34}" r="4"/><circle cx="${p.x + 9}" cy="${p.y - 34}" r="4"/></g>`;
+    }
+    const owned = [
+      ...run.unlocks.map((b) => TITLED_UNLOCKS[b]),
+      ...run.upgrades.map((u) => upgradeDef(u).name),
+    ];
+
     const s = this.show(
       'map',
       `${bg ? `<img class="bg" src="${bg.src}" alt="">` : '<div class="bg-fallback"></div>'}
-       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${trailPaths}${nodesSvg}${posts}</svg>
+       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${trailPaths}${nodesSvg}${markers}${posts}</svg>
        <div class="map-hud">
          ❤ <b>${run.hp} / ${run.maxHp}</b><br>
          🍞 <b>${run.crumbs}</b> crumbs<br>
          <button class="btn ghost deck">Deck · ${run.deck.length}</button>
+         ${owned.length ? `<div class="who">${owned.map((n) => `<span>✦ ${n}</span>`).join('')}</div>` : ''}
        </div>
-       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown</div>
+       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown${
+         run.snailNode ? ' · 🐌 the Snail wanders' : ''
+       }${seesGreeble ? ' · 👀 the Greeble' : ''}</div>
        <div class="map-title">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,
     );
     for (const g of s.querySelectorAll<SVGGElement>('.node.reachable')) {
@@ -315,17 +365,57 @@ export class RunScreens {
     const shop = run.shop;
     if (!shop) return;
     const snail = this.art.get('npc-snail');
+    const canAfford = (price: number) => run.crumbs >= price;
+    const wareClass = (sold: boolean, price: number) =>
+      ['ware', sold ? 'sold' : '', !sold && !canAfford(price) ? 'poor' : '']
+        .filter(Boolean)
+        .join(' ');
+    const tag = (sold: boolean, price: number) =>
+      sold ? '<span class="tag">SOLD</span>' : `<span class="tag">🍞 ${price}</span>`;
+
+    const unlockWares = shop.unlocks
+      .map(
+        (u, i) => `<div class="${wareClass(u.sold, u.price)}" data-kind="unlock" data-index="${i}">
+          <b>${TITLED_UNLOCKS[u.bug]}</b>
+          <small>Every ${cardDef(u.bug).name}-family card you have or find this run plays in its upgraded form.</small>
+          ${tag(u.sold, u.price)}</div>`,
+      )
+      .join('');
+    const upgradeWares = shop.upgrades
+      .map((u, i) => {
+        const def = upgradeDef(u.id);
+        return `<div class="${wareClass(u.sold, u.price)}" data-kind="upgrade" data-index="${i}">
+          <b>${def.name}</b><small>${def.text}</small>${tag(u.sold, u.price)}</div>`;
+      })
+      .join('');
+    const worm = shop.wormillionaire;
+    const wormWare = worm
+      ? `<div class="${wareClass(worm.sold, worm.price)}" data-kind="wormillionaire" data-index="0">
+          <b>Wormillionaire</b><small>Five Wormillion+ (they cost 0 Charge) join your deck.</small>
+          ${tag(worm.sold, worm.price)}</div>`
+      : '';
+    const title = shop.traveling
+      ? `THE SNAIL'S CART<span class="discount">20% OFF</span>`
+      : `THE SNAIL'S STALL`;
+    const subtitle = shop.traveling
+      ? `🍞 <b>${run.crumbs}</b> crumbs · caught on the road: two cards and one upgrade`
+      : `🍞 <b>${run.crumbs}</b> crumbs`;
+    const removal =
+      shop.removalPrice === null
+        ? ''
+        : `<button class="btn remove" ${!canAfford(shop.removalPrice) || run.deck.length <= 1 ? 'disabled' : ''}>Remove a card · 🍞 ${shop.removalPrice}</button>`;
+
     const s = this.show(
       'shop',
       `<div class="veil"></div>
        <div class="panel">
          ${snail ? `<img class="snail" src="${snail.src}" alt="">` : ''}
          <div class="stock">
-           <h1>THE SNAIL'S STALL</h1>
-           <h2>🍞 <b>${run.crumbs}</b> crumbs</h2>
+           <h1>${title}</h1>
+           <h2>${subtitle}</h2>
            <div class="cards">${shop.cards
              .map((c, i) => {
-               const poor = !c.sold && run.crumbs < c.price;
+               const poor = !c.sold && !canAfford(c.price);
                const cls = ['pick', c.sold ? 'sold' : '', poor ? 'poor' : '']
                  .filter(Boolean)
                  .join(' ');
@@ -333,9 +423,10 @@ export class RunScreens {
                  ${c.sold ? '<div class="sold-tag">SOLD</div>' : `<div class="price">🍞 ${c.price}</div>`}</div>`;
              })
              .join('')}</div>
-           <p style="margin-top:22px">
-             <button class="btn remove" ${run.crumbs < shop.removalPrice || run.deck.length <= 1 ? 'disabled' : ''}>Remove a card · 🍞 ${shop.removalPrice}</button>
-             <button class="btn ghost leave">LEAVE</button>
+           <div class="wares">${unlockWares}${upgradeWares}${wormWare}</div>
+           <p style="margin:8px 0 0">
+             ${removal}
+             <button class="btn ghost leave">${shop.traveling ? 'WAVE IT ON' : 'LEAVE'}</button>
            </p>
          </div>
        </div>`,
@@ -344,6 +435,15 @@ export class RunScreens {
       el.addEventListener('click', () => {
         if (el.classList.contains('sold') || el.classList.contains('poor')) return;
         this.h.onBuy(Number(el.dataset['index']));
+      });
+    }
+    for (const el of s.querySelectorAll<HTMLElement>('.ware')) {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('sold') || el.classList.contains('poor')) return;
+        const index = Number(el.dataset['index']);
+        if (el.dataset['kind'] === 'unlock') this.h.onBuyUnlock(index);
+        else if (el.dataset['kind'] === 'upgrade') this.h.onBuyUpgrade(index);
+        else this.h.onBuyWormillionaire();
       });
     }
     s.querySelector('.remove')?.addEventListener('click', () =>

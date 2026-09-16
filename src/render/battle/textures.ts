@@ -3,6 +3,8 @@
  * data, procedural placeholders for every creature (used until generated art exists), and
  * helpers for loading generated art and finding glowing eyes in it.
  */
+import { cardDef } from '@content/cards';
+import { TITLED_UNLOCKS } from '@content/upgrades';
 import type { CardDef, CardForm } from '@engine/types';
 import * as THREE from 'three';
 
@@ -633,10 +635,16 @@ export function drawCardFace(
   ctx.fillText(def.name + (opts.upgraded ? '+' : ''), CARD_W / 2, 552);
   ctx.fillStyle = status ? '#9a94a8' : '#7a6a4a';
   ctx.font = 'italic 24px Georgia, serif';
+  // Type line names the family (Drill Worm is "Attack · Wormillion"); an upgraded form shows
+  // the family's title instead, the banner spec §5.1 asks for ("Mr. Wormsley").
+  const family = def.bug ? cardDef(def.bug).name : def.name;
   const typeLine =
     def.type === 'status'
       ? 'Status'
-      : `${def.type === 'attack' ? 'Attack' : 'Skill'} · ${def.name}`;
+      : opts.upgraded && def.bug
+        ? `${def.type === 'attack' ? 'Attack' : 'Skill'} · ${TITLED_UNLOCKS[def.bug]}`
+        : `${def.type === 'attack' ? 'Attack' : 'Skill'} · ${family}`;
+  if (opts.upgraded) ctx.fillStyle = '#8a5a1c';
   ctx.fillText(typeLine, CARD_W / 2, 588);
   ctx.fillStyle = status ? '#cfc9d8' : '#3a2a18';
   ctx.font = '28px Georgia, serif';

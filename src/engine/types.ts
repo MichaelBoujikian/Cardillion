@@ -25,9 +25,17 @@ export type CardEffect =
       ignoreBlock?: boolean;
       /** Sir Reginald V: an Unseen enemy killed by this hit returns double its stolen crumbs. */
       doubleStolenOnKill?: boolean;
+      /** Spot Barrage: each hit re-picks a random seen enemy instead of using the card's target. */
+      randomTarget?: boolean;
     }
   | { kind: 'block'; amount: number }
-  | { kind: 'apply'; status: 'poison' | 'weak'; amount: number; to: 'target' | 'all-enemies' }
+  | {
+      kind: 'apply';
+      status: 'poison' | 'weak';
+      amount: number;
+      /** Flutter: a random seen enemy, re-picked at play time (not per-hit). */
+      to: 'target' | 'all-enemies' | 'random-enemy';
+    }
   | { kind: 'draw'; amount: number };
 
 /** One playable form of a card: the base form or the upgraded form. */
@@ -130,12 +138,23 @@ export interface PlayerState {
   statuses: Statuses;
 }
 
+/** General-upgrade effects that modify combat rules directly (spec §6.2). All default to 0. */
+export interface CombatMods {
+  /** Sharpened Mandibles: added to every player damage effect. */
+  attackBonus: number;
+  /** Solar Panel: added to Charge on turn 1 only. */
+  firstTurnCharge: number;
+  /** Cat's Whisker: subtracted (floored at 0) from every Greeble pilfer amount. */
+  pilferReduction: number;
+}
+
 export type Phase = 'player' | 'won' | 'lost';
 
 export interface CombatState {
   rng: RngState;
   turn: number;
   phase: Phase;
+  mods: CombatMods;
   player: PlayerState;
   enemies: EnemyInstance[];
   draw: CardInstance[];

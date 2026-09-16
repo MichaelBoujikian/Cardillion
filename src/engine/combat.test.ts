@@ -453,3 +453,85 @@ describe('losing', () => {
     expect(ofType(events, 'combatLost')).toHaveLength(1);
   });
 });
+
+describe('family cards (spec §5.4)', () => {
+  it('Spot Barrage hits a random seen enemy 3 times, never the Unseen', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const { state } = start({
+        seed,
+        enemies: ['rat', 'rat', 'greeble'],
+        deck: Array<string>(10).fill('spot-barrage'),
+        chargePerTurn: 9,
+      });
+      const { state: s2, events } = play(state, 'spot-barrage');
+      const hits = ofType(events, 'damageDealt');
+      expect(hits).toHaveLength(3);
+      const totalDamage = hits.reduce((a, h) => a + h.amount, 0);
+      expect(totalDamage).toBeGreaterThan(0);
+      const greeble = s2.enemies.find((e) => e.def === 'greeble')!;
+      expect(hits.every((h) => h.target !== greeble.uid)).toBe(true);
+    }
+  });
+
+  it('Flutter draws and applies Weak to one random seen enemy, not all', () => {
+    const { state } = start({ enemies: ['rat', 'rat'], deck: Array<string>(10).fill('flutter') });
+    const before = state.hand.length;
+    const { state: s2, events } = play(state, 'flutter');
+    expect(s2.hand.length).toBe(before - 1 + 1); // played card leaves, one card drawn
+    const applied = ofType(events, 'statusApplied');
+    expect(applied).toHaveLength(1);
+    const weakened = s2.enemies.filter((e) => e.statuses.weak > 0);
+    expect(weakened).toHaveLength(1);
+  });
+
+  it('Drill Worm ignores Block', () => {
+    const { state } = start({ enemies: ['rat'], deck: Array<string>(10).fill('drill-worm') });
+    const rat = state.enemies[0]!;
+    rat.statuses.block = 50;
+    const { state: s2 } = play(state, 'drill-worm', rat.uid);
+    expect(s2.enemies[0]!.hp).toBe(rat.hp - 3);
+    expect(s2.enemies[0]!.statuses.block).toBe(50);
+  });
+
+  it('a titled unlock upgrades the whole family, not just the base card', () => {
+    const { state } = start({
+      unlocks: ['wormillion'],
+      deck: ['drill-worm', 'roly-poly', 'roly-poly', 'roly-poly', 'roly-poly'],
+    });
+    const { state: s2 } = play(state, 'drill-worm', state.enemies[0]!.uid);
+    // Drill Worm+ deals 5, not 3.
+    expect(state.enemies[0]!.hp - s2.enemies[0]!.hp).toBe(5);
+  });
+});
+
+describe('general-upgrade mods (spec §6.2)', () => {
+  it('Sharpened Mandibles adds +1 to every player damage effect', () => {
+    const { state } = start({
+      enemies: ['rat'],
+      deck: Array<string>(10).fill('wormillion'),
+      mods: { attackBonus: 1 },
+    });
+    const { state: s2 } = play(state, 'wormillion', state.enemies[0]!.uid);
+    expect(state.enemies[0]!.hp - s2.enemies[0]!.hp).toBe(5); // 4 base + 1
+  });
+
+  it('Solar Panel grants +1 Charge on turn 1 only', () => {
+    const { state } = start({ chargePerTurn: 3, mods: { firstTurnCharge: 1 } });
+    expect(state.player.charge).toBe(4);
+    const s2 = endTurn(state).state;
+    expect(s2.player.charge).toBe(3);
+  });
+
+  it("Cat's Whisker reduces every Greeble pilfer by 1", () => {
+    const { state } = start({
+      enemies: ['rat', 'greeble'],
+      deck: Array<string>(10).fill('wormillion'),
+      chargePerTurn: 9,
+      crumbs: 25,
+      mods: { pilferReduction: 1 },
+    });
+    const { state: s2, events } = endTurn(state);
+    expect(ofType(events, 'crumbsStolen')[0]).toMatchObject({ amount: 3 });
+    expect(s2.crumbs).toBe(22);
+  });
+});
