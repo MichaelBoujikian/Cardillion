@@ -37,7 +37,7 @@ thing CI runs.
   Mr. Wormsley, six general upgrades, Wormillionaire, the roaming Greeble (visible to Cat
   owners; ambushes the node it sits on) and the wandering Snail (a 20%-off cart when you meet
   it off its stall).
-- **Art**: all 31 assets generated and approved (`assets/art/`), including the family cards' own art.
+- **Art**: all 40 assets generated and approved (`assets/art/`) — every card has its own art, plus the Shop and Cocoon backdrops.
 - **M5 systems: done.** One autosave slot (Continue on the title, deleted when a run ends),
   a settings panel (⚙ or Esc) with screen shake, reduce motion, fullscreen, the seed with a
   copy button, abandon run and reset.

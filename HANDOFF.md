@@ -26,7 +26,7 @@ directs, agents build; he judges results by eye and approves art in batches.
 | M3 run loop             | done — title → map → fights/rewards/shops/cocoons → the Bear → result |
 | M4 content              | done — 14 cards, titled unlocks, upgrades, Wormillionaire, markers    |
 | M5 systems              | done — autosave slot + Continue, settings panel, reduce motion        |
-| M6 art                  | 31 assets approved; 9 more generated overnight, awaiting approval     |
+| M6 art                  | done — all 40 assets generated and approved                           |
 
 123 tests pass; `npm run check` is green; CI and the Pages deploy are green.
 
@@ -37,27 +37,28 @@ owner has played the live link but has not yet given balance notes.
 weakest, block when a hit is coming, rest when hurt, buy upgrades first) played 300 seeded runs:
 **win rate 0.3%**. It reached the Bear in 43% of runs and died there almost every time; the
 next deadliest fights were the late `scorpion ×2 + rat` pool, `spider + scorpion` and the Wolf
-Spider. A random bot never wins and dies around node 4–5. Reading: the Bear (130 HP, Maul 18,
-enrage +3) is far beyond a starting-deck run's damage output, and the late pool is a step up
-from mid. One recommendation, not applied: Bear 130 → 95 HP and Maul 18 → 14, then remeasure
-with the same test. A stronger bot that plans Block against Maul might also change the picture;
-the fuzz policy is deliberately naive.
+Spider. A random bot never wins and dies around node 4–5. The fuzz policy is deliberately
+naive, so treat these as a first reading, not a target. **The owner has decided: no balance
+changes on the back of this; balance gets its own dedicated test sessions.** Do not propose
+number changes in passing — when that session comes, it starts from `spec.md` §15 and this
+data.
 
 ## What's next (the morning after the overnight run)
 
-1. **Art approval.** Nine images are on disk and uncommitted: `bg-shop`, `bg-cocoon`,
-   `card-cobweb`, `card-molt`, `card-scavenge`, `card-worm-swarm`, `card-stink-cloud`,
-   `card-chrysalis`, `card-burrow` (three contact sheets were sent to the owner; they are in
-   `art/out/contact-2026-09-15-*.png`). On a yes: `git add assets/art/<id>.png
-public/art/<id>.webp` for the approved ids and commit. On a no: edit the prompt in
-   `art/manifest.json`, `npm run art -- --only <id> --force`, `npm run art:optimize`, new sheet.
-   Until then the deployed build 404s on them and falls back to placeholders / gradients.
-2. **The owner's verdict on the new mechanics** (spec §5.4 second wave, §8.6 trail, §8.8, §8.9).
-   They were built "to see how they do"; cut or tune freely. Every one is one commit and one
-   spec section, so reverting is cheap.
-3. **Balance.** See the data above. Ask before changing numbers; then change spec first.
-4. Ideas from his list not built: collectable cyborg parts, card lifespan (reasons in the
-   overnight table). Roadmap in spec §14 is otherwise unchanged.
+The owner reviewed the overnight run on 2026-09-16: **all nine images approved and committed;
+all the new mechanics approved** (spec §5.4 second wave, §8.6 trail, §8.8, §8.9). Standing
+requests from that review:
+
+1. **Metamorphosis for more bugs.** He wants it to be a mechanic across the roster, not a
+   Caterpillar-only trick. Today `PUPATION` in `src/content/cards.ts` maps Caterpillar →
+   Butterfly and Munch → Flutter; the engine is already generic (any card with a mapping can
+   pupate at a Cocoon and emerges after the next won fight). The design work is deciding what
+   each bug becomes — Wormillion, Roly Poly, Ladybug, Chameleon and Cat have no "next stage"
+   yet — and whether every stage is a Cocoon visit. Spec §14 (Roadmap) carries the note; grill
+   him on the shapes before building.
+2. **Balance** — dedicated test sessions later, nothing in passing (see the data above).
+3. Ideas from his list not built: collectable cyborg parts, card lifespan (reasons in the
+   overnight table).
 
 ## How to work here (the parts CLAUDE.md doesn't say)
 
@@ -170,8 +171,6 @@ before screenshots, the pane's default is 800×450.
   from a single gesture. Instrumented, never reproduced across many drags. No root cause found;
   `RunController.dispatch` now marks itself busy synchronously and the playback chain can no
   longer be poisoned by a throw, which closes every window found so far. Watch for it.
-- Nine art files await approval (see "What's next"). `card-cobweb` in particular: until it is
-  committed the loader 404s once per load and draws the placeholder doodle.
 - Desktop-only layout. The page loads on phones but the title overflows and touch is untested;
   spec lists touch as roadmap. Share the desktop link.
 - GitHub Pages URLs are case-sensitive: `/Cardillion/` works, `/cardillion/` 404s. Renaming

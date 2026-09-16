@@ -608,6 +608,11 @@ DOM globals, or any outer layer.
 - Map ideas held back: **Dandelion spin** (random branch choice you can bribe with crumbs),
   **Trapdoor spider** node, **Weather** reshuffles, **Scout** (pay crumbs to peek through fog).
 - More families, more titled unlocks with second tiers, more vermin.
+- **Metamorphosis for every bug** (owner, 2026-09-16): §8.8's Pupate is meant to become a
+  roster-wide mechanic, not a Caterpillar-only one. Open questions: what each bug's next stage
+  is (grub → beetle? roly poly → …?), whether stages chain, and whether the Cocoon is the only
+  place it happens. The engine is already generic (`PUPATION` is a table); the design is not
+  decided.
 
 ---
 
