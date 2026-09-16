@@ -19,6 +19,11 @@
     "scene": {
       "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit storybook garden of flowers, moss and pebbles; with depth it turns into grim painted realism: wet black soil, tangled roots, thorns, cobwebs and shadow where faint amber eyes watch. Heavy film grain on the far half only, vignette, no characters, no text.",
       "suffix": ""
+    },
+    "thicket-object": {
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The subject is an OBJECT from a dark thicket, not a creature: dirty, damp, wrong. Centered, whole object in frame, no text, no border.",
+      "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
+      "key": "green"
     }
   },
   "assets": [
@@ -228,6 +233,27 @@
       "reference": ["style-anchor-garden", "owner-cat"],
       "prompt": "The same real ginger tabby cat as the reference photo (orange tabby stripes, white chin and bib, pink nose) as a cyborg mid-pounce: front paws stretched out, one glowing brass-rimmed lens eye wide, tail straight out behind, fierce and adorable.",
       "size": "1024x1024"
+    },
+    {
+      "id": "card-cobweb",
+      "style": "thicket-object",
+      "reference": "style-anchor-thicket",
+      "prompt": "A tangled clump of old cobweb: thick grey silk strands wound into a sticky knot with a few loose strands trailing, dust, dew and the dry husks of two dead flies caught in it.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "bg-shop",
+      "style": "scene",
+      "prompt": "The Snail's market stall at the side of a sunlit garden path, seen head-on from a bug's height: a small rickety wooden stall with a striped cloth awning and paper lanterns, shelves of jars, brass gears and glass lenses behind, and an EMPTY wooden counter running across the lower third of the picture with nothing on it. Flowers and moss around the stall; past it the path runs away into a dark thicket where faint amber eyes watch. No characters, no snail, no text.",
+      "size": "1536x1024",
+      "background": "opaque"
+    },
+    {
+      "id": "bg-cocoon",
+      "style": "scene",
+      "prompt": "The inside of a sheltered fold of a huge sunlit leaf, seen from a bug's height: a half-spun cocoon of pale gold silk glowing with warm light hangs at the centre, silk threads and dew drops around it, soft moss below. Through the opening of the leaf the garden fades into a dark thicket where faint amber eyes watch. Hushed, warm, safe. No characters, no text.",
+      "size": "1536x1024",
+      "background": "opaque"
     }
   ]
 }

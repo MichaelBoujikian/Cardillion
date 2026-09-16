@@ -118,6 +118,29 @@ events can still animate after `combat` is nulled; `returnToMap()` in `run.ts` i
 node hands control back and where deferred content (Greeble-ambushed Shop/Cocoon, the
 Snail's cart) is intercepted — route new "after this node" behaviour through it.
 
+## Overnight run 2026-09-15 → 16 (owner asleep; agent working unattended)
+
+The owner asked for, in this order: painted Shop and Cocoon scenes; a batch of new mechanics
+from his list ("rough ideas, implement them to see how they do"); then M5; then bug testing.
+Each item is one commit with spec text and tests; this list is the checkpoint — **update the
+status here in the same commit as the work**, so a fresh session resumes from the right line.
+
+| #   | Item                                                                                       | Status                                                                                                                           |
+| --- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| A   | Art: `bg-shop`, `bg-cocoon`, `card-cobweb` generated; contact sheet sent to owner          | done — **image files uncommitted pending his approval** (they are on disk in `assets/art` and `public/art`; do not `git add -A`) |
+| B   | Cocoon choices: Rest / Forage / Pupate (metamorphosis, spec §8.8)                          | todo                                                                                                                             |
+| C   | Cocoon scene on `bg-cocoon`; Shop scene on `bg-shop`                                       | todo                                                                                                                             |
+| D   | Habitats on fight nodes (spec §8.9): map gen, combat mods, map + HUD display               | todo                                                                                                                             |
+| E   | New cards: Molt, Worm Swarm, Stink Cloud, Scavenge, Chrysalis (+ art batch, contact sheet) | todo                                                                                                                             |
+| F   | Snail pheromone trail on the map (spec §8.6)                                               | todo                                                                                                                             |
+| G   | Burrow (delayed damage) — only if time allows                                              | todo                                                                                                                             |
+| H   | M5: save/resume, settings, reduce motion (spec §10)                                        | todo                                                                                                                             |
+| I   | Bug testing: engine fuzz over many seeds, browser smoke of every screen, fixes             | todo                                                                                                                             |
+
+Ideas from his list deliberately **not** built, and why: collectable cyborg parts (a whole item
+system; he offered "conditional evolution" as the alternative and Pupate is that); card
+lifespan (punishes the deck for existing; Molt carries the flavour without the bookkeeping).
+
 ## Known issues and loose ends
 
 - **One unexplained one-off:** on the very first drag of one session, three cards were spent
