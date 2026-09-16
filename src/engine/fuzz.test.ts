@@ -14,6 +14,8 @@ import type { CardDef, CombatState, EnemyInstance } from './types';
 
 const RUNS = 120;
 const MAX_STEPS = 4000;
+/** Whole runs are slow on CI runners; well above the default 5 s. */
+const BUDGET_MS = 60_000;
 
 type Policy = 'random' | 'greedy';
 
@@ -229,31 +231,43 @@ function playRun(seed: string, policy: Policy = 'random'): { run: RunState; acti
 }
 
 describe('fuzz: whole runs under a random policy', () => {
-  it('every run ends in victory or death with the invariants intact', () => {
-    for (let i = 0; i < RUNS; i++) {
-      const { run } = playRun(`fuzz-${i}`);
-      expect(['victory', 'death']).toContain(run.phase);
-    }
-  });
+  it(
+    'every run ends in victory or death with the invariants intact',
+    () => {
+      for (let i = 0; i < RUNS; i++) {
+        const { run } = playRun(`fuzz-${i}`);
+        expect(['victory', 'death']).toContain(run.phase);
+      }
+    },
+    BUDGET_MS,
+  );
 
-  it('a greedy player wins some runs and loses some (a balance smoke test, not a target)', () => {
-    let victories = 0;
-    for (let i = 0; i < RUNS; i++) {
-      const { run } = playRun(`greedy-${i}`, 'greedy');
-      expect(['victory', 'death']).toContain(run.phase);
-      if (run.phase === 'victory') victories++;
-    }
-    expect(victories).toBeGreaterThan(0);
-    expect(victories).toBeLessThan(RUNS);
-  });
+  it(
+    'a greedy player wins some runs and loses some (a balance smoke test, not a target)',
+    () => {
+      let victories = 0;
+      for (let i = 0; i < RUNS; i++) {
+        const { run } = playRun(`greedy-${i}`, 'greedy');
+        expect(['victory', 'death']).toContain(run.phase);
+        if (run.phase === 'victory') victories++;
+      }
+      expect(victories).toBeGreaterThan(0);
+      expect(victories).toBeLessThan(RUNS);
+    },
+    BUDGET_MS,
+  );
 
-  it('is deterministic: the same seed and actions replay to the identical final state', () => {
-    for (let i = 0; i < 10; i++) {
-      const seed = `replay-${i}`;
-      const first = playRun(seed);
-      let run = createRun(seed);
-      for (const action of first.actions) run = applyRunAction(run, action).run;
-      expect(run).toEqual(first.run);
-    }
-  });
+  it(
+    'is deterministic: the same seed and actions replay to the identical final state',
+    () => {
+      for (let i = 0; i < 10; i++) {
+        const seed = `replay-${i}`;
+        const first = playRun(seed);
+        let run = createRun(seed);
+        for (const action of first.actions) run = applyRunAction(run, action).run;
+        expect(run).toEqual(first.run);
+      }
+    },
+    BUDGET_MS,
+  );
 });
