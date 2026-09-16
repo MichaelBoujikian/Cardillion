@@ -24,7 +24,7 @@ directs, agents build; he judges results by eye and approves art in batches.
 | M2 first playable fight | done                                                                  |
 | M3 run loop             | done — title → map → fights/rewards/shops/cocoons → the Bear → result |
 | M4 content              | done — 14 cards, titled unlocks, upgrades, Wormillionaire, markers    |
-| **M5 systems**          | **next** — save/resume, seed entry, settings, reduce-motion (§10)     |
+| M5 systems              | done — autosave slot + Continue, settings panel, reduce motion        |
 | M6 art                  | effectively done early: all 31 assets generated and approved          |
 
 87 tests pass; `npm run check` is green; CI and the Pages deploy are green.
@@ -134,7 +134,7 @@ status here in the same commit as the work**, so a fresh session resumes from th
 | E   | New cards: Molt, Worm Swarm, Stink Cloud, Scavenge, Chrysalis (+ art batch, contact sheet) | done — card art also uncommitted pending approval (second contact sheet sent)                                                    |
 | F   | Snail pheromone trail on the map (spec §8.6)                                               | done                                                                                                                             |
 | G   | Burrow (delayed damage) — only if time allows                                              | done — art uncommitted pending approval                                                                                          |
-| H   | M5: save/resume, settings, reduce motion (spec §10)                                        | todo                                                                                                                             |
+| H   | M5: save/resume, settings, reduce motion (spec §10)                                        | done                                                                                                                             |
 | I   | Bug testing: engine fuzz over many seeds, browser smoke of every screen, fixes             | todo                                                                                                                             |
 
 Ideas from his list deliberately **not** built, and why: collectable cyborg parts (a whole item

@@ -38,7 +38,13 @@ thing CI runs.
   owners; ambushes the node it sits on) and the wandering Snail (a 20%-off cart when you meet
   it off its stall).
 - **Art**: all 31 assets generated and approved (`assets/art/`), including the family cards' own art.
-- **Next: M5 systems** — save/resume, seeds on the title, settings, reduce-motion.
+- **M5 systems: done.** One autosave slot (Continue on the title, deleted when a run ends),
+  a settings panel (⚙ or Esc) with screen shake, reduce motion, fullscreen, the seed with a
+  copy button, abandon run and reset.
+- **Also new (2026-09-15):** painted Shop and Cocoon scenes; Cocoons offer Rest, Forage or
+  Pupate (Caterpillar → Chrysalis → Butterfly); habitats under half the fights favour a bug
+  family; six new cards (Molt, Scavenge, Worm Swarm, Stink Cloud, Burrow, Chrysalis); the
+  Snail leaves a pheromone trail.
 
 ## Licence
 

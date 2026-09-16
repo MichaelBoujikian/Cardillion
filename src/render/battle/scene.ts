@@ -6,7 +6,7 @@
 import { enemyDef } from '@content/enemies';
 import type { EnemyInstance } from '@engine/types';
 import * as THREE from 'three';
-import { makePost, type Post } from './post';
+import { GRAIN_DEFAULT, makePost, type Post } from './post';
 import {
   PLACEHOLDER_EYES,
   findGlowPoints,
@@ -78,6 +78,8 @@ export class BattleScene {
   private ashSeed!: Float32Array;
   private farEyes: { grp: THREE.Group; seed: number }[] = [];
   private shakeAmt = 0;
+  /** Settings (spec §10): which movement the scene is allowed. */
+  private motion = { shake: true, grain: true, flicker: true };
   private readonly basePos = new THREE.Vector3(0, 4.6, 7.2);
   private readonly lookAt = new THREE.Vector3(0, 0.7, -3.5);
   private w = 1;
@@ -712,7 +714,21 @@ export class BattleScene {
   }
 
   shake(strength: number): void {
-    this.shakeAmt = Math.max(this.shakeAmt, strength);
+    if (this.motion.shake) this.shakeAmt = Math.max(this.shakeAmt, strength);
+  }
+
+  /**
+   * Apply the settings (spec §10). Reduce motion: no grain, no shake, no shimmer or blinking;
+   * the vignette and the depth grade stay. Screen shake can also be off on its own.
+   */
+  setMotion(opts: { screenShake: boolean; reduceMotion: boolean }): void {
+    this.motion = {
+      shake: opts.screenShake && !opts.reduceMotion,
+      grain: !opts.reduceMotion,
+      flicker: !opts.reduceMotion,
+    };
+    this.post.setGrain(this.motion.grain ? GRAIN_DEFAULT : 0);
+    if (!this.motion.shake) this.shakeAmt = 0;
   }
 
   // ---------- frame ----------
@@ -727,8 +743,10 @@ export class BattleScene {
   }
 
   update(dt: number, t: number): void {
-    this.warm.intensity =
-      28 + Math.sin(t * 9.1) * 1.6 + Math.sin(t * 23.7) * 1.1 + Math.sin(t * 2.3) * 2;
+    const flicker = this.motion.flicker;
+    this.warm.intensity = flicker
+      ? 28 + Math.sin(t * 9.1) * 1.6 + Math.sin(t * 23.7) * 1.1 + Math.sin(t * 2.3) * 2
+      : 28;
     const mp = this.motes.geometry.getAttribute('position') as THREE.BufferAttribute;
     for (let i = 0; i < mp.count; i++) {
       const s = this.moteSeed[i] as number;
@@ -746,7 +764,7 @@ export class BattleScene {
     }
     ap.needsUpdate = true;
     for (const { grp, seed } of this.farEyes)
-      grp.scale.setScalar(Math.sin(t * 0.7 + seed) > 0.96 ? 0 : 1);
+      grp.scale.setScalar(flicker && Math.sin(t * 0.7 + seed) > 0.96 ? 0 : 1);
 
     let i = 0;
     for (const s of this.sprites.values()) {
@@ -760,7 +778,7 @@ export class BattleScene {
       if (s.unseen) {
         const target = s.revealTarget;
         s.reveal += (target - s.reveal) * Math.min(1, dt * 6);
-        const shimmer = 0.06 + Math.sin(t * 13 + i) * 0.03;
+        const shimmer = flicker ? 0.06 + Math.sin(t * 13 + i) * 0.03 : 0.08;
         this.applyReveal(s);
         if (s.reveal < 0.95) s.plane.material.opacity = Math.max(s.plane.material.opacity, shimmer);
       }

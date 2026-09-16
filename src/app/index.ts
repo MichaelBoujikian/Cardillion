@@ -8,9 +8,12 @@ import { ENEMIES } from '@content/enemies';
 import type { RunOptions } from '@engine/run';
 import { BattleScene } from '@render/battle/scene';
 import { loadArt } from '@render/battle/textures';
+import { clearSave, readSave, writeSave } from '@save/save';
+import { DEFAULT_SETTINGS, readSettings, writeSettings, type Settings } from '@save/settings';
+import { MemoryStore, type KeyValueStore } from '@save/store';
 import { BattleUI } from '@ui/battle-ui';
 import { CardFaces } from '@ui/card-faces';
-import { RunScreens } from '@ui/run-screens';
+import { RunScreens, type TitleOptions } from '@ui/run-screens';
 import * as THREE from 'three';
 import { RunController } from './run-controller';
 
@@ -38,6 +41,23 @@ function randomSeed(): string {
   return Math.floor(Math.random() * 0xffffffff).toString(36);
 }
 
+/** localStorage when the browser allows it; otherwise the game runs with a session-only store. */
+function storage(): KeyValueStore {
+  try {
+    const probe = '__cardillion_probe__';
+    window.localStorage.setItem(probe, '1');
+    window.localStorage.removeItem(probe);
+    return window.localStorage;
+  } catch {
+    return new MemoryStore();
+  }
+}
+
+const NOTICES = {
+  outdated: 'A save from an older version was found and set aside.',
+  corrupt: 'A saved run could not be read and was set aside.',
+} as const;
+
 export async function boot(root: HTMLElement): Promise<void> {
   const artIds = [
     ...Object.values(CARDS).flatMap((c) => (c.upgradedArt ? [c.art, c.upgradedArt] : [c.art])),
@@ -59,6 +79,23 @@ export async function boot(root: HTMLElement): Promise<void> {
     onHold: (uid) => controller.hold(uid),
   });
 
+  // Persistence (spec §10): one autosave slot and the settings, both in localStorage.
+  const store = storage();
+  let settings: Settings = readSettings(store);
+  const applySettings = () => {
+    scene.setMotion(settings);
+    battle.setReduceMotion(settings.reduceMotion);
+  };
+  /** The title, with CONTINUE when a valid save exists and a notice when one was set aside. */
+  // (`screens` is assigned just below; both closures run only after boot has finished.)
+  const showTitle = (seedHint: string | null) => {
+    const saved = readSave(store);
+    const opts: TitleOptions = { canContinue: saved.ok };
+    if (!saved.ok && saved.reason !== 'none') opts.notice = NOTICES[saved.reason];
+    battle.hide();
+    screens.showTitle(seedHint, opts);
+  };
+
   const screens = new RunScreens(root, faces, art, {
     onNewRun(seed) {
       const s = seed ?? randomSeed();
@@ -78,15 +115,46 @@ export async function boot(root: HTMLElement): Promise<void> {
     onForage: () => controller.dispatch({ type: 'forage' }),
     onPupate: (uid) => controller.dispatch({ type: 'pupate', uid }),
     onLeave: () => controller.dispatch({ type: 'leave' }),
-    onBackToTitle() {
-      battle.hide();
-      screens.showTitle(null);
+    onBackToTitle: () => showTitle(null),
+    onContinue() {
+      const saved = readSave(store);
+      if (saved.ok) controller.resume(saved.run);
+      else showTitle(null);
+    },
+    onOpenSettings() {
+      const run = controller.current;
+      const inRun = run !== null && run.phase !== 'victory' && run.phase !== 'death';
+      screens.showSettings({ settings, seed: run?.seed ?? null, inRun });
+    },
+    onSettingsChanged(next) {
+      settings = next;
+      writeSettings(store, settings);
+      applySettings();
+    },
+    onFullscreen() {
+      if (document.fullscreenElement) void document.exitFullscreen();
+      else void document.documentElement.requestFullscreen?.();
+    },
+    onAbandon() {
+      controller.abandon();
+      showTitle(null);
+    },
+    onResetSave() {
+      clearSave(store);
+      settings = { ...DEFAULT_SETTINGS };
+      writeSettings(store, settings);
+      applySettings();
+      controller.abandon();
+      showTitle(null);
     },
   });
 
-  controller = new RunController(scene, battle, screens);
-  battle.hide();
-  screens.showTitle(new URLSearchParams(window.location.search).get('seed'));
+  controller = new RunController(scene, battle, screens, {
+    write: (run) => writeSave(store, run),
+    clear: () => clearSave(store),
+  });
+  applySettings();
+  showTitle(new URLSearchParams(window.location.search).get('seed'));
   if (import.meta.env.DEV) installDevHooks(controller, screens);
 
   // Frame loop: the scene always renders (it is the backdrop of every screen).

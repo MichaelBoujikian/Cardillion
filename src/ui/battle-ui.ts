@@ -62,7 +62,7 @@ const CSS = /* css */ `
 .crumbs b { color:#ffd27a; }
 .habitat { position:absolute; left:26px; top:52px; font-size:13px; color:#9be37a; text-shadow: 0 1px 2px #000; opacity:.9; }
 .habitat b { color:#c6ff9e; letter-spacing:.06em; }
-.topright { position:absolute; top:18px; right:26px; text-align:right; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; line-height:1.7; }
+.topright { position:absolute; top:18px; right:70px; text-align:right; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; line-height:1.7; }
 .topright b { opacity:1; }
 .turn { position:absolute; right:26px; bottom:34px; pointer-events:auto; padding:10px 22px; border-radius:8px;
   background: linear-gradient(#6b4a2a, #3a2412); color:#f3e7c9; border:2px solid #b8862b; font: 16px Georgia, serif; letter-spacing:.06em; cursor:pointer;
@@ -183,6 +183,7 @@ export class BattleUI {
   >();
   private selected: string | null = null;
   private state: CombatState | null = null;
+  private reduceMotion = false;
   private readonly q: (sel: string) => HTMLElement;
 
   constructor(root: HTMLElement, faces: CardFaces, scene: BattleScene, handlers: UIHandlers) {
@@ -599,8 +600,14 @@ export class BattleUI {
   }
 
   /** Screen feedback for a hit on the player: claws and a red veil, or a shell flash if fully blocked. */
+  /** Reduce motion (spec §10): the claw-mark strobe is skipped; the red pulse and HP feedback stay. */
+  setReduceMotion(on: boolean): void {
+    this.reduceMotion = on;
+  }
+
   playerHit(blockedOnly: boolean): void {
-    for (const sel of blockedOnly ? ['.shell'] : ['.claw', '.redveil']) {
+    const hit = this.reduceMotion ? ['.redveil'] : ['.claw', '.redveil'];
+    for (const sel of blockedOnly ? ['.shell'] : hit) {
       const el = this.q(sel);
       el.classList.remove('on');
       void el.offsetWidth;

@@ -73,7 +73,11 @@ export interface Post {
   composer: EffectComposer;
   setSize(w: number, h: number): void;
   setTime(t: number): void;
+  /** Film grain amount; 0 turns it off (Reduce motion). The vignette always stays. */
+  setGrain(amount: number): void;
 }
+
+export const GRAIN_DEFAULT = 0.06;
 
 export function makePost(
   renderer: THREE.WebGLRenderer,
@@ -99,6 +103,9 @@ export function makePost(
     },
     setTime(t) {
       uniforms.time.value = t;
+    },
+    setGrain(amount) {
+      uniforms.grain.value = amount;
     },
   };
 }

@@ -9,6 +9,7 @@ import { IllegalAction, canPlay } from '@engine/combat';
 import {
   applyRunAction,
   createRun,
+  currentNode,
   IllegalRunAction,
   type RunAction,
   type RunEvent,
@@ -31,6 +32,12 @@ const REFUSALS: Record<string, string> = {
   unseen: 'Only a Cat can strike the Unseen.',
 };
 
+/** Where the run is persisted after every action (spec §10). The app passes the save slot. */
+export interface RunSlot {
+  write(run: RunState): void;
+  clear(): void;
+}
+
 export class RunController {
   private run: RunState | null = null;
   private busy = false;
@@ -44,6 +51,7 @@ export class RunController {
     private readonly scene: BattleScene,
     private readonly battle: BattleUI,
     private readonly screens: RunScreens,
+    private readonly slot: RunSlot,
   ) {}
 
   get current(): RunState | null {
@@ -56,10 +64,44 @@ export class RunController {
 
   newRun(seed: string, options: RunOptions = {}): void {
     this.run = createRun(seed, options);
+    this.slot.write(this.run);
     this.awaitingContinue = false;
+    this.notes = [];
     this.battle.hide();
     this.battle.setSeed(seed);
     this.render();
+  }
+
+  /** Continue a saved run exactly where it was, mid-fight included (spec §10). */
+  resume(run: RunState): void {
+    this.run = run;
+    this.awaitingContinue = false;
+    this.notes = [];
+    this.battle.hide();
+    this.battle.setSeed(run.seed);
+    if (run.phase === 'fight' && run.combat) {
+      const node = currentNode(run);
+      this.screens.hideAll();
+      this.scene.clearEnemies();
+      this.scene.setEnemies(run.combat.enemies);
+      this.battle.hideOverlay();
+      this.battle.setHabitat(node.habitat ? HABITATS[node.habitat] : null);
+      this.battle.show();
+      this.battle.render(run.combat);
+      this.battle.setInputEnabled(run.combat.phase === 'player');
+      return;
+    }
+    this.render();
+  }
+
+  /** Abandon the run from Settings: the save is deleted and the run is over (spec §10). */
+  abandon(): void {
+    this.slot.clear();
+    this.run = null;
+    this.awaitingContinue = false;
+    this.notes = [];
+    this.battle.hide();
+    this.screens.hideAll();
   }
 
   /** Play a card from the battle UI; refusals are shown, never thrown. */
@@ -119,6 +161,8 @@ export class RunController {
     }
     const prev = this.run;
     this.run = step.run;
+    // The engine state is authoritative, so it is saved now, before the animation plays.
+    this.slot.write(step.run);
     // Busy from this instant, not from when the animation task starts: two handlers firing for
     // one input event must not both slip through before the queued playback sets the flag.
     this.busy = true;

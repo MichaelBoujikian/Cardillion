@@ -14,10 +14,21 @@ import {
   type RunState,
 } from '@engine/run';
 import type { ArtCache } from '@render/battle/textures';
+import type { Settings } from '@save/settings';
 import type { CardFaces } from './card-faces';
 
 export interface ScreenHandlers {
   onNewRun(seed: string | null): void;
+  onContinue(): void;
+  /** The gear (or Esc): the app decides what the panel shows and calls showSettings. */
+  onOpenSettings(): void;
+  /** A toggle in the settings panel changed. */
+  onSettingsChanged(settings: Settings): void;
+  onFullscreen(): void;
+  /** Abandon the current run (confirmed in the panel). */
+  onAbandon(): void;
+  /** Reset save data and settings (confirmed in the panel). */
+  onResetSave(): void;
   onTravel(nodeId: string): void;
   onTakeReward(card: string | null): void;
   onBuy(index: number): void;
@@ -30,6 +41,20 @@ export interface ScreenHandlers {
   onPupate(uid: string): void;
   onLeave(): void;
   onBackToTitle(): void;
+}
+
+export interface TitleOptions {
+  /** A valid save exists: show CONTINUE first. */
+  canContinue: boolean;
+  /** One line about a discarded save, shown once. */
+  notice?: string;
+}
+
+/** What the settings panel shows; `seed` and `inRun` are null/false on the title. */
+export interface SettingsView {
+  settings: Settings;
+  seed: string | null;
+  inRun: boolean;
 }
 
 const GLYPH: Record<string, string> = {
@@ -58,6 +83,28 @@ const CSS = /* css */ `
 .btn.ghost { background:transparent; border-color:rgba(184,134,43,.5); }
 .btn:disabled { opacity:.45; cursor:not-allowed; filter:none; }
 .veil { position:absolute; inset:0; background: rgba(6,5,10,.6); }
+
+/* gear + settings (spec §10) */
+.gear { position:absolute; right:14px; top:12px; width:34px; height:34px; border-radius:50%; border:2px solid rgba(184,134,43,.7); background:rgba(10,8,14,.7); color:#ffd27a; font-size:18px; cursor:pointer; pointer-events:auto; display:grid; place-items:center; z-index:5; }
+.gear:hover { filter:brightness(1.2); border-color:#ffd27a; }
+.settings { position:absolute; inset:0; display:none; place-items:center; background:rgba(6,5,10,.7); pointer-events:auto; z-index:6; }
+.settings.on { display:grid; }
+.settings .panel { position:static; transform:none; min-width:420px; max-width:520px; text-align:left; }
+.settings h1 { font-size:26px; text-align:center; }
+.settings .row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid rgba(184,134,43,.25); }
+.settings .row:last-of-type { border-bottom:none; }
+.settings .row b { display:block; font-weight:600; }
+.settings .row small { display:block; opacity:.75; font-size:12px; margin-top:2px; }
+.settings .row .btn { margin:0; padding:6px 14px; font-size:14px; white-space:nowrap; }
+.settings .row .btn.danger { border-color:#b8322b; color:#ff8a7a; }
+.settings code { color:#ffd27a; }
+.settings .foot { text-align:center; margin-top:14px; }
+.toggle { width:50px; height:26px; border-radius:13px; border:2px solid #b8862b; background:#3a3020; position:relative; cursor:pointer; flex:none; }
+.toggle::after { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#f3e7c9; transition:left .15s ease; }
+.toggle.on { background:#6b4a2a; }
+.toggle.on::after { left:26px; background:#ffd27a; }
+.title-screen .notice { color:#ff8a7a; font-size:14px; }
+.topright-room { padding-right:44px; }
 
 /* title */
 .title-screen .panel { background: transparent; border:none; box-shadow:none; }
@@ -175,6 +222,7 @@ export class RunScreens {
   private readonly h: ScreenHandlers;
   private readonly screens: Record<string, HTMLElement> = {};
   private readonly deckList: HTMLElement;
+  private readonly settingsEl: HTMLElement;
 
   constructor(root: HTMLElement, faces: CardFaces, art: ArtCache, handlers: ScreenHandlers) {
     this.faces = faces;
@@ -195,6 +243,84 @@ export class RunScreens {
     this.deckList = document.createElement('div');
     this.deckList.className = 'deck-list';
     this.el.appendChild(this.deckList);
+    this.settingsEl = document.createElement('div');
+    this.settingsEl.className = 'settings';
+    this.el.appendChild(this.settingsEl);
+    const gear = document.createElement('button');
+    gear.className = 'gear';
+    gear.title = 'Settings (Esc)';
+    gear.textContent = '⚙';
+    gear.addEventListener('click', () => this.h.onOpenSettings());
+    this.el.appendChild(gear);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.settingsEl.classList.contains('on')) this.hideSettings();
+        else this.h.onOpenSettings();
+      }
+    });
+  }
+
+  // ---------- settings (spec §10) ----------
+
+  showSettings(view: SettingsView): void {
+    const { settings, seed, inRun } = view;
+    const toggle = (key: keyof Settings, on: boolean) =>
+      `<button class="toggle${on ? ' on' : ''}" data-key="${key}" role="switch" aria-checked="${on}"></button>`;
+    this.settingsEl.innerHTML = `
+      <div class="panel">
+        <h1>SETTINGS</h1>
+        <div class="row"><div><b>Screen shake</b><small>The camera jolts when you take a hit.</small></div>${toggle('screenShake', settings.screenShake)}</div>
+        <div class="row"><div><b>Reduce motion &amp; flashing</b><small>No film grain, shake, shimmer or flicker. The vignette stays.</small></div>${toggle('reduceMotion', settings.reduceMotion)}</div>
+        <div class="row"><div><b>Fullscreen</b><small>Toggle the browser's fullscreen mode.</small></div><button class="btn ghost fullscreen">TOGGLE</button></div>
+        ${
+          seed
+            ? `<div class="row"><div><b>Run seed</b><small><code>${seed}</code> — same seed, same run.</small></div><button class="btn ghost copy">COPY</button></div>`
+            : ''
+        }
+        ${
+          inRun
+            ? `<div class="row"><div><b>Abandon run</b><small>Deletes the save. Nothing carries over.</small></div><button class="btn ghost danger abandon">ABANDON</button></div>`
+            : ''
+        }
+        <div class="row"><div><b>Reset save data</b><small>Deletes the saved run and these settings.</small></div><button class="btn ghost danger reset">RESET</button></div>
+        <div class="foot"><button class="btn close">CLOSE</button></div>
+      </div>`;
+    this.settingsEl.classList.add('on');
+    const q = (sel: string) => this.settingsEl.querySelector<HTMLElement>(sel);
+    for (const t of this.settingsEl.querySelectorAll<HTMLElement>('.toggle')) {
+      t.addEventListener('click', () => {
+        const key = t.dataset['key'] as keyof Settings;
+        const next = { ...settings, [key]: !settings[key] };
+        this.h.onSettingsChanged(next);
+        this.showSettings({ ...view, settings: next });
+      });
+    }
+    q('.fullscreen')?.addEventListener('click', () => this.h.onFullscreen());
+    q('.copy')?.addEventListener('click', () => {
+      if (seed) void navigator.clipboard?.writeText(seed);
+      const b = q('.copy');
+      if (b) b.textContent = 'COPIED';
+    });
+    const confirm = (btn: HTMLElement | null, label: string, act: () => void) => {
+      if (!btn) return;
+      let armed = false;
+      btn.addEventListener('click', () => {
+        if (!armed) {
+          armed = true;
+          btn.textContent = `${label}?`;
+          return;
+        }
+        this.hideSettings();
+        act();
+      });
+    };
+    confirm(q('.abandon'), 'REALLY ABANDON', () => this.h.onAbandon());
+    confirm(q('.reset'), 'REALLY RESET', () => this.h.onResetSave());
+    q('.close')?.addEventListener('click', () => this.hideSettings());
+  }
+
+  hideSettings(): void {
+    this.settingsEl.classList.remove('on');
   }
 
   hideAll(): void {
@@ -212,20 +338,23 @@ export class RunScreens {
 
   // ---------- title ----------
 
-  showTitle(seedHint: string | null): void {
+  showTitle(seedHint: string | null, opts: TitleOptions = { canContinue: false }): void {
     const s = this.show(
       'title',
       `<div class="veil"></div>
        <div class="panel">
          <h1>CARDILLION</h1>
          <h2>cyborg garden bugs versus the things in the thicket</h2>
+         ${opts.notice ? `<p class="notice">${opts.notice}</p>` : ''}
+         ${opts.canContinue ? '<p><button class="btn continue">CONTINUE</button></p>' : ''}
          <p><input class="seed" placeholder="seed (optional)" value="${seedHint ?? ''}" spellcheck="false"></p>
-         <button class="btn new">NEW RUN</button>
+         <button class="btn${opts.canContinue ? ' ghost' : ''} new">NEW RUN</button>
        </div>`,
     );
     const input = s.querySelector<HTMLInputElement>('.seed') as HTMLInputElement;
     const go = () => this.h.onNewRun(input.value.trim() || null);
     s.querySelector('.new')?.addEventListener('click', go);
+    s.querySelector('.continue')?.addEventListener('click', () => this.h.onContinue());
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') go();
     });
@@ -338,7 +467,7 @@ export class RunScreens {
        <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown · <span style="color:#9be37a">⛰ ❀ ☀ ◐</span> habitat, smelled a step ahead${
          run.snailNode ? ' · 🐌 the Snail wanders' : ''
        }${seesGreeble ? ' · 👀 the Greeble' : ''}</div>
-       <div class="map-title">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,
+       <div class="map-title topright-room">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,
     );
     for (const g of s.querySelectorAll<SVGGElement>('.node.reachable')) {
       g.addEventListener('click', () => this.h.onTravel(g.dataset['id'] as string));
@@ -468,7 +597,7 @@ export class RunScreens {
        <div class="shade"></div>
        ${snail ? `<img class="snail" src="${snail.src}" alt="">` : ''}
        <div class="stop-hud">❤ <b>${run.hp} / ${run.maxHp}</b><br>🍞 <b>${run.crumbs}</b> crumbs</div>
-       <div class="stop-title"><h1>${title}</h1><h2>${subtitle}</h2></div>
+       <div class="stop-title topright-room"><h1>${title}</h1><h2>${subtitle}</h2></div>
        <div class="counter">${shop.cards
          .map((c, i) => {
            const poor = !c.sold && !canAfford(c.price);
@@ -516,7 +645,7 @@ export class RunScreens {
       `${bg ? `<img class="bg" src="${bg.src}" alt="">` : '<div class="bg-fallback"></div>'}
        <div class="shade"></div>
        <div class="stop-hud">❤ <b>${run.hp} / ${run.maxHp}</b><br>🍞 <b>${run.crumbs}</b> crumbs</div>
-       <div class="stop-title"><h1>❂ COCOON</h1><h2>Warm silk in a fold of leaf. The vermin can't find you here — for a while.</h2></div>
+       <div class="stop-title topright-room"><h1>❂ COCOON</h1><h2>Warm silk in a fold of leaf. The vermin can't find you here — for a while.</h2></div>
        <div class="choices">
          <button class="choice rest"><b>REST</b><small>Curl up in the silk. Heal ${heal} (30% of ${run.maxHp}).</small></button>
          <button class="choice forage"><b>FORAGE</b><small>Root through the leaf litter for ${FORAGE_CRUMBS[0]}–${FORAGE_CRUMBS[1]} crumbs.</small></button>
