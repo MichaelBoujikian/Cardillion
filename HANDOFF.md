@@ -1,7 +1,8 @@
 # Handoff — Cardillion
 
 For an agent picking this project up cold. Read this, then `CLAUDE.md` (the standing rules),
-then the `spec.md` section for whatever you build next. Written 2026-09-15 at commit `e9b0540`.
+then the `spec.md` section for whatever you build next. Written 2026-09-15; updated 2026-09-16
+after the overnight run (see that section) at commit `44a6cfd`.
 
 ## What this is
 
@@ -25,9 +26,9 @@ directs, agents build; he judges results by eye and approves art in batches.
 | M3 run loop             | done — title → map → fights/rewards/shops/cocoons → the Bear → result |
 | M4 content              | done — 14 cards, titled unlocks, upgrades, Wormillionaire, markers    |
 | M5 systems              | done — autosave slot + Continue, settings panel, reduce motion        |
-| M6 art                  | effectively done early: all 31 assets generated and approved          |
+| M6 art                  | 31 assets approved; 9 more generated overnight, awaiting approval     |
 
-87 tests pass; `npm run check` is green; CI and the Pages deploy are green.
+123 tests pass; `npm run check` is green; CI and the Pages deploy are green.
 
 Nothing has been balanced. Every number in the spec is a first guess marked _(tuning)_. The
 owner has played the live link but has not yet given balance notes.
@@ -42,19 +43,21 @@ from mid. One recommendation, not applied: Bear 130 → 95 HP and Maul 18 → 14
 with the same test. A stronger bot that plans Block against Maul might also change the picture;
 the fuzz policy is deliberately naive.
 
-## What M5 needs (spec §10)
+## What's next (the morning after the overnight run)
 
-- Single autosave slot in `localStorage` (`cardillion.save.v1`), written after every engine
-  action, deleted on death/victory/abandon. `RunState` is already plain JSON with every RNG
-  stream's state inside it, so a save is `JSON.stringify(run)` — the work is in `src/save`
-  (empty layer, see its README), a **Continue** button on the title, and versioning so an old
-  save is discarded with a notice rather than crashing.
-- Seed entry already exists on the title screen (`?seed=` also works); show the seed in
-  settings with a copy button.
-- Settings (`cardillion.settings.v1`): screen shake, reduce motion/flashing (disable grain,
-  shake, Greeble shimmer; keep vignette), fullscreen, show seed, abandon run, reset save.
-- Build it engine-first like everything else: the save adapter and settings store are pure and
-  testable; the UI is thin.
+1. **Art approval.** Nine images are on disk and uncommitted: `bg-shop`, `bg-cocoon`,
+   `card-cobweb`, `card-molt`, `card-scavenge`, `card-worm-swarm`, `card-stink-cloud`,
+   `card-chrysalis`, `card-burrow` (three contact sheets were sent to the owner; they are in
+   `art/out/contact-2026-09-15-*.png`). On a yes: `git add assets/art/<id>.png
+public/art/<id>.webp` for the approved ids and commit. On a no: edit the prompt in
+   `art/manifest.json`, `npm run art -- --only <id> --force`, `npm run art:optimize`, new sheet.
+   Until then the deployed build 404s on them and falls back to placeholders / gradients.
+2. **The owner's verdict on the new mechanics** (spec §5.4 second wave, §8.6 trail, §8.8, §8.9).
+   They were built "to see how they do"; cut or tune freely. Every one is one commit and one
+   spec section, so reverting is cheap.
+3. **Balance.** See the data above. Ask before changing numbers; then change spec first.
+4. Ideas from his list not built: collectable cyborg parts, card lifespan (reasons in the
+   overnight table). Roadmap in spec §14 is otherwise unchanged.
 
 ## How to work here (the parts CLAUDE.md doesn't say)
 
@@ -87,8 +90,10 @@ The browser JS tool times out at 45 s — poll long runs with waits. The console
 stale errors from old HMR loads (`glow before initialization`, `faces.face`) — ignore them; a
 fresh navigation clears them.
 
-Useful seeds: `g52` (trail 0 is fight, fight, shop, cocoon; a strong deck wins it in ~2 min of
-autoplay), `s0` spider, `s5` scorpion, `s3` possum, `garden1` two rats plus a Greeble.
+Useful seeds: `g52` (trail 0 is fight, fight, shop, cocoon; `t0-1` is Damp Soil; a strong deck
+wins it in ~2 min of autoplay), `s0` spider, `s5` scorpion + Greeble, `s3` possum on a Flower
+Patch, `garden1` two rats plus a Greeble. Deck overrides for the new cards:
+`?deck=worm-swarm,wormillion,drill-worm,scavenge,molt,stink-cloud,burrow,caterpillar`.
 
 **Art.** `docs/art-pipeline.md` is complete. What you need to know beyond it: the owner's
 OpenAI key is in the gitignored `.env` on his machine (never print it); the Cat cards portray
@@ -113,7 +118,9 @@ src/ui/       battle-ui.ts (hand, HUD, drag/click targeting) · run-screens.ts (
               reward, shop, cocoon, result, deck list) · card-faces.ts (shared face cache)
 src/app/      index.ts (boot, dev hooks) · run-controller.ts (dispatch → animate → screen)
               · animate.ts (plays combat events as animations with a running ledger)
-src/save/     empty — M5 lives here
+src/save/     store.ts (KeyValueStore + MemoryStore) · save.ts (one autosave slot, versioned
+              and shape-checked) · settings.ts — pure, tested; src/app/index.ts owns the
+              localStorage instance and applies settings to the scene
 tools/        gen-art.mjs (OpenAI Images + chroma key) · art-preview.mjs (checkerboard
               previews + alpha stats) · art-optimize.mjs (PNG masters → WebP)
 ```
@@ -145,27 +152,39 @@ status here in the same commit as the work**, so a fresh session resumes from th
 | F   | Snail pheromone trail on the map (spec §8.6)                                               | done                                                                                                                             |
 | G   | Burrow (delayed damage) — only if time allows                                              | done — art uncommitted pending approval                                                                                          |
 | H   | M5: save/resume, settings, reduce motion (spec §10)                                        | done                                                                                                                             |
-| I   | Bug testing: engine fuzz over many seeds, browser smoke of every screen, fixes             | todo                                                                                                                             |
+| I   | Bug testing: engine fuzz over many seeds, browser smoke of every screen, fixes             | done — `fuzz.test.ts` (240 runs + replay), a full browser run, and a cold Opus review whose findings are fixed in `44a6cfd`      |
 
 Ideas from his list deliberately **not** built, and why: collectable cyborg parts (a whole item
 system; he offered "conditional evolution" as the alternative and Pupate is that); card
 lifespan (punishes the deck for existing; Molt carries the flavour without the bookkeeping).
 
+What the run left behind that a new session should know: the Bash tool's ~8 KB limit bit twice
+more — every multi-file edit went through a Python script written with the Write tool and run
+from `scratchpad/`; the other chat's dev server on :5173 was reused for verification (HMR
+reloads the page on any `.ts` edit, so re-stage after editing); `resize_window` to 1280×720
+before screenshots, the pane's default is 800×450.
+
 ## Known issues and loose ends
 
 - **One unexplained one-off:** on the very first drag of one session, three cards were spent
   from a single gesture. Instrumented, never reproduced across many drags. No root cause found;
-  `RunController.dispatch` now marks itself busy synchronously (it used to wait for the queued
-  animation task), which closes the only window where two handlers for one input event could
-  both get through. Watch for it.
-- `card-cobweb` has no art yet; the loader 404s once per load and falls back to the drawn
-  placeholder. Harmless, but it's the one "error" you'll see in production. It's a card the
-  player holds among painted ones, so it belongs in the next art batch.
+  `RunController.dispatch` now marks itself busy synchronously and the playback chain can no
+  longer be poisoned by a throw, which closes every window found so far. Watch for it.
+- Nine art files await approval (see "What's next"). `card-cobweb` in particular: until it is
+  committed the loader 404s once per load and draws the placeholder doodle.
 - Desktop-only layout. The page loads on phones but the title overflows and touch is untested;
   spec lists touch as roadmap. Share the desktop link.
 - GitHub Pages URLs are case-sensitive: `/Cardillion/` works, `/cardillion/` 404s. Renaming
   the repo to lowercase was offered to the owner and not decided.
 - Both spider sprites keep a faint half-keyed shadow under the body; the owner accepted them.
+- Cosmetic, known and left: the Possum bites from its back and only then stands up (its
+  `enemyActed` comes after the move's damage events); after a mid-fight reload the reward
+  screen's "emerged" note is lost and the URL's `?seed=` is not refreshed.
+- Reduce motion removes the film grain, which is a big part of the thicket's look. The spec
+  asks for exactly that; if the owner wants a middle setting, `Post.setGrain` takes any amount.
+- `SAVE_VERSION` is 1. `readSave` also sets aside any run lacking a current `RunState` field,
+  so forgetting to bump it cannot crash Continue — but bump it anyway when the shape or the
+  content it references changes incompatibly.
 
 ## How we got here (for context, not action)
 
