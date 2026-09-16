@@ -254,6 +254,41 @@
       "prompt": "The inside of a sheltered fold of a huge sunlit leaf, seen from a bug's height: a half-spun cocoon of pale gold silk glowing with warm light hangs at the centre, silk threads and dew drops around it, soft moss below. Through the opening of the leaf the garden fades into a dark thicket where faint amber eyes watch. Hushed, warm, safe. No characters, no text.",
       "size": "1536x1024",
       "background": "opaque"
+    },
+    {
+      "id": "card-molt",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg roly poly (pill bug) mid-molt: climbing out of its old riveted brass armour shell, which sits split open and empty beside it, its new shell soft and pale cream with the rivets not yet fitted, a loose spring popping out, a relieved happy grin.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-scavenge",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg roly poly (pill bug) with riveted brass armour plates rummaging happily through leaf litter, a tiny brass lantern strapped to its head, holding up a golden bread crumb in two front legs like treasure, delighted.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-worm-swarm",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A happy wriggling heap of many small cheerful cyborg earthworms, each a short segmented pink worm with a domed brass cap and one round glass lens eye, tumbling over one another in a pile, all smiling, no legs on any of them.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-stink-cloud",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A fuzzy green cyborg caterpillar with copper-wire bristles and clockwork legs, cheeks puffed and eyes squeezed shut with effort, releasing a billowing pale yellow-green stink cloud from a small brass valve on its back, little wavy stink lines, comic and cheerful.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-chrysalis",
+      "style": "garden",
+      "reference": "style-anchor-garden",
+      "prompt": "A cyborg chrysalis hanging from a leaf stem by a small brass hook: a teardrop of pale gold silk wrapped in fine brass bands, a tiny round glass porthole showing a sleeping smiling face inside, a small clockwork dial on its side ticking, soft glow.",
+      "size": "1024x1024"
     }
   ]
 }

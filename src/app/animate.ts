@@ -203,6 +203,13 @@ export async function animateEvents(
         await sleep(300);
         break;
 
+      case 'crumbsFound':
+        crumbs += ev.amount;
+        ui.setCrumbs(crumbs);
+        ui.pop(PLAYER, `🍞 +${ev.amount}`, 'crumbs');
+        await sleep(300);
+        break;
+
       case 'greebleEscaped':
         ui.pop(ev.uid, ev.amount > 0 ? `escaped with ${ev.amount} crumbs` : 'escaped', 'info');
         ui.hideEnemy(ev.uid);

@@ -27,6 +27,8 @@ export type CardEffect =
       doubleStolenOnKill?: boolean;
       /** Spot Barrage: each hit re-picks a random seen enemy instead of using the card's target. */
       randomTarget?: boolean;
+      /** Worm Swarm: hit once per card of this card's bug in hand, itself included (ADR 0007). */
+      perFamilyInHand?: boolean;
     }
   | { kind: 'block'; amount: number }
   | {
@@ -36,7 +38,9 @@ export type CardEffect =
       /** Flutter: a random seen enemy, re-picked at play time (not per-hit). */
       to: 'target' | 'all-enemies' | 'random-enemy';
     }
-  | { kind: 'draw'; amount: number };
+  | { kind: 'draw'; amount: number }
+  /** Scavenge: crumbs found mid-fight. */
+  | { kind: 'crumbs'; amount: number };
 
 /** One playable form of a card: the base form or the upgraded form. */
 export interface CardForm {
@@ -220,6 +224,8 @@ export type CombatEvent =
   | { type: 'intentRolled'; uid: string; move: string }
   | { type: 'crumbsStolen'; uid: string; amount: number }
   | { type: 'crumbsRecovered'; uid: string; amount: number }
+  /** Crumbs found by a card (Scavenge). */
+  | { type: 'crumbsFound'; amount: number }
   | { type: 'greebleEscaped'; uid: string; amount: number }
   | { type: 'playerDamaged'; amount: number; blocked: number }
   | { type: 'combatWon'; crumbsRecovered: number }

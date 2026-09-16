@@ -607,3 +607,48 @@ describe('habitat mods (spec §8.9)', () => {
     expect([...after.draw, ...after.hand].filter((c) => c.def === 'cobweb')).toHaveLength(2);
   });
 });
+
+describe('second card wave (spec §5.4)', () => {
+  it('Worm Swarm hits once per Wormillion-family card in hand, itself included', () => {
+    const { state } = start({
+      deck: ['worm-swarm', 'wormillion', 'drill-worm', 'roly-poly', 'chameleon'],
+      enemies: ['possum'],
+    });
+    const enemy = state.enemies[0]!.uid;
+    const swarm = state.hand.find((c) => c.def === 'worm-swarm')!;
+    const { state: after, events } = applyAction(state, {
+      type: 'playCard',
+      uid: swarm.uid,
+      target: enemy,
+    });
+    const hits = ofType(events, 'damageDealt');
+    expect(hits).toHaveLength(3);
+    for (const h of hits) expect(h.amount).toBe(2);
+    expect(after.enemies[0]!.hp).toBe(24 - 6);
+  });
+
+  it('Scavenge adds crumbs and exhausts', () => {
+    const { state } = start({ deck: ['scavenge'], enemies: ['rat'] });
+    const card = state.hand[0]!;
+    const { state: after, events } = applyAction(state, { type: 'playCard', uid: card.uid });
+    expect(after.crumbs).toBe(25 + 5);
+    expect(events).toContainEqual({ type: 'crumbsFound', amount: 5 });
+    expect(after.exhausted.map((c) => c.uid)).toEqual([card.uid]);
+    expect(after.player.charge).toBe(3);
+  });
+
+  it('Molt gives 11 Block and exhausts; Stink Cloud poisons every seen enemy', () => {
+    const { state } = start({ deck: ['molt', 'stink-cloud'], enemies: ['rat', 'rat', 'greeble'] });
+    const molt = state.hand.find((c) => c.def === 'molt')!;
+    const a = applyAction(state, { type: 'playCard', uid: molt.uid });
+    expect(a.state.player.statuses.block).toBe(11);
+    expect(a.state.exhausted).toHaveLength(1);
+    const stink = a.state.hand.find((c) => c.def === 'stink-cloud')!;
+    const b = applyAction(a.state, { type: 'playCard', uid: stink.uid });
+    const poisoned = ofType(b.events, 'statusApplied').filter((e) => e.status === 'poison');
+    expect(poisoned).toHaveLength(2); // the Unseen Greeble is passed over
+    for (const e of b.state.enemies.filter((e) => e.def === 'rat')) {
+      expect(e.statuses.poison).toBe(2);
+    }
+  });
+});

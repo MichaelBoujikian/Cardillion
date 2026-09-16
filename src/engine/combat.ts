@@ -282,7 +282,9 @@ function playCard(
   for (const effect of form.effects) {
     switch (effect.kind) {
       case 'damage': {
-        const times = effect.times ?? 1;
+        const times = effect.perFamilyInHand
+          ? s.hand.filter((c) => cardDef(c.def).bug === def.bug).length
+          : (effect.times ?? 1);
         const amount = Math.floor((effect.amount + s.mods.attackBonus + familyAttack) * weakMult);
         const opts = {
           ignoreBlock: effect.ignoreBlock ?? false,
@@ -332,6 +334,10 @@ function playCard(
       }
       case 'draw':
         drawCards(s, events, rng, effect.amount);
+        break;
+      case 'crumbs':
+        s.crumbs += effect.amount;
+        events.push({ type: 'crumbsFound', amount: effect.amount });
         break;
     }
   }

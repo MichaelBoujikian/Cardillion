@@ -189,6 +189,20 @@ All numbers _(tuning)_.
 | Tongue Lash  | Chameleon   | Common   | Attack | 1    | Deal 5.                             | Deal 7.                             |
 | Pounce       | Cat         | Rare     | Attack | 2    | Deal 10. Can target Unseen enemies. | Deal 14. Can target Unseen enemies. |
 
+Second wave (2026-09-15, from the owner's "insect behaviours" list — molting, swarming, chemical
+warfare, foraging):
+
+| Card        | Family      | Rarity   | Type   | Cost | Effect                                                                    | Upgraded form (+)       |
+| ----------- | ----------- | -------- | ------ | ---- | ------------------------------------------------------------------------- | ----------------------- |
+| Molt        | Roly Poly   | Common   | Skill  | 1    | Gain 11 Block. Exhaust. (Shed the shell; it's gone.)                      | Gain 15 Block. Exhaust. |
+| Scavenge    | Roly Poly   | Common   | Skill  | 0    | Gain 5 crumbs. Exhaust. (Forage mid-fight.)                               | Gain 8 crumbs. Exhaust. |
+| Worm Swarm  | Wormillion  | Uncommon | Attack | 1    | Deal 2, once per Wormillion-family card in your hand (this one included). | Deal 3, once per …      |
+| Stink Cloud | Caterpillar | Uncommon | Skill  | 1    | Apply 2 Poison to ALL enemies.                                            | Apply 3 Poison to ALL.  |
+| Chrysalis   | Butterfly   | special  | Skill  | 0    | Gain 6 Block. Exhaust. Only via Pupate (§8.8); never offered.             | Gain 8 Block. Exhaust.  |
+
+_Swarm_ is the first family-count mechanic (ADR 0007): it rewards holding many of one bug,
+which Wormillionaire and Mr. Wormsley already encourage. All numbers _(tuning)_.
+
 Family cards are upgraded by the same titled unlock as their bug (Mr. Wormsley upgrades Drill
 Worm too), and by Wormillionaire/whole-family injection where applicable. Each family card has
 its **own art** (`card-<card>`, e.g. `card-drill-worm`): the same bug caught in a different
@@ -593,9 +607,10 @@ DOM globals, or any outer layer.
 Record balance changes here with a date and a one-line reason, so numbers in this document stay
 the source of truth.
 
-| Date       | Change                                    | Why                                                                                                                                                       |
-| ---------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-13 | Initial numbers                           | First pass from design session.                                                                                                                           |
-| 2026-09-15 | Family card upgraded forms                | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta).                                                    |
-| 2026-09-15 | Cocoon: Forage 18–28, Chrysalis Block 6/8 | New §8.8 from the owner's idea list. Forage sits between a fight's bounty and a common card's price; Chrysalis is a Roly Poly with the attack taken away. |
-| 2026-09-15 | Habitats: 50% of fights, bonuses of +1/+2 | New §8.9 from the owner's idea list. Bonuses are one Sharpened Mandibles' worth, so a habitat tilts a fight without deciding it.                          |
+| Date       | Change                                                             | Why                                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-13 | Initial numbers                                                    | First pass from design session.                                                                                                                                     |
+| 2026-09-15 | Family card upgraded forms                                         | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta).                                                              |
+| 2026-09-15 | Cocoon: Forage 18–28, Chrysalis Block 6/8                          | New §8.8 from the owner's idea list. Forage sits between a fight's bounty and a common card's price; Chrysalis is a Roly Poly with the attack taken away.           |
+| 2026-09-15 | Habitats: 50% of fights, bonuses of +1/+2                          | New §8.9 from the owner's idea list. Bonuses are one Sharpened Mandibles' worth, so a habitat tilts a fight without deciding it.                                    |
+| 2026-09-15 | Molt 11/15, Scavenge 5/8, Worm Swarm 2/3 per card, Stink Cloud 2/3 | Second card wave (§5.4). Molt is two Roly Polys that cost one card; Scavenge is a third of a common card's price; Swarm with three worms in hand matches Chameleon. |
