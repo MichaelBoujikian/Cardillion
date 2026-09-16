@@ -32,6 +32,16 @@ directs, agents build; he judges results by eye and approves art in batches.
 Nothing has been balanced. Every number in the spec is a first guess marked _(tuning)_. The
 owner has played the live link but has not yet given balance notes.
 
+**First balance data (2026-09-16, `src/engine/fuzz.test.ts`).** A greedy bot (attack the
+weakest, block when a hit is coming, rest when hurt, buy upgrades first) played 300 seeded runs:
+**win rate 0.3%**. It reached the Bear in 43% of runs and died there almost every time; the
+next deadliest fights were the late `scorpion ×2 + rat` pool, `spider + scorpion` and the Wolf
+Spider. A random bot never wins and dies around node 4–5. Reading: the Bear (130 HP, Maul 18,
+enrage +3) is far beyond a starting-deck run's damage output, and the late pool is a step up
+from mid. One recommendation, not applied: Bear 130 → 95 HP and Maul 18 → 14, then remeasure
+with the same test. A stronger bot that plans Block against Maul might also change the picture;
+the fuzz policy is deliberately naive.
+
 ## What M5 needs (spec §10)
 
 - Single autosave slot in `localStorage` (`cardillion.save.v1`), written after every engine
