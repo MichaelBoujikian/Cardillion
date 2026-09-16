@@ -121,7 +121,10 @@ Snail's cart) is intercepted — route new "after this node" behaviour through i
 ## Known issues and loose ends
 
 - **One unexplained one-off:** on the very first drag of one session, three cards were spent
-  from a single gesture. Instrumented, never reproduced across many drags. Watch for it.
+  from a single gesture. Instrumented, never reproduced across many drags. No root cause found;
+  `RunController.dispatch` now marks itself busy synchronously (it used to wait for the queued
+  animation task), which closes the only window where two handlers for one input event could
+  both get through. Watch for it.
 - `card-cobweb` has no art yet; the loader 404s once per load and falls back to the drawn
   placeholder. Harmless, but it's the one "error" you'll see in production. It's a card the
   player holds among painted ones, so it belongs in the next art batch.

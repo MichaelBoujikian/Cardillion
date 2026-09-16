@@ -116,12 +116,26 @@ export class RunController {
     }
     const prev = this.run;
     this.run = step.run;
+    // Busy from this instant, not from when the animation task starts: two handlers firing for
+    // one input event must not both slip through before the queued playback sets the flag.
+    this.busy = true;
     this.queue = this.queue.then(() => this.play_(prev, step.run, step.events));
   }
 
   private async play_(prev: RunState, next: RunState, events: RunEvent[]): Promise<void> {
     this.busy = true;
     this.battle.setInputEnabled(false);
+    try {
+      await this.animate(prev, next, events);
+    } finally {
+      // A throwing animation must not leave the game frozen with input locked.
+      this.busy = false;
+    }
+    this.battle.setInputEnabled(next.phase === 'fight' && next.combat?.phase === 'player');
+    this.render();
+  }
+
+  private async animate(prev: RunState, next: RunState, events: RunEvent[]): Promise<void> {
     let before: CombatState | null = prev.combat;
     for (const ev of events) {
       switch (ev.type) {
@@ -155,9 +169,6 @@ export class RunController {
           break;
       }
     }
-    this.busy = false;
-    this.battle.setInputEnabled(next.phase === 'fight' && next.combat?.phase === 'player');
-    this.render();
   }
 
   /** Show whatever the run's phase calls for. */
