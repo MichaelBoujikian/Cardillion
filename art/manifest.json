@@ -179,6 +179,55 @@
       "prompt": "A top-down garden map: winding dirt trails between flower beds, a pond, a fence, and at the far edge a dark forest.",
       "size": "1536x1024",
       "background": "opaque"
+    },
+    {
+      "id": "card-drill-worm",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "Drill Worm, a cyborg earthworm cousin of Wormillion: segmented pink worm body, a spinning brass drill bit where its head cap would be, small brass goggles pushed up, a determined grin, boring into a pebble with grit flying.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-roly-pounce",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "A cyborg roly poly (pill bug) caught mid-leap: riveted brass armour plates flaring open, tiny spring-loaded legs, one glass lens eye, an eager gleeful expression.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-munch",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "A small chubby cyborg caterpillar with copper-wire bristles, mouth wide open taking an enormous bite out of a leaf, cheeks stuffed, leaf crumbs flying, blissful.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-spot-barrage",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "A cyborg ladybug in flight with red enamel wing cases open, launching a burst of glowing brass-rimmed spots from its back like tiny cannonballs, trailing sparkles.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-flutter",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "A cyborg BUTTERFLY as the single large subject filling the frame: an insect with two pairs of big stained-glass wings held in a fine brass frame, a slim segmented body, clockwork antennae, one glass lens eye. Its wings are swept forward mid-flap, scattering glittering golden dust; quick, playful, radiant.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-tongue-lash",
+      "style": "garden",
+      "reference": ["style-anchor-garden"],
+      "prompt": "A cyborg chameleon with a telescopic brass eye, its long pink tongue snapping out in a whip-crack across the frame, the tongue tip a brass ring, intensely focused.",
+      "size": "1024x1024"
+    },
+    {
+      "id": "card-pounce",
+      "style": "garden",
+      "reference": ["style-anchor-garden", "owner-cat"],
+      "prompt": "The same real ginger tabby cat as the reference photo (orange tabby stripes, white chin and bib, pink nose) as a cyborg mid-pounce: front paws stretched out, one glowing brass-rimmed lens eye wide, tail straight out behind, fierce and adorable.",
+      "size": "1024x1024"
     }
   ]
 }
