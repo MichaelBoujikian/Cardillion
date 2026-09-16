@@ -14,7 +14,7 @@ import { RunScreens } from '@ui/run-screens';
 import * as THREE from 'three';
 import { RunController } from './run-controller';
 
-const EXTRA_ART = ['npc-snail', 'bg-map', 'bg-battle'];
+const EXTRA_ART = ['npc-snail', 'bg-map', 'bg-battle', 'bg-shop', 'bg-cocoon'];
 
 function debugOptions(): RunOptions {
   const params = new URLSearchParams(window.location.search);

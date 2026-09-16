@@ -102,14 +102,23 @@ const CSS = /* css */ `
 .pick .price { position:absolute; left:50%; bottom:-14px; transform:translateX(-50%); padding:3px 12px; border-radius:12px; background:#14100c; border:1px solid #b8862b; color:#ffd27a; font-size:14px; white-space:nowrap; }
 .pick .sold-tag { position:absolute; inset:0; display:grid; place-items:center; font-size:26px; letter-spacing:.2em; color:#ff8a7a; text-shadow: 0 2px 4px #000; }
 
+/* painted stops (shop, cocoon): a full-bleed backdrop with the UI laid into the picture */
+.stop { background:#0b0d09; }
+.stop .bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.stop .bg-fallback { position:absolute; inset:0; background: linear-gradient(90deg, #3d5a22, #1d2a14 45%, #0a0910); }
+.stop .shade { position:absolute; inset:0; background: linear-gradient(90deg, rgba(6,5,10,0) 48%, rgba(6,5,10,.5) 72%); pointer-events:none; }
+.stop-hud { position:absolute; left:26px; top:22px; font-size:16px; line-height:1.9; text-shadow: 0 1px 3px #000; padding:6px 14px; border-radius:10px; background:rgba(6,5,10,.45); }
+.stop-hud b { color:#ffd27a; }
+.stop-title { position:absolute; right:26px; top:18px; text-align:right; text-shadow: 0 2px 6px #000; }
+.stop-title h1 { margin:0; font-size:30px; letter-spacing:.14em; }
+.stop-title h2 { margin:2px 0 0; font-size:14px; opacity:.85; }
+
 /* shop */
-.shop-screen .panel { min-width:760px; max-width:1000px; padding:18px 30px 16px; max-height:94vh; overflow-y:auto; }
-.shop-screen h1 { font-size:28px; margin-bottom:2px; }
-.shop-screen h2 { margin-bottom:6px; }
-.shop-screen .snail { width:110px; height:110px; object-fit:contain; float:left; margin:-6px 14px 0 -8px; }
-.shop-screen .stock { overflow:hidden; }
-.shop-screen .cards { margin:6px 0 22px; gap:14px; }
-.shop-screen .pick { width:140px; height:196px; }
+.shop-screen .snail { position:absolute; left:0; bottom:3%; height:32vh; filter: drop-shadow(0 10px 18px rgba(0,0,0,.75)); }
+.shop-screen .counter { position:absolute; left:19%; bottom:9%; display:flex; gap:18px; }
+.shop-screen .counter .pick { width:150px; height:210px; }
+.shop-screen .wares { position:absolute; right:4%; top:17%; width:min(440px, 42vw); justify-content:flex-end; margin:0; }
+.shop-screen .actions { position:absolute; right:26px; bottom:26px; text-align:right; }
 .wares { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:0 0 6px; }
 .ware { width:196px; text-align:left; padding:8px 10px; border-radius:10px; background:rgba(10,8,14,.55); border:1px solid rgba(184,134,43,.5); cursor:pointer; transition: transform .15s ease, filter .15s ease; }
 .ware:hover { transform:translateY(-3px); filter: drop-shadow(0 0 12px rgba(255,214,120,.45)); border-color:#ffd27a; }
@@ -120,6 +129,16 @@ const CSS = /* css */ `
 .ware.sold:hover, .ware.poor:hover { transform:none; border-color:rgba(184,134,43,.5); }
 .ware.sold .tag { color:#ff8a7a; }
 .discount { display:inline-block; margin-left:10px; padding:2px 8px; border-radius:10px; background:#5a3a10; color:#ffd27a; font-size:12px; letter-spacing:.06em; vertical-align:middle; }
+
+/* cocoon */
+.cocoon-screen .choices { position:absolute; right:6%; top:50%; transform:translateY(-50%); width:min(380px, 38vw); display:flex; flex-direction:column; gap:12px; }
+.choice { text-align:left; padding:14px 18px; border-radius:12px; background:rgba(10,8,14,.74); border:2px solid rgba(184,134,43,.6); cursor:pointer; color:#f3e7c9; font-family:inherit; transition: transform .15s ease, filter .15s ease, border-color .15s ease; }
+.choice:hover { transform:translateX(-6px); border-color:#ffd27a; filter: drop-shadow(0 0 14px rgba(255,214,120,.45)); }
+.choice b { display:block; color:#ffd27a; font-size:18px; letter-spacing:.08em; }
+.choice small { display:block; font-size:13px; opacity:.85; margin-top:3px; line-height:1.4; }
+.choice:disabled { opacity:.45; cursor:not-allowed; }
+.choice:disabled:hover { transform:none; filter:none; border-color:rgba(184,134,43,.6); }
+.cocoon-screen .leave { position:absolute; right:26px; bottom:26px; }
 
 /* map markers */
 .map-screen .marker { pointer-events:none; }
@@ -418,39 +437,36 @@ export class RunScreens {
       ? `THE SNAIL'S CART<span class="discount">20% OFF</span>`
       : `THE SNAIL'S STALL`;
     const subtitle = shop.traveling
-      ? `🍞 <b>${run.crumbs}</b> crumbs · caught on the road: two cards and one upgrade`
-      : `🍞 <b>${run.crumbs}</b> crumbs`;
+      ? 'Caught on the road: two cards and one upgrade, cheap.'
+      : 'Cards, titled unlocks, a general upgrade or two. No healing here.';
     const removal =
       shop.removalPrice === null
         ? ''
         : `<button class="btn remove" ${!canAfford(shop.removalPrice) || run.deck.length <= 1 ? 'disabled' : ''}>Remove a card · 🍞 ${shop.removalPrice}</button>`;
 
+    const bg = this.art.get('bg-shop');
     const s = this.show(
       'shop',
-      `<div class="veil"></div>
-       <div class="panel">
-         ${snail ? `<img class="snail" src="${snail.src}" alt="">` : ''}
-         <div class="stock">
-           <h1>${title}</h1>
-           <h2>${subtitle}</h2>
-           <div class="cards">${shop.cards
-             .map((c, i) => {
-               const poor = !c.sold && !canAfford(c.price);
-               const cls = ['pick', c.sold ? 'sold' : '', poor ? 'poor' : '']
-                 .filter(Boolean)
-                 .join(' ');
-               return `<div class="${cls}" data-index="${i}" style="background-image:url(${this.faces.url(c.def, run.unlocks.includes(cardDef(c.def).bug!))})">
-                 ${c.sold ? '<div class="sold-tag">SOLD</div>' : `<div class="price">🍞 ${c.price}</div>`}</div>`;
-             })
-             .join('')}</div>
-           <div class="wares">${unlockWares}${upgradeWares}${wormWare}</div>
-           <p style="margin:8px 0 0">
-             ${removal}
-             <button class="btn ghost leave">${shop.traveling ? 'WAVE IT ON' : 'LEAVE'}</button>
-           </p>
-         </div>
+      `${bg ? `<img class="bg" src="${bg.src}" alt="">` : '<div class="bg-fallback"></div>'}
+       <div class="shade"></div>
+       ${snail ? `<img class="snail" src="${snail.src}" alt="">` : ''}
+       <div class="stop-hud">❤ <b>${run.hp} / ${run.maxHp}</b><br>🍞 <b>${run.crumbs}</b> crumbs</div>
+       <div class="stop-title"><h1>${title}</h1><h2>${subtitle}</h2></div>
+       <div class="counter">${shop.cards
+         .map((c, i) => {
+           const poor = !c.sold && !canAfford(c.price);
+           const cls = ['pick', c.sold ? 'sold' : '', poor ? 'poor' : ''].filter(Boolean).join(' ');
+           return `<div class="${cls}" data-index="${i}" style="background-image:url(${this.faces.url(c.def, run.unlocks.includes(cardDef(c.def).bug!))})">
+             ${c.sold ? '<div class="sold-tag">SOLD</div>' : `<div class="price">🍞 ${c.price}</div>`}</div>`;
+         })
+         .join('')}</div>
+       <div class="wares">${unlockWares}${upgradeWares}${wormWare}</div>
+       <div class="actions">
+         ${removal}
+         <button class="btn ghost leave">${shop.traveling ? 'WAVE IT ON' : 'LEAVE'}</button>
        </div>`,
     );
+    s.classList.add('stop');
     for (const el of s.querySelectorAll<HTMLElement>('.pick')) {
       el.addEventListener('click', () => {
         if (el.classList.contains('sold') || el.classList.contains('poor')) return;
@@ -477,19 +493,25 @@ export class RunScreens {
   showCocoon(run: RunState): void {
     const heal = Math.min(run.maxHp - run.hp, Math.ceil(run.maxHp * COCOON_HEAL_FRACTION));
     const canPupate = run.deck.some((c) => c.def in PUPATION);
+    const bg = this.art.get('bg-cocoon');
     const s = this.show(
       'cocoon',
-      `<div class="veil"></div>
-       <div class="panel">
-         <h1>❂ COCOON</h1>
-         <h2>❤ ${run.hp} / ${run.maxHp} · 🍞 ${run.crumbs}</h2>
-         <p>Warm silk in a sunny fold of leaf. The vermin can't find you here — for a while.<br>Choose one.</p>
-         <button class="btn rest">REST · heal ${heal}</button>
-         <button class="btn forage">FORAGE · ${FORAGE_CRUMBS[0]}–${FORAGE_CRUMBS[1]} crumbs</button>
-         <button class="btn pupate" ${canPupate ? '' : 'disabled title="Needs a Caterpillar-family card"'}>PUPATE · a Caterpillar</button>
-         <br><button class="btn ghost leave">MOVE ON</button>
-       </div>`,
+      `${bg ? `<img class="bg" src="${bg.src}" alt="">` : '<div class="bg-fallback"></div>'}
+       <div class="shade"></div>
+       <div class="stop-hud">❤ <b>${run.hp} / ${run.maxHp}</b><br>🍞 <b>${run.crumbs}</b> crumbs</div>
+       <div class="stop-title"><h1>❂ COCOON</h1><h2>Warm silk in a fold of leaf. The vermin can't find you here — for a while.</h2></div>
+       <div class="choices">
+         <button class="choice rest"><b>REST</b><small>Curl up in the silk. Heal ${heal} (30% of ${run.maxHp}).</small></button>
+         <button class="choice forage"><b>FORAGE</b><small>Root through the leaf litter for ${FORAGE_CRUMBS[0]}–${FORAGE_CRUMBS[1]} crumbs.</small></button>
+         <button class="choice pupate" ${canPupate ? '' : 'disabled'}><b>PUPATE</b><small>${
+           canPupate
+             ? 'Spin a Caterpillar-family card into a Chrysalis. After your next won fight it emerges as a Butterfly.'
+             : 'Needs a Caterpillar-family card in your deck.'
+         }</small></button>
+       </div>
+       <button class="btn ghost leave">MOVE ON</button>`,
     );
+    s.classList.add('stop');
     s.querySelector('.rest')?.addEventListener('click', () => this.h.onRest());
     s.querySelector('.forage')?.addEventListener('click', () => this.h.onForage());
     s.querySelector('.pupate')?.addEventListener('click', () =>
