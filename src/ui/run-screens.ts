@@ -147,6 +147,7 @@ const CSS = /* css */ `
 .map-screen .marker.snail image { filter: drop-shadow(0 3px 6px rgba(0,0,0,.7)); }
 .map-screen .marker.snail text { font: 28px Georgia, serif; text-anchor:middle; dominant-baseline:central; }
 .map-screen .marker.greeble circle { fill:#ffb347; filter: drop-shadow(0 0 6px #ff9a3c); animation: blink 3.2s ease-in-out infinite; }
+.map-screen .marker.slime circle { fill:#b7e36a; filter: drop-shadow(0 0 4px #9be37a); }
 @keyframes blink { 0%,44%,52%,100% { opacity:1; } 48% { opacity:0; } }
 .map-hud .who { font-size:12px; opacity:.85; margin-top:2px; max-width:260px; line-height:1.6; }
 .map-hud .who span { display:inline-block; margin-right:10px; }
@@ -301,6 +302,13 @@ export class RunScreens {
     // Markers: the Snail is always shown; the Greeble only to a Cat owner (spec §8.5, §8.6).
     const snailArt = this.art.get('npc-snail');
     let markers = '';
+    // The Snail's pheromone trail: its last nodes, fading with age (spec §8.6).
+    run.snailTrail.forEach((id, i) => {
+      const p = px(nodeAt(map, id));
+      const age = run.snailTrail.length - i; // 1 = freshest
+      const opacity = (0.95 - age * 0.22).toFixed(2);
+      markers += `<g class="marker slime" style="opacity:${opacity}"><title>the Snail passed here</title><circle cx="${p.x + 24}" cy="${p.y - 22}" r="6.5"/><circle cx="${p.x + 35}" cy="${p.y - 31}" r="4.5"/></g>`;
+    });
     if (run.snailNode) {
       const p = px(nodeAt(map, run.snailNode));
       markers += snailArt

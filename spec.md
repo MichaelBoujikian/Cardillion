@@ -370,6 +370,9 @@ unknown markers along the trail. A node's **habitat** (§8.9) shows only **1 ste
 - If you enter a non-Shop node the Snail is standing on, a **travelling stall** opens after
   that node's normal content: 2 cards + 1 general upgrade at **20% off**, no titled unlocks,
   no removal. The Snail then leaves the map for 4 moves and reappears elsewhere.
+- The Snail leaves a **pheromone trail**: the last 3 nodes it passed stay marked on the map,
+  fading with age, so you can read which way it is heading. The trail is wiped when it leaves
+  the map and starts fresh when it reappears.
 
 ### 8.7 Win & death
 

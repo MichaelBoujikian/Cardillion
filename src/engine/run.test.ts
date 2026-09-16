@@ -21,6 +21,7 @@ import {
   SHOP_REMOVAL_PRICE,
   SHOP_REMOVAL_STEP,
   SNAIL_ABSENCE,
+  SNAIL_TRAIL_LENGTH,
   SPARE_PARTS_HEAL,
   THICK_THORAX_HP,
   TRAVELING_DISCOUNT,
@@ -526,6 +527,30 @@ describe('the wandering Snail (spec §8.6)', () => {
         expect(r.snailNode).not.toBe(r.position);
       }
     }
+  });
+
+  it('leaves a pheromone trail of its last three nodes, wiped when it leaves the map', () => {
+    let r = createRun('snail-trail', { deck: STRONG_DECK, hp: 999 });
+    expect(r.snailTrail).toEqual([]);
+    const passed: string[] = [];
+    for (let i = 0; i < 6 && r.phase !== 'victory'; i++) {
+      const from = r.snailNode!;
+      const next =
+        nodeAt(r.map, r.position).next.find((e) => e.id !== r.snailNode) ??
+        nodeAt(r.map, r.position).next[0]!;
+      r = settle(step(r, { type: 'travel', to: next.id }).run);
+      if (r.snailNode === null) break;
+      passed.push(from);
+      expect(r.snailTrail).toEqual(passed.slice(-SNAIL_TRAIL_LENGTH));
+      expect(r.snailTrail.length).toBeLessThanOrEqual(SNAIL_TRAIL_LENGTH);
+    }
+    // Meeting the Snail off its stall takes it off the map and wipes the trail.
+    r = createRun('snail-trail', { deck: STRONG_DECK, hp: 999 });
+    const next = nodeAt(r.map, START).next[0]!.id;
+    r = { ...r, snailNode: next, snailTrail: ['t0-3', 't0-4'] };
+    const s = step(r, { type: 'travel', to: next });
+    expect(s.run.snailNode).toBeNull();
+    expect(s.run.snailTrail).toEqual([]);
   });
 
   it('standing on a fixed Shop is just its stall: no travelling stall, and it keeps wandering', () => {

@@ -116,6 +116,8 @@ export interface RunState {
   snailNode: string | null;
   /** Moves left until the Snail reappears; meaningful only while `snailNode` is null. */
   snailReturnIn: number;
+  /** The last nodes the Snail passed, oldest first (spec §8.6). Empty while it is off the map. */
+  snailTrail: string[];
   /** Set by a move onto the Greeble's node; consumed by the node's fight. */
   pendingGreeble: boolean;
   /** The Greeble ambushed a Shop/Cocoon: open that content once the ambush fight resolves. */
@@ -196,6 +198,8 @@ export const TRAVELING_CARD_COUNT = 2;
 export const TRAVELING_DISCOUNT = 0.8;
 /** Moves the Snail spends off the map after a travelling stall (spec §8.6). */
 export const SNAIL_ABSENCE = 4;
+/** Nodes of pheromone trail the Snail leaves behind it (spec §8.6). */
+export const SNAIL_TRAIL_LENGTH = 3;
 /** The Greeble marker relocates at least this far after an ambush (spec §8.5). */
 export const GREEBLE_RELOCATE_DISTANCE = 4;
 /** General upgrades that act outside combat (spec §6.2). */
@@ -249,6 +253,7 @@ export function createRun(seed: string, options: RunOptions = {}): RunState {
     greebleNode: pickAnyNode(map, markers),
     snailNode: pickMiddleThirdNode(map, markers),
     snailReturnIn: 0,
+    snailTrail: [],
     pendingGreeble: false,
     deferredNodeType: null,
     pendingTravelingStall: false,
@@ -718,7 +723,9 @@ function updateMarkers(r: RunState): void {
     r.pendingTravelingStall = true;
     r.snailNode = null;
     r.snailReturnIn = SNAIL_ABSENCE;
+    r.snailTrail = [];
   } else {
+    r.snailTrail = [...r.snailTrail, r.snailNode].slice(-SNAIL_TRAIL_LENGTH);
     r.snailNode = stepMarker(r.map, rng, r.snailNode);
   }
 
