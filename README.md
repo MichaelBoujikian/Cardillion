@@ -33,9 +33,12 @@ thing CI runs.
   rewards, the Snail's stall (cards and removal), cocoons → the Bear → victory or death.
   `npm run dev` and press New Run. Test overrides: `?seed=`, `?deck=cat,cat`, `?hp=`,
   `?crumbs=`; in dev, `window.__cardillion.autoRun()` plays a run out from the console.
-- **Art**: the full v1 roster is generated and approved (`assets/art/`).
-- **Next: M4 content** — card families, titled unlocks, general upgrades, Wormillionaire,
-  the roaming Greeble and the wandering Snail.
+- **M4 content: done.** Fourteen cards (every bug has a family), titled unlocks like
+  Mr. Wormsley, six general upgrades, Wormillionaire, the roaming Greeble (visible to Cat
+  owners; ambushes the node it sits on) and the wandering Snail (a 20%-off cart when you meet
+  it off its stall).
+- **Art**: all 30 assets generated and approved (`assets/art/`).
+- **Next: M5 systems** — save/resume, seeds on the title, settings, reduce-motion.
 
 ## Licence
 

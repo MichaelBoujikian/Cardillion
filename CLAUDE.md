@@ -46,8 +46,12 @@ before and after a visual change. Render and UI have no unit tests — the scree
 
 ## Current milestone
 
-M1–M3 are done (2026-09-13): the engine choice is settled, a fight plays, and a full run goes
-title → map → fights/rewards/shops/cocoons → the Bear → result. Next is **M4 content** — see
-`spec.md` §13. The engine has `run.ts` (map + run reducer) over `combat.ts`; screens live in
+M1–M4 are done (2026-09-15). Next is **M5 systems** — save/resume, seeds, settings — see
+`spec.md` §13 and §10. Engine: `combat.ts` (fight reducer, `CombatMods` for upgrade effects),
+`map.ts`, `run.ts` (run reducer: shops, upgrades, the two map markers). Screens live in
 `src/ui/run-screens.ts`; `src/app/run-controller.ts` sequences events into animations. In dev,
-`window.__cardillion.autoRun()` / `autoFight()` play the game from the console for verification.
+`window.__cardillion.autoRun()` / `autoFight()` play the game from the console, and
+`?seed= ?deck= ?hp= ?crumbs=` override a run's start.
+
+Tool note: the Bash tool truncates commands past roughly 8 KB (the failure looks like an
+unterminated quote). Write large files with the Write tool; keep heredocs small.
