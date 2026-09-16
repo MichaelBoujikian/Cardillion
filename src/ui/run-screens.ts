@@ -347,7 +347,7 @@ export class RunScreens {
       `<div class="veil"></div>
        <div class="panel">
          <h1>CARDILLION</h1>
-         <h2>cyborg garden bugs versus the things in the thicket</h2>
+         <h2>garden bugs versus the things in the thicket</h2>
          ${opts.notice ? `<p class="notice">${opts.notice}</p>` : ''}
          ${opts.canContinue ? '<p><button class="btn continue">CONTINUE</button></p>' : ''}
          <p><input class="seed" placeholder="seed (optional)" value="${esc(seedHint ?? '')}" spellcheck="false"></p>

@@ -44,6 +44,16 @@ That is the entire setup. From here the agent runs the pipeline.
 Costs: roughly $0.02 / $0.07 / $0.19 per image at low / medium / high quality. Use
 `--quality medium` while iterating on prompts, `high` for the final render.
 
+## Editing an existing asset (`subject`)
+
+A manifest entry with `"subject": "<id>"` is an **edit** of that asset rather than a new
+picture: the model is told the first image _is_ the creature — keep its pose, size and every
+detail not mentioned — and to change only what the prompt describes. The raw chroma render in
+`art/out/<id>-raw.png` is sent when it exists (so the model paints on the same green screen);
+`reference` images can still follow as style anchors. Expect some drift in fur and tone — it
+is a guided repaint, not a pixel edit — but the creature and pose hold. This is how the mutant
+direction (torn skin, mouth-tentacles) was sampled from the existing rat.
+
 ## Chroma-key mode (the default for both styles)
 
 The API's native transparent mode drops thin dark limbs — rats came back with floating paws and

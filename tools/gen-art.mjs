@@ -83,9 +83,12 @@ function buildPrompt(asset) {
   const key = keyFor(asset);
   // With a reference image the edits endpoint tends to redraw the reference's subject, so the
   // prompt says what the reference is for.
-  const refHint = asset.reference
-    ? 'Use the reference image only for its painting technique; the subject is described below.'
-    : '';
+  // `subject` is an existing asset to keep and alter (an edit); `reference` is a style anchor.
+  const refHint = asset.subject
+    ? 'The FIRST image is the subject: keep this exact creature - its pose, size, proportions, colours and every detail not mentioned below - and change only what is described. Any further images are for painting technique only.'
+    : asset.reference
+      ? 'Use the reference image only for its painting technique; the subject is described below.'
+      : '';
   const suffix = key
     ? `IMPORTANT: the subject is shown floating in empty space against a flat, evenly lit, bright neon ${key.name} chroma-key screen, cut out like a sticker, with a generous margin of the same colour on every side including below its feet; the bottom edge of the image is exactly the same colour as the top edge. The screen is a perfectly flat digital colour fill, as if the subject had been pasted onto a solid colour layer in an image editor: no ambient occlusion, no cast shadow, no glow and no darkening of the screen anywhere, not even right next to the outline. There is NO floor, NO ground, NO shadow, NO gradient, NO wall, table or room anywhere - only the subject itself is painted.`
     : style.suffix;
@@ -210,17 +213,21 @@ async function generate(asset, prompt) {
   const background = key ? 'opaque' : (asset.background ?? manifest.defaults.background ?? 'auto');
 
   let res;
-  if (asset.reference) {
-    // Style-anchored generation: send the reference image(s) through the edits endpoint.
+  if (asset.reference || asset.subject) {
+    // Style-anchored generation or an edit: send the image(s) through the edits endpoint.
+    // The subject goes first (the prompt says so); its raw chroma render is preferred so the
+    // model sees the screen it must paint on.
     const form = new FormData();
     form.append('model', 'gpt-image-1');
     form.append('prompt', prompt);
     form.append('size', size);
     form.append('quality', quality);
     form.append('background', background);
-    for (const ref of [].concat(asset.reference)) {
-      // A reference is a generated asset, or a local photo in art/refs (gitignored).
+    const images = [...[].concat(asset.subject ?? []), ...[].concat(asset.reference ?? [])];
+    for (const ref of images) {
+      // A reference is a generated asset (raw render if kept), or a local photo in art/refs.
       const candidates = [
+        ...(asset.subject === ref ? [path.join(RAW_DIR, `${ref}-raw.png`)] : []),
         path.join(OUT_DIR, `${ref}.png`),
         path.join(ROOT, 'art', 'refs', `${ref}.png`),
       ];

@@ -296,6 +296,14 @@
       "reference": "style-anchor-garden",
       "prompt": "A cheerful cyborg earthworm diving head-first into dark garden soil: only the back half of its segmented pink body and a small copper spring at the tail tip still show above ground, a spray of soil crumbs and pebbles flying up, a tiny brass 'danger' sign planted beside the hole.",
       "size": "1024x1024"
+    },
+    {
+      "id": "enemy-rat-mutant",
+      "$comment": "Direction sample (2026-09-16): an EDIT of enemy-rat toward the mutant look the owner wants. Not a content id.",
+      "style": "thicket",
+      "subject": "enemy-rat",
+      "prompt": "Mutate this rat: large patches of its skin have been torn or sloughed away, showing raw wet muscle and pale ribs beneath; from its open mouth a bundle of thin, glistening, pink-grey fleshy tentacles pushes out and droops toward the ground, like the mouth of a Fallout 3 centaur (the mutant, not the horse-man) - smooth tube-like tentacles with no suckers, a couple ending in small toothed openings. Keep the same rat, the same pose, size, fur, eyes and lighting; only the wounds and the mouth-tentacles are new.",
+      "size": "1024x1024"
     }
   ]
 }
