@@ -13,7 +13,11 @@ export class CardFaces {
 
   face(defId: string, upgraded: boolean): HTMLCanvasElement {
     const def = cardDef(defId);
-    const art = this.art.get(def.art) ?? null;
+    // An upgraded form with its own art (Sir Reginald V) shows it; otherwise the base art.
+    const art =
+      (upgraded && def.upgradedArt ? this.art.get(def.upgradedArt) : undefined) ??
+      this.art.get(def.art) ??
+      null;
     const key = `${def.id}|${upgraded ? 1 : 0}|${art ? 1 : 0}`;
     let face = this.canvases.get(key);
     if (!face) {

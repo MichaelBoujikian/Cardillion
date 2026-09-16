@@ -14,7 +14,7 @@ import { RunScreens } from '@ui/run-screens';
 import * as THREE from 'three';
 import { RunController } from './run-controller';
 
-const EXTRA_ART = ['npc-snail', 'bg-map', 'bg-battle', 'enemy-possum-dead'];
+const EXTRA_ART = ['npc-snail', 'bg-map', 'bg-battle'];
 
 function debugOptions(): RunOptions {
   const params = new URLSearchParams(window.location.search);
@@ -40,8 +40,8 @@ function randomSeed(): string {
 
 export async function boot(root: HTMLElement): Promise<void> {
   const artIds = [
-    ...Object.values(CARDS).map((c) => c.art),
-    ...Object.values(ENEMIES).map((e) => e.art),
+    ...Object.values(CARDS).flatMap((c) => (c.upgradedArt ? [c.art, c.upgradedArt] : [c.art])),
+    ...Object.values(ENEMIES).flatMap((e) => (e.deadArt ? [e.art, e.deadArt] : [e.art])),
     ...EXTRA_ART,
   ];
   const art = await loadArt(artIds);

@@ -31,6 +31,17 @@ describe('cards', () => {
     }
   });
 
+  it('upgraded-form art is a card art id, distinct from the base art, and Cat and Wormillion have it', () => {
+    for (const card of Object.values(CARDS)) {
+      if (card.upgradedArt === undefined) continue;
+      expect(card.upgraded).not.toBeNull();
+      expect(card.upgradedArt).toMatch(/^card-/);
+      expect(card.upgradedArt).not.toBe(card.art);
+    }
+    expect(CARDS['cat']?.upgradedArt).toBe('card-cat-plus');
+    expect(CARDS['wormillion']?.upgradedArt).toBe('card-wormillion-plus');
+  });
+
   it('the starting deck only uses real cards and has ten of them', () => {
     expect(STARTING_DECK).toHaveLength(10);
     for (const id of STARTING_DECK) expect(CARDS[id]).toBeDefined();
@@ -66,6 +77,16 @@ describe('enemies', () => {
       }
       if (enemy.traits.includes('playDead')) expect(enemy.reviveHp).toBeGreaterThan(0);
     }
+  });
+
+  it('a Play Dead pose is an enemy art id and only Play Dead enemies have one', () => {
+    for (const enemy of Object.values(ENEMIES)) {
+      if (enemy.deadArt === undefined) continue;
+      expect(enemy.traits).toContain('playDead');
+      expect(enemy.deadArt).toMatch(/^enemy-/);
+      expect(enemy.deadArt).not.toBe(enemy.art);
+    }
+    expect(ENEMIES['possum']?.deadArt).toBe('enemy-possum-dead');
   });
 });
 

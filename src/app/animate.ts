@@ -132,14 +132,22 @@ export async function animateEvents(
         await scene.killEnemy(ev.uid);
         break;
 
-      case 'enemyRevived':
+      case 'enemyRevived': {
+        // Play Dead: the creature drops into its dead pose and lies there, intent still showing,
+        // until it next acts (see enemyActed).
         hp.set(ev.uid, ev.hp);
+        const pose = nextEnemy(ev.uid);
+        if (pose) {
+          const dead = enemyDef(pose.def).deadArt;
+          if (dead) scene.setPose(ev.uid, dead);
+        }
         scene.reviveEnemy(ev.uid);
         ui.showEnemy(ev.uid);
         ui.setEnemyHp(ev.uid, ev.hp);
         ui.pop(ev.uid, 'plays dead!', 'info');
         await sleep(400);
         break;
+      }
 
       case 'enemySummoned': {
         const e = nextEnemy(ev.uid);
@@ -156,11 +164,15 @@ export async function animateEvents(
         break;
       }
 
-      case 'enemyActed':
+      case 'enemyActed': {
+        // A creature that was playing dead springs back up to act.
+        const actor = nextEnemy(ev.uid);
+        if (actor) scene.setPose(ev.uid, enemyDef(actor.def).art);
         ui.flashIntent(ev.uid, true);
         await sleep(260);
         ui.flashIntent(ev.uid, false);
         break;
+      }
 
       case 'intentRolled': {
         const e = nextEnemy(ev.uid);

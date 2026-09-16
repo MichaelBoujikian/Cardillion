@@ -15,6 +15,7 @@ const CARD_LIST: CardDef[] = [
     base: { cost: 1, text: 'Deal 4.', effects: [{ kind: 'damage', amount: 4 }] },
     upgraded: { cost: 0, text: 'Deal 4.', effects: [{ kind: 'damage', amount: 4 }] },
     art: 'card-wormillion',
+    upgradedArt: 'card-wormillion-plus',
   },
   {
     id: 'roly-poly',
@@ -118,6 +119,7 @@ const CARD_LIST: CardDef[] = [
       effects: [{ kind: 'damage', amount: 8, doubleStolenOnKill: true }],
     },
     art: 'card-cat',
+    upgradedArt: 'card-cat-plus',
   },
   {
     id: 'drill-worm',

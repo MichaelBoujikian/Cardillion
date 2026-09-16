@@ -47,6 +47,7 @@ const ENEMY_LIST: EnemyDef[] = [
       },
     ],
     art: 'enemy-possum',
+    deadArt: 'enemy-possum-dead',
   },
   {
     id: 'spider',

@@ -190,10 +190,11 @@ All numbers _(tuning)_.
 | Pounce       | Cat         | Rare     | Attack | 2    | Deal 10. Can target Unseen enemies. | Deal 14. Can target Unseen enemies. |
 
 Family cards are upgraded by the same titled unlock as their bug (Mr. Wormsley upgrades Drill
-Worm too), and by Wormillionaire/whole-family injection where applicable. They carry the same
-"+" rivet as the base card but reuse its art (no separate art slot) — the rivet and title
-banner are the only visual difference, matching the general rule in §5.1. All numbers
-_(tuning)_.
+Worm too), and by Wormillionaire/whole-family injection where applicable. Each family card has
+its **own art** (`card-<card>`, e.g. `card-drill-worm`): the same bug caught in a different
+act, so a family reads as one character with a repertoire rather than one picture repeated.
+Family cards have no separate upgraded-form art; their "+" form is the base art with the rivet
+and title banner (§5.1). All numbers _(tuning)_.
 
 **First playable (M2) shipped with only the seven base cards; families ship in M4.**
 
@@ -465,19 +466,22 @@ Every visual asset is keyed by a stable **id** matching its content entry. Maste
 game loads. A missing asset falls back to a procedurally drawn placeholder, so the game is
 always fully playable without any generated art.
 
-| Kind          | Id pattern        | Generated size  | Displayed as                  | Background  |
-| ------------- | ----------------- | --------------- | ----------------------------- | ----------- |
-| Card art      | `card-<bug>`      | 1024 × 1024 PNG | contain-fit in the art window | transparent |
-| Upgraded card | `card-<bug>-plus` | 1024 × 1024 PNG | as above                      | transparent |
-| Enemy sprite  | `enemy-<name>`    | 1024 × 1024 PNG | billboard, height ≈ 1.6 units | transparent |
-| Boss sprite   | `boss-<name>`     | 1024 × 1536 PNG | billboard, height ≈ 3 units   | transparent |
-| NPC           | `npc-<name>`      | 1024 × 1024 PNG | map marker / shop portrait    | transparent |
-| Backgrounds   | `bg-<scene>`      | 1536 × 1024 PNG | table texture / map backdrop  | opaque      |
-| Icons         | `icon-<name>`     | SVG             | UI                            | —           |
+| Kind          | Id pattern            | Generated size  | Displayed as                                                         | Background  |
+| ------------- | --------------------- | --------------- | -------------------------------------------------------------------- | ----------- |
+| Card art      | `card-<card>`         | 1024 × 1024 PNG | contain-fit in the art window                                        | transparent |
+| Upgraded card | `card-<card>-plus`    | 1024 × 1024 PNG | as above, only where the "+" form has its own look (Cat, Wormillion) | transparent |
+| Enemy sprite  | `enemy-<name>`        | 1024 × 1024 PNG | billboard, height ≈ 1.6 units                                        | transparent |
+| Enemy pose    | `enemy-<name>-<pose>` | 1024 × 1024 PNG | swapped onto the billboard while the pose holds (Possum's Play Dead) | transparent |
+| Boss sprite   | `boss-<name>`         | 1024 × 1536 PNG | billboard, height ≈ 3 units                                          | transparent |
+| NPC           | `npc-<name>`          | 1024 × 1024 PNG | map marker / shop portrait                                           | transparent |
+| Backgrounds   | `bg-<scene>`          | 1536 × 1024 PNG | table texture / map backdrop                                         | opaque      |
+| Icons         | `icon-<name>`         | SVG             | UI                                                                   | —           |
 
+Content names its art explicitly (`art`, and `upgradedArt` / `deadArt` where a second image
+exists); the patterns above are the naming convention, not something the loader infers.
 Prompts live in `art/manifest.json`; `npm run art` renders them (see `docs/art-pipeline.md`).
-Art is generated with the OpenAI Images API once the game is further along; until then,
-placeholders.
+All v1 assets are generated and approved; new content gets a manifest entry and plays with a
+placeholder until its art is.
 
 ---
 

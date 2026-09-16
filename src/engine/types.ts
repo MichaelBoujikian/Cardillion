@@ -65,6 +65,8 @@ export interface CardDef {
   unplayable?: boolean;
   /** Asset id for the art contract (spec §11.4). */
   art: string;
+  /** Art for the upgraded form when it has its own (Sir Reginald V's top hat); else `art`. */
+  upgradedArt?: string;
 }
 
 export interface CardInstance {
@@ -110,6 +112,8 @@ export interface EnemyDef {
   /** HP the creature gets back up with when Play Dead triggers. */
   reviveHp?: number;
   art: string;
+  /** Art shown from the moment Play Dead triggers until the creature next acts. */
+  deadArt?: string;
 }
 
 export interface EnemyInstance {

@@ -36,6 +36,8 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 interface EnemySprite {
   uid: string;
   def: string;
+  /** Art id currently on the plane (the def's art, or a pose such as Play Dead). */
+  pose: string;
   root: THREE.Group;
   plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
   eyes: THREE.Sprite[];
@@ -474,15 +476,13 @@ export class BattleScene {
     plane.position.y = height / 2 - 0.08;
     const root = new THREE.Group();
     root.add(plane);
-    const eyes: THREE.Sprite[] = [];
-    const points = img ? findGlowPoints(img) : PLACEHOLDER_EYES;
-    for (const [u, v] of points) {
-      const e = new THREE.Sprite(this.eyeMat);
-      e.position.set((u - 0.5) * width, (0.5 - v) * height + plane.position.y, 0.03);
-      e.scale.setScalar(img ? 0.3 : 0.11);
-      root.add(e);
-      eyes.push(e);
-    }
+    const eyes = this.placeEyes(
+      root,
+      img ? findGlowPoints(img) : PLACEHOLDER_EYES,
+      width,
+      height,
+      !!img,
+    );
     const blob = new THREE.Mesh(
       new THREE.CircleGeometry(0.9, 16),
       new THREE.MeshBasicMaterial({
@@ -499,6 +499,7 @@ export class BattleScene {
     const sprite: EnemySprite = {
       uid: enemy.uid,
       def: enemy.def,
+      pose: def.art,
       root,
       plane,
       eyes,
@@ -512,6 +513,46 @@ export class BattleScene {
     };
     this.applyReveal(sprite);
     return sprite;
+  }
+
+  /** Glowing-eye sprites at the given UV points (v down) of a plane of the given size. */
+  private placeEyes(
+    root: THREE.Group,
+    points: readonly [number, number][],
+    width: number,
+    height: number,
+    generated: boolean,
+  ): THREE.Sprite[] {
+    const eyes: THREE.Sprite[] = [];
+    for (const [u, v] of points) {
+      const e = new THREE.Sprite(this.eyeMat);
+      e.position.set((u - 0.5) * width, (0.5 - v) * height + height / 2 - 0.08, 0.03);
+      e.scale.setScalar(generated ? 0.3 : 0.11);
+      root.add(e);
+      eyes.push(e);
+    }
+    return eyes;
+  }
+
+  /**
+   * Swap an enemy's art for another pose (the Possum's Play Dead), keeping its height and
+   * re-finding its eyes. A pose with no art keeps whatever is showing.
+   */
+  setPose(uid: string, artId: string): void {
+    const s = this.sprites.get(uid);
+    if (!s || s.pose === artId) return;
+    const img = this.art.get(artId);
+    if (!img) return;
+    s.pose = artId;
+    s.width = s.height / (img.height / img.width);
+    s.plane.geometry.dispose();
+    s.plane.geometry = new THREE.PlaneGeometry(s.width, s.height);
+    s.plane.material.map?.dispose();
+    s.plane.material.map = imageTexture(img);
+    s.plane.material.needsUpdate = true;
+    for (const e of s.eyes) s.root.remove(e);
+    s.eyes = this.placeEyes(s.root, findGlowPoints(img), s.width, s.height, true);
+    this.applyReveal(s);
   }
 
   private applyReveal(sprite: EnemySprite): void {

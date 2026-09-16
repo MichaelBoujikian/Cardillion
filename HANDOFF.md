@@ -109,7 +109,10 @@ tools/        gen-art.mjs (OpenAI Images + chroma key) · art-preview.mjs (check
 ```
 
 Rules that matter when you touch it: the engine emits **events** and the renderer only
-animates from them (ADR 0003); randomness only from `Rng` streams (`map`, `encounters`,
+animates from them (ADR 0003); content names every image it uses (`art`, plus `upgradedArt`
+on Cat/Wormillion and `deadArt` on the Possum) and `src/app/index.ts` collects those ids for
+the loader — a new image means a new field or list entry, never a naming convention the
+loader guesses; randomness only from `Rng` streams (`map`, `encounters`,
 `combat`, `rewards`, `shop`, `markers`); `run.ts` keeps `lastCombat` so a fight's closing
 events can still animate after `combat` is nulled; `returnToMap()` in `run.ts` is where a
 node hands control back and where deferred content (Greeble-ambushed Shop/Cocoon, the
@@ -119,14 +122,13 @@ Snail's cart) is intercepted — route new "after this node" behaviour through i
 
 - **One unexplained one-off:** on the very first drag of one session, three cards were spent
   from a single gesture. Instrumented, never reproduced across many drags. Watch for it.
-- `card-cobweb` has no art on purpose; the loader 404s once per load and falls back to the
-  drawn placeholder. Harmless, but it's the one "error" you'll see in production.
+- `card-cobweb` has no art yet; the loader 404s once per load and falls back to the drawn
+  placeholder. Harmless, but it's the one "error" you'll see in production. It's a card the
+  player holds among painted ones, so it belongs in the next art batch.
 - Desktop-only layout. The page loads on phones but the title overflows and touch is untested;
   spec lists touch as roadmap. Share the desktop link.
 - GitHub Pages URLs are case-sensitive: `/Cardillion/` works, `/cardillion/` 404s. Renaming
   the repo to lowercase was offered to the owner and not decided.
-- `enemy-possum-dead` exists (the Play Dead pose) but nothing swaps to it yet; the possum's
-  revive animation still uses the standing sprite.
 - Both spider sprites keep a faint half-keyed shadow under the body; the owner accepted them.
 
 ## How we got here (for context, not action)
