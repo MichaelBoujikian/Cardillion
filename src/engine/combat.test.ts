@@ -720,3 +720,36 @@ describe('Play Dead is visible in state', () => {
     expect(acted.state.enemies[0]!.playingDead).toBe(false);
   });
 });
+
+describe('enemyActing cues the wind-up (ADR 0003: the renderer animates from events)', () => {
+  it('is emitted after the poison tick and before the move resolves, once per acting enemy', () => {
+    const { state } = start({ deck: ['roly-poly'], enemies: ['rat', 'scorpion'] });
+    const poisoned = structuredClone(state);
+    poisoned.enemies[0]!.statuses.poison = 2;
+    poisoned.enemies[0]!.intent = 'gnaw';
+    poisoned.enemies[1]!.intent = 'sting';
+    const { events } = applyAction(poisoned, { type: 'endTurn' });
+    const types = events.map((e) => e.type);
+    const acting = ofType(events, 'enemyActing');
+    expect(acting).toEqual([
+      { type: 'enemyActing', uid: 'e2', move: 'gnaw' },
+      { type: 'enemyActing', uid: 'e3', move: 'sting' },
+    ]);
+    const ratTick = types.indexOf('poisonTicked');
+    const ratActing = types.indexOf('enemyActing');
+    const firstHit = types.indexOf('playerDamaged');
+    const ratActed = types.indexOf('enemyActed');
+    expect(ratTick).toBeLessThan(ratActing);
+    expect(ratActing).toBeLessThan(firstHit);
+    expect(firstHit).toBeLessThan(ratActed);
+  });
+
+  it('is not emitted for an enemy that dies to poison before acting', () => {
+    const { state } = start({ deck: ['roly-poly'], enemies: ['rat', 'possum'] });
+    const dying = structuredClone(state);
+    dying.enemies[0]!.hp = 1;
+    dying.enemies[0]!.statuses.poison = 1;
+    const { events } = applyAction(dying, { type: 'endTurn' });
+    expect(ofType(events, 'enemyActing').map((e) => e.uid)).toEqual(['e3']);
+  });
+});

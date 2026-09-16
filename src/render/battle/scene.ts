@@ -33,14 +33,41 @@ function rnd(seed: number): () => number {
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** Whether the creature's shown intent is an attack (it leans in while it means to bite). */
+function isThreatening(enemy: EnemyInstance): boolean {
+  const move = enemyDef(enemy.def).moves.find((m) => m.id === enemy.intent);
+  return move?.effects.some((e) => e.kind === 'attack') ?? false;
+}
+
+/** The move a creature is making, as a body motion (spec §11.2). */
+export type EnemyAction = 'lunge' | 'rear' | 'shudder' | 'spin' | 'dart' | 'stamp';
+
+/** Per-action timing: total length and the moment the move "lands", both in seconds. */
+const ACTION_TIMING: Record<EnemyAction, { duration: number; impact: number }> = {
+  lunge: { duration: 0.6, impact: 0.24 },
+  rear: { duration: 0.65, impact: 0.3 },
+  shudder: { duration: 0.5, impact: 0.2 },
+  spin: { duration: 0.6, impact: 0.3 },
+  dart: { duration: 0.5, impact: 0.24 },
+  stamp: { duration: 0.4, impact: 0.18 },
+};
+
 interface EnemySprite {
   uid: string;
   def: string;
   /** Art id currently on the plane (the def's art, or a pose such as Play Dead). */
   pose: string;
   root: THREE.Group;
+  /** Plane and eyes together: idle motion and moves are applied here; the plane itself keeps hit recoil and death. */
+  body: THREE.Group;
   plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
   eyes: THREE.Sprite[];
+  /** Desynchronises the idle motion between creatures. */
+  seed: number;
+  /** Its shown intent is an attack: it leans in and breathes faster. */
+  threat: boolean;
+  /** A move in progress, started at scene time `start`. */
+  action: { kind: EnemyAction; start: number } | null;
   width: number;
   height: number;
   unseen: boolean;
@@ -79,7 +106,9 @@ export class BattleScene {
   private farEyes: { grp: THREE.Group; seed: number }[] = [];
   private shakeAmt = 0;
   /** Settings (spec §10): which movement the scene is allowed. */
-  private motion = { shake: true, grain: true, flicker: true };
+  private motion = { shake: true, grain: true, flicker: true, idle: true };
+  /** Scene time of the last frame, so actions started between frames know when they began. */
+  private now = 0;
   private readonly basePos = new THREE.Vector3(0, 4.6, 7.2);
   private readonly lookAt = new THREE.Vector3(0, 0.7, -3.5);
   private w = 1;
@@ -448,6 +477,7 @@ export class BattleScene {
       const x = (i - (n - 1) / 2) * spread;
       const z = -5.4 - (i % 2) * 1.1;
       sprite.root.position.set(x, 0, z);
+      sprite.threat = isThreatening(enemy);
       if (enemy.hp <= 0 && !sprite.dead) {
         sprite.dead = true;
         sprite.root.visible = false;
@@ -478,9 +508,11 @@ export class BattleScene {
     );
     plane.position.y = height / 2 - 0.08;
     const root = new THREE.Group();
-    root.add(plane);
+    const body = new THREE.Group();
+    root.add(body);
+    body.add(plane);
     const eyes = this.placeEyes(
-      root,
+      body,
       img ? findGlowPoints(img) : PLACEHOLDER_EYES,
       width,
       height,
@@ -504,8 +536,12 @@ export class BattleScene {
       def: enemy.def,
       pose: poseArt,
       root,
+      body,
       plane,
       eyes,
+      seed: (this.sprites.size * 2.399 + enemy.uid.length) % 6.28,
+      threat: isThreatening(enemy),
+      action: null,
       width,
       height,
       unseen,
@@ -516,6 +552,17 @@ export class BattleScene {
     };
     this.applyReveal(sprite);
     return sprite;
+  }
+
+  /**
+   * Play a move as a body motion. Resolves at the moment the move lands, so the caller can
+   * let the hit's own feedback follow; the recovery plays out on its own.
+   */
+  act(uid: string, kind: EnemyAction): Promise<void> {
+    const s = this.sprites.get(uid);
+    if (!s || s.dead) return Promise.resolve();
+    s.action = { kind, start: this.now };
+    return sleep(ACTION_TIMING[kind].impact * 1000);
   }
 
   /** Glowing-eye sprites at the given UV points (v down) of a plane of the given size. */
@@ -553,8 +600,8 @@ export class BattleScene {
     s.plane.material.map?.dispose();
     s.plane.material.map = imageTexture(img);
     s.plane.material.needsUpdate = true;
-    for (const e of s.eyes) s.root.remove(e);
-    s.eyes = this.placeEyes(s.root, findGlowPoints(img), s.width, s.height, true);
+    for (const e of s.eyes) s.body.remove(e);
+    s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, true);
     this.applyReveal(s);
   }
 
@@ -679,6 +726,11 @@ export class BattleScene {
     const s = this.sprites.get(uid);
     if (!s || s.dead) return;
     s.dead = true;
+    // Whatever it was doing, it falls from the rest pose.
+    s.action = null;
+    s.body.position.set(0, 0, 0);
+    s.body.rotation.set(0, 0, 0);
+    s.body.scale.set(1, 1, 1);
     const t0 = performance.now();
     await new Promise<void>((resolve) => {
       let done = false;
@@ -727,6 +779,8 @@ export class BattleScene {
       shake: opts.screenShake && !opts.reduceMotion,
       grain: !opts.reduceMotion,
       flicker: !opts.reduceMotion,
+      // Ambient sway and twitches go; breathing, leaning and the moves themselves stay.
+      idle: !opts.reduceMotion,
     };
     this.post.setGrain(this.motion.grain ? GRAIN_DEFAULT : 0);
     if (!this.motion.shake) this.shakeAmt = 0;
@@ -744,6 +798,7 @@ export class BattleScene {
   }
 
   update(dt: number, t: number): void {
+    this.now = t;
     const flicker = this.motion.flicker;
     this.warm.intensity = flicker
       ? 28 + Math.sin(t * 9.1) * 1.6 + Math.sin(t * 23.7) * 1.1 + Math.sin(t * 2.3) * 2
@@ -770,8 +825,7 @@ export class BattleScene {
     let i = 0;
     for (const s of this.sprites.values()) {
       if (s.dead) continue;
-      const breathe = 1 + Math.sin(t * 1.7 + i * 2.1) * 0.02;
-      s.plane.scale.y = breathe;
+      this.poseBody(s, t);
       if (s.recoil > 0) {
         s.recoil = Math.max(0, s.recoil - dt * 4);
         s.plane.position.x = Math.sin(s.recoil * 30) * 0.08 * s.recoil;
@@ -797,6 +851,106 @@ export class BattleScene {
     } else this.camera.position.copy(this.basePos);
     this.camera.lookAt(this.lookAt);
     this.post.setTime(t);
+  }
+
+  /**
+   * Idle motion plus the current move, composed fresh every frame from the rest pose so
+   * nothing accumulates. Idle: breathing, a slow sway, a bob, an occasional twitch, and a
+   * lean-in while its intent is an attack. Moves: see EnemyAction.
+   */
+  private poseBody(s: EnemySprite, t: number): void {
+    const b = s.body;
+    const k = s.seed;
+    const rate = s.threat ? 2.6 : 1.7;
+    let sx = 1;
+    let sy = 1 + Math.sin(t * rate + k) * (s.threat ? 0.03 : 0.02);
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    let rx = s.threat ? 0.07 : 0;
+    let rz = 0;
+    if (this.motion.idle) {
+      rz += Math.sin(t * 0.6 + k) * 0.03;
+      y += Math.sin(t * 1.1 + k * 1.7) * 0.02;
+      x += Math.sin(t * 0.35 + k * 0.9) * 0.04;
+      // A twitch every few seconds, each creature on its own clock.
+      const cycle = 3.5 + (k % 2.5);
+      const u = ((t + k * 7) % cycle) / cycle;
+      if (u < 0.05) {
+        const e = Math.sin((u / 0.05) * Math.PI);
+        rz += e * 0.05;
+        x += e * 0.05;
+      }
+    }
+    if (s.action) {
+      const { kind, start } = s.action;
+      const { duration } = ACTION_TIMING[kind];
+      const u = Math.min(1, (t - start) / duration);
+      if (u >= 1) s.action = null;
+      const ease = (a: number) => 1 - (1 - a) * (1 - a);
+      switch (kind) {
+        case 'lunge': {
+          // Pull back, strike toward the camera, hold, recover.
+          if (u < 0.2) z -= 0.3 * (u / 0.2);
+          else if (u < 0.4) {
+            const p = ease((u - 0.2) / 0.2);
+            z += -0.3 + 1.7 * p;
+            rx += 0.3 * p;
+            sx *= 1 + 0.08 * p;
+            sy *= 1 + 0.08 * p;
+          } else if (u < 0.55) {
+            z += 1.4;
+            rx += 0.3;
+            sx *= 1.08;
+            sy *= 1.08;
+          } else {
+            const p = 1 - ease((u - 0.55) / 0.45);
+            z += 1.4 * p;
+            rx += 0.3 * p;
+            sx *= 1 + 0.08 * p;
+            sy *= 1 + 0.08 * p;
+          }
+          break;
+        }
+        case 'rear': {
+          // Up on the hind legs and back down.
+          const p = u < 0.45 ? ease(u / 0.45) : 1 - ease((u - 0.45) / 0.55);
+          sy *= 1 + 0.16 * p;
+          y += 0.25 * p;
+          rx -= 0.18 * p;
+          break;
+        }
+        case 'shudder': {
+          const env = Math.sin(u * Math.PI);
+          x += Math.sin(t * 45) * 0.07 * env;
+          rz += Math.sin(t * 45) * 0.04 * env;
+          break;
+        }
+        case 'spin': {
+          const env = Math.sin(u * Math.PI);
+          rz += Math.sin(t * 22) * 0.16 * env;
+          y += 0.05 * env;
+          break;
+        }
+        case 'dart': {
+          // A quick sideways scuttle and back.
+          const p = Math.sin(u * Math.PI * 2);
+          x += p * 0.35;
+          rz -= p * 0.08;
+          break;
+        }
+        case 'stamp': {
+          const p = Math.sin(u * Math.PI);
+          y -= 0.1 * p;
+          sy *= 1 - 0.06 * p;
+          sx *= 1 + 0.04 * p;
+          break;
+        }
+      }
+    }
+    b.position.set(x, y, z);
+    b.rotation.set(rx, 0, rz);
+    b.scale.set(sx, sy, 1);
   }
 
   render(): void {

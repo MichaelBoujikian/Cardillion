@@ -438,6 +438,7 @@ function enemyTurn(s: CombatState, events: CombatEvent[], rng: Rng, enemy: Enemy
   }
   const move = def.moves.find((m) => m.id === enemy.intent);
   if (!move) return;
+  events.push({ type: 'enemyActing', uid: enemy.uid, move: move.id });
 
   const enraged = isEnraged(def, enemy);
   const bonus = enraged ? (def.enrage?.bonusDamage ?? 0) : 0;

@@ -500,6 +500,13 @@ enemy; the Thicket's fog creeps a little onto the table.
   cool hemisphere fill, enemies' eyes emissive.
 - **Enemies:** painted sprites (billboards) standing on the far half of the table, spaced across
   x. Intent above, HP bar below. The Greeble is a shimmer shader + HP bar until revealed.
+  They are never still: each breathes, sways, bobs and twitches on its own clock, and leans in
+  while its intent is an attack. Each move is a **body motion** cued by the `enemyActing`
+  event — attacks lunge toward the camera (the hit lands at the apex), Roar/Hiss rear up,
+  webs spin, Pilfer darts sideways, a summon stamps, poison shudders. All of it is transforms
+  on the billboard, so the art can be replaced without touching the motion (only the eye-glow
+  finder cares what is in the picture: keep the amber eyes). Reduce motion keeps breathing,
+  the lean and the moves; the ambient sway and twitches go.
 - **Hand:** DOM elements along the bottom edge in the bright zone. Hover lifts and enlarges.
 - **Playing a card:** it lifts off the hand, becomes a textured plane in the 3D scene, flies to
   its target and hits (impact flash, sprite recoil, number pop). Untargeted cards flash at the

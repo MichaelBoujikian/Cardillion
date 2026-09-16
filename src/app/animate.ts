@@ -6,10 +6,32 @@
 import { cardDef } from '@content/cards';
 import { enemyDef } from '@content/enemies';
 import { PLAYER, type CombatEvent, type CombatState, type EnemyInstance } from '@engine/types';
-import type { BattleScene } from '@render/battle/scene';
+import type { BattleScene, EnemyAction } from '@render/battle/scene';
 import { describeIntent, type BattleUI } from '@ui/battle-ui';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** The body motion for a move, from what the move does first. */
+function actionFor(uid: string, move: string, state: CombatState): EnemyAction {
+  const enemy = state.enemies.find((e) => e.uid === uid);
+  const effect = enemy ? enemyDef(enemy.def).moves.find((m) => m.id === move)?.effects[0] : null;
+  switch (effect?.kind) {
+    case 'attack':
+      return 'lunge';
+    case 'block':
+      return 'rear';
+    case 'apply':
+      return effect.status === 'weak' ? 'rear' : 'shudder';
+    case 'cobweb':
+      return 'spin';
+    case 'pilfer':
+      return 'dart';
+    case 'summon':
+      return 'stamp';
+    default:
+      return 'shudder';
+  }
+}
 
 export async function animateEvents(
   events: CombatEvent[],
@@ -170,15 +192,20 @@ export async function animateEvents(
         break;
       }
 
-      case 'enemyActed': {
-        // A creature that was playing dead springs back up to act.
+      case 'enemyActing': {
+        // The wind-up: a creature that was playing dead springs up first; the body motion
+        // resolves at the moment the move lands, so the hit's own feedback follows it.
         const actor = nextEnemy(ev.uid);
         if (actor) scene.setPose(ev.uid, enemyDef(actor.def).art);
         ui.flashIntent(ev.uid, true);
-        await sleep(260);
-        ui.flashIntent(ev.uid, false);
+        await scene.act(ev.uid, actionFor(ev.uid, ev.move, next));
         break;
       }
+
+      case 'enemyActed':
+        ui.flashIntent(ev.uid, false);
+        await sleep(120);
+        break;
 
       case 'intentRolled': {
         const e = nextEnemy(ev.uid);

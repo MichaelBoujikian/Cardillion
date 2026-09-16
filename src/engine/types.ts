@@ -238,6 +238,8 @@ export type CombatEvent =
   | { type: 'enemyDied'; uid: string }
   | { type: 'enemyRevived'; uid: string; hp: number }
   | { type: 'enemySummoned'; uid: string; def: string }
+  /** The enemy begins its move: the wind-up, before any of the move's effects land. */
+  | { type: 'enemyActing'; uid: string; move: string }
   | { type: 'enemyActed'; uid: string; move: string }
   | { type: 'intentRolled'; uid: string; move: string }
   | { type: 'crumbsStolen'; uid: string; amount: number }

@@ -107,6 +107,13 @@ The browser JS tool times out at 45 s — poll long runs with waits. The console
 stale errors from old HMR loads (`glow before initialization`, `faces.face`) — ignore them; a
 fresh navigation clears them.
 
+**Enemy motion and the coming art change.** The owner plans more mutant enemy art (Fallout 3
+centaur-like). Enemy idle motion and per-move body motions (spec §11.2, `poseBody` and `act`
+in `scene.ts`) are transforms on the billboard and transfer to new art unchanged; only
+amplitudes might want re-tuning per creature. Keep the glowing amber eyes in new prompts —
+`findGlowPoints` finds the emissive eyes in the image. Do not rig sprites into parts before
+the art is final.
+
 Useful seeds: `g52` (trail 0 is fight, fight, shop, cocoon; `t0-1` is Damp Soil; a strong deck
 wins it in ~2 min of autoplay), `s0` spider, `s5` scorpion + Greeble, `s3` possum on a Flower
 Patch, `garden1` two rats plus a Greeble. Deck overrides for the new cards:
