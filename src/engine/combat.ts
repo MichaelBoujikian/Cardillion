@@ -43,7 +43,16 @@ export interface CombatSetup {
   mods?: Partial<CombatMods>;
 }
 
-const DEFAULT_MODS: CombatMods = { attackBonus: 0, firstTurnCharge: 0, pilferReduction: 0 };
+const DEFAULT_MODS: CombatMods = {
+  attackBonus: 0,
+  firstTurnCharge: 0,
+  pilferReduction: 0,
+  familyAttackBonus: {},
+  familyBlockBonus: {},
+  familyRefund: null,
+  enemyPoisonBonus: 0,
+  enemyCobwebBonus: 0,
+};
 
 export class IllegalAction extends Error {}
 
@@ -119,6 +128,7 @@ export function createCombat(setup: CombatSetup): StepResult {
     crumbs: setup.crumbs,
     stolen: 0,
     recovered: 0,
+    refundUsed: false,
     nextUid: 1,
   };
   for (const entry of setup.deck) {
@@ -201,6 +211,7 @@ function startPlayerTurn(s: CombatState, events: CombatEvent[], rng: Rng): void 
   s.turn++;
   events.push({ type: 'turnStarted', turn: s.turn });
   s.player.statuses.block = 0;
+  s.refundUsed = false;
   s.player.charge = s.player.chargePerTurn + (s.turn === 1 ? s.mods.firstTurnCharge : 0);
   events.push({ type: 'chargeChanged', charge: s.player.charge });
   if (s.player.statuses.poison > 0) {
@@ -248,6 +259,15 @@ function playCard(
   s.player.charge -= form.cost;
   events.push({ type: 'cardPlayed', uid, ...(target ? { target } : {}) });
   events.push({ type: 'chargeChanged', charge: s.player.charge });
+  // Habitat refund: the first card of the favoured family each turn costs nothing after all.
+  if (def.bug && s.mods.familyRefund === def.bug && !s.refundUsed && form.cost > 0) {
+    s.refundUsed = true;
+    s.player.charge += form.cost;
+    events.push({ type: 'chargeRefunded', uid, amount: form.cost });
+    events.push({ type: 'chargeChanged', charge: s.player.charge });
+  }
+  const familyAttack = def.bug ? (s.mods.familyAttackBonus[def.bug] ?? 0) : 0;
+  const familyBlock = def.bug ? (s.mods.familyBlockBonus[def.bug] ?? 0) : 0;
 
   const weakMult = s.player.statuses.weak > 0 ? WEAK_MULTIPLIER : 1;
   const targetsFor = (scope: 'target' | 'all-enemies'): EnemyInstance[] => {
@@ -263,7 +283,7 @@ function playCard(
     switch (effect.kind) {
       case 'damage': {
         const times = effect.times ?? 1;
-        const amount = Math.floor((effect.amount + s.mods.attackBonus) * weakMult);
+        const amount = Math.floor((effect.amount + s.mods.attackBonus + familyAttack) * weakMult);
         const opts = {
           ignoreBlock: effect.ignoreBlock ?? false,
           doubleStolen: effect.doubleStolenOnKill ?? false,
@@ -284,10 +304,12 @@ function playCard(
         }
         break;
       }
-      case 'block':
-        s.player.statuses.block += effect.amount;
-        events.push({ type: 'blockGained', target: PLAYER, amount: effect.amount });
+      case 'block': {
+        const amount = effect.amount + familyBlock;
+        s.player.statuses.block += amount;
+        events.push({ type: 'blockGained', target: PLAYER, amount });
         break;
+      }
       case 'apply': {
         // Flutter: 'random-enemy' picks once at play time, not once per target.
         const targets =
@@ -393,17 +415,14 @@ function enemyTurn(s: CombatState, events: CombatEvent[], rng: Rng, enemy: Enemy
         enemy.statuses.block += effect.amount;
         events.push({ type: 'blockGained', target: enemy.uid, amount: effect.amount });
         break;
-      case 'apply':
-        s.player.statuses[effect.status] += effect.amount;
-        events.push({
-          type: 'statusApplied',
-          target: PLAYER,
-          status: effect.status,
-          amount: effect.amount,
-        });
+      case 'apply': {
+        const amount = effect.amount + (effect.status === 'poison' ? s.mods.enemyPoisonBonus : 0);
+        s.player.statuses[effect.status] += amount;
+        events.push({ type: 'statusApplied', target: PLAYER, status: effect.status, amount });
         break;
+      }
       case 'cobweb':
-        for (let i = 0; i < effect.count; i++) {
+        for (let i = 0; i < effect.count + s.mods.enemyCobwebBonus; i++) {
           const card: CardInstance = { uid: `c${s.nextUid++}`, def: 'cobweb', upgraded: false };
           // Shuffled into the draw pile at a random position.
           s.draw.splice(rng.int(0, s.draw.length), 0, card);

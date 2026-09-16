@@ -3,6 +3,7 @@
  * list used by the map HUD and the shop's removal service. DOM over the battle canvas.
  */
 import { PUPATION, cardDef } from '@content/cards';
+import { HABITATS } from '@content/habitats';
 import { FLAVORS } from '@content/trails';
 import { TITLED_UNLOCKS, upgradeDef } from '@content/upgrades';
 import { nodeAt, signposts, visibleNodes, type MapNode } from '@engine/map';
@@ -84,6 +85,7 @@ const CSS = /* css */ `
 .map-screen .node.here text { fill:#2a1a08; }
 .map-screen .node.boss circle { fill:#1c0e12; stroke:#b8322b; stroke-width:4; }
 .map-screen .node.elite circle { stroke:#d9534f; }
+.map-screen .node .habitat { font-size:15px; fill:#9be37a; paint-order:stroke; stroke:#0b0d09; stroke-width:3px; }
 @keyframes pulse { 0%,100% { stroke-opacity:1; } 50% { stroke-opacity:.35; } }
 .map-screen .signpost { font: italic 15px Georgia, serif; fill:#ffd27a; text-anchor:middle; paint-order:stroke; stroke:#0b0d09; stroke-width:4px; pointer-events:none; }
 .map-screen .signpost.blurb { font-size:12px; fill:#f3e7c9; opacity:.85; }
@@ -235,6 +237,9 @@ export class RunScreens {
     const here = nodeAt(map, run.position);
     const visible = visibleNodes(map, run.position, run.visited);
     const reachable = new Set(here.next.map((e) => e.id));
+    // A habitat can only be smelled one step ahead, or remembered (spec §8.9).
+    const smells = (id: string) =>
+      reachable.has(id) || id === run.position || run.visited.includes(id);
     const bg = this.art.get('bg-map');
     const W = 1000;
     const H = 1000;
@@ -272,8 +277,12 @@ export class RunScreens {
           .join(' ');
         const r = n.type === 'boss' ? 30 : known ? 22 : 12;
         const glyph = n.id === run.position ? '☀' : known ? (GLYPH[n.type] ?? '?') : '';
-        const label = known ? n.type : 'unknown';
-        return `<g class="${cls}" data-id="${n.id}"><title>${label}</title><circle cx="${p.x}" cy="${p.y}" r="${r}"/><text x="${p.x}" y="${p.y + 1}">${glyph}</text></g>`;
+        const habitat = n.habitat && smells(n.id) ? HABITATS[n.habitat] : null;
+        const label = (known ? n.type : 'unknown') + (habitat ? ` · ${habitat.name}` : '');
+        const badge = habitat
+          ? `<text class="habitat" x="${p.x + 19}" y="${p.y - 17}">${habitat.glyph}</text>`
+          : '';
+        return `<g class="${cls}" data-id="${n.id}"><title>${label}</title><circle cx="${p.x}" cy="${p.y}" r="${r}"/><text x="${p.x}" y="${p.y + 1}">${glyph}</text>${badge}</g>`;
       })
       .join('');
 
@@ -318,7 +327,7 @@ export class RunScreens {
          <button class="btn ghost deck">Deck · ${run.deck.length}</button>
          ${owned.length ? `<div class="who">${owned.map((n) => `<span>✦ ${n}</span>`).join('')}</div>` : ''}
        </div>
-       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown${
+       <div class="map-legend">⚔ fight · ☠ elite · 🐌 shop · ❂ cocoon · 🐻 the Bear · ? unknown · <span style="color:#9be37a">⛰ ❀ ☀ ◐</span> habitat, smelled a step ahead${
          run.snailNode ? ' · 🐌 the Snail wanders' : ''
        }${seesGreeble ? ' · 👀 the Greeble' : ''}</div>
        <div class="map-title">Cardillion · the garden<br>seed <b>${run.seed}</b></div>`,

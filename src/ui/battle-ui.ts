@@ -60,6 +60,8 @@ const CSS = /* css */ `
 
 .crumbs { position:absolute; left:26px; top:22px; font-size:18px; letter-spacing:.04em; text-shadow: 0 1px 2px #000; }
 .crumbs b { color:#ffd27a; }
+.habitat { position:absolute; left:26px; top:52px; font-size:13px; color:#9be37a; text-shadow: 0 1px 2px #000; opacity:.9; }
+.habitat b { color:#c6ff9e; letter-spacing:.06em; }
 .topright { position:absolute; top:18px; right:26px; text-align:right; font-size:12px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; line-height:1.7; }
 .topright b { opacity:1; }
 .turn { position:absolute; right:26px; bottom:34px; pointer-events:auto; padding:10px 22px; border-radius:8px;
@@ -196,6 +198,7 @@ export class BattleUI {
       <div class="claw"></div><div class="redveil"></div><div class="shell"></div>
       <div class="labels"></div>
       <div class="crumbs">🍞 <b class="crumbs-n">0</b> crumbs</div>
+      <div class="habitat"></div>
       <div class="topright">Cardillion · <b class="turn-n">turn 1</b><br>seed <b class="seed">—</b></div>
       <div class="player">
         <div class="portrait">☀</div>
@@ -518,6 +521,13 @@ export class BattleUI {
 
   setCrumbs(n: number): void {
     this.q('.crumbs-n').textContent = String(n);
+  }
+
+  /** Name the fight's habitat and its effects under the crumbs (spec §8.9); null clears it. */
+  setHabitat(habitat: { glyph: string; name: string; blurb: string } | null): void {
+    this.q('.habitat').innerHTML = habitat
+      ? `${habitat.glyph} <b>${habitat.name.toUpperCase()}</b> · ${habitat.blurb}`
+      : '';
   }
 
   setPiles(draw: number, discard: number, exhausted: number): void {

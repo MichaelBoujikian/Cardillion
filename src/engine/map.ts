@@ -2,6 +2,7 @@
  * Map generation — spec.md §8.2–§8.4. Three trails from Start to Boss, each with a signpost
  * flavour, crossing at two points so the player can switch. Pure: same Rng, same map.
  */
+import { HABITAT_CHANCE, HABITAT_IDS, type HabitatId } from '@content/habitats';
 import { CROSSINGS, FLAVORS, type Flavor } from '@content/trails';
 import type { Rng } from './rng';
 
@@ -22,6 +23,8 @@ export interface MapNode {
   /** Trails that pass through this node (two for a crossing). */
   trails: number[];
   crossing: boolean;
+  /** Fight and Elite nodes only, about half of them (spec §8.9). */
+  habitat?: HabitatId;
   /** Layout, 0..1 across the garden and 0 (near) .. 1 (the forest edge). */
   x: number;
   y: number;
@@ -184,6 +187,14 @@ export function generateMap(rng: Rng): GameMap {
       prev = id;
     }
     link(prev, BOSS, trail.index);
+  }
+
+  // Habitats come from a forked stream so they never perturb the layout above (spec §8.9).
+  const habitats = rng.fork('habitats');
+  for (const id of Object.keys(nodes).sort()) {
+    const node = nodes[id] as MapNode;
+    if (node.type !== 'fight' && node.type !== 'elite') continue;
+    if (habitats.chance(HABITAT_CHANCE)) node.habitat = habitats.pick(HABITAT_IDS);
   }
   return { nodes, trails, start: START, boss: BOSS, depth };
 }

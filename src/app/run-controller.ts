@@ -4,6 +4,7 @@
  */
 import { cardDef } from '@content/cards';
 import { enemyDef } from '@content/enemies';
+import { HABITATS } from '@content/habitats';
 import { IllegalAction, canPlay } from '@engine/combat';
 import {
   applyRunAction,
@@ -149,6 +150,7 @@ export class RunController {
           this.scene.setEnemies(combat.enemies);
           this.battle.hideOverlay();
           this.battle.show();
+          this.battle.setHabitat(ev.habitat ? HABITATS[ev.habitat] : null);
           this.battle.render(combat);
           before = null;
           break;

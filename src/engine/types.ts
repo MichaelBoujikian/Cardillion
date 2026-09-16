@@ -146,7 +146,10 @@ export interface PlayerState {
   statuses: Statuses;
 }
 
-/** General-upgrade effects that modify combat rules directly (spec §6.2). All default to 0. */
+/**
+ * Rule modifiers a fight starts with: general upgrades (spec §6.2) and the node's habitat
+ * (spec §8.9). Everything defaults to 0 / empty / null.
+ */
 export interface CombatMods {
   /** Sharpened Mandibles: added to every player damage effect. */
   attackBonus: number;
@@ -154,6 +157,16 @@ export interface CombatMods {
   firstTurnCharge: number;
   /** Cat's Whisker: subtracted (floored at 0) from every Greeble pilfer amount. */
   pilferReduction: number;
+  /** Habitat: added to damage effects of cards of that bug. */
+  familyAttackBonus: Partial<Record<BugId, number>>;
+  /** Habitat: added to block effects of cards of that bug. */
+  familyBlockBonus: Partial<Record<BugId, number>>;
+  /** Habitat: the first card of this bug played each turn refunds its cost. */
+  familyRefund: BugId | null;
+  /** Habitat: added to every Poison an enemy applies to the player. */
+  enemyPoisonBonus: number;
+  /** Habitat: added to every Cobweb count an enemy spins. */
+  enemyCobwebBonus: number;
 }
 
 export type Phase = 'player' | 'won' | 'lost';
@@ -176,6 +189,8 @@ export interface CombatState {
   stolen: number;
   /** Crumbs recovered from Greeble kills this fight (bonus included). */
   recovered: number;
+  /** The habitat's family refund has been used this turn. */
+  refundUsed: boolean;
   nextUid: number;
 }
 
@@ -186,6 +201,8 @@ export type CombatEvent =
   | { type: 'combatStarted' }
   | { type: 'turnStarted'; turn: number }
   | { type: 'chargeChanged'; charge: number }
+  /** A habitat refunded a card's cost (spec §8.9). */
+  | { type: 'chargeRefunded'; uid: string; amount: number }
   | { type: 'cardDrawn'; uid: string }
   | { type: 'deckReshuffled' }
   | { type: 'cardPlayed'; uid: string; target?: string }

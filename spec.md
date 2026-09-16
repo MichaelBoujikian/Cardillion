@@ -330,7 +330,7 @@ v1: **one act**, one map, the Bear at the end. Later acts get their own map and 
 ### 8.4 Fog & signposts
 
 You see the **type** of every node within **2 steps** of your position. Further nodes show as
-unknown markers along the trail. At every branch, a **signpost** names each trail's flavour:
+unknown markers along the trail. A node's **habitat** (§8.9) shows only **1 step** ahead. At every branch, a **signpost** names each trail's flavour:
 
 | Flavour          | Length | Fights | Elites | Shops | Cocoons (+ pre-boss) | Extra                             |
 | ---------------- | ------ | ------ | ------ | ----- | -------------------- | --------------------------------- |
@@ -375,6 +375,23 @@ Metamorphosis is how a common Caterpillar becomes an uncommon Butterfly: one Coc
 the fight after it. The Chrysalis belongs to the Butterfly family, so Madame Butterfly upgrades
 it and the card it becomes. A Chrysalis is never offered by rewards or shops. One still in the
 deck at the Bear simply never emerges.
+
+### 8.9 Habitats
+
+Half of all Fight and Elite nodes _(tuning)_ sit in a **habitat**: a patch of ground that suits
+one bug family and, sometimes, one kind of vermin. Habitats are rolled at map creation from the
+`map` stream (after the layout, so they never change it) and never move. The Boss has none.
+
+| Habitat          | Garden side (yours)                                         | Thicket side (theirs)                           |
+| ---------------- | ----------------------------------------------------------- | ----------------------------------------------- |
+| **Damp Soil**    | Wormillion-family attacks +1. Roly Poly-family Block +2.    | —                                               |
+| **Flower Patch** | The first Butterfly-family card each turn refunds its cost. | —                                               |
+| **Dry Stone**    | Chameleon-family attacks +2 (basking).                      | Poison applied to you +1 (scorpion country).    |
+| **Dark Crevice** | Cat-family attacks +2 (hunting).                            | Spiders spin 1 extra Cobweb. Greeble chance ×2. |
+
+You can only **smell** a habitat: its glyph shows on nodes **one step ahead** (and on visited
+nodes), one step nearer than the fog reveals node types (§8.4). In the fight, the habitat and
+its effects are named under the crumbs. All numbers _(tuning)_.
 
 ---
 
@@ -581,3 +598,4 @@ the source of truth.
 | 2026-09-13 | Initial numbers                           | First pass from design session.                                                                                                                           |
 | 2026-09-15 | Family card upgraded forms                | Decided for M4 (spec §5.4 was draft; picked modest bumps matching each base card's own upgrade delta).                                                    |
 | 2026-09-15 | Cocoon: Forage 18–28, Chrysalis Block 6/8 | New §8.8 from the owner's idea list. Forage sits between a fight's bounty and a common card's price; Chrysalis is a Roly Poly with the attack taken away. |
+| 2026-09-15 | Habitats: 50% of fights, bonuses of +1/+2 | New §8.9 from the owner's idea list. Bonuses are one Sharpened Mandibles' worth, so a habitat tilts a fight without deciding it.                          |

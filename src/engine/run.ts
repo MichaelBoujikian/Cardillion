@@ -5,6 +5,7 @@
  */
 import { CARDS, PUPATION, STARTING_DECK, cardDef } from '@content/cards';
 import { ENCOUNTERS, encounterPool } from '@content/encounters';
+import { HABITATS, type HabitatId } from '@content/habitats';
 import { FLAVORS } from '@content/trails';
 import {
   GENERAL_UPGRADE_PRICE,
@@ -139,7 +140,14 @@ export type RunAction =
 
 export type RunEvent =
   | { type: 'traveled'; to: string; nodeType: NodeType }
-  | { type: 'fightStarted'; enemies: string[]; elite: boolean; boss: boolean; ambush: boolean }
+  | {
+      type: 'fightStarted';
+      enemies: string[];
+      elite: boolean;
+      boss: boolean;
+      ambush: boolean;
+      habitat?: HabitatId;
+    }
   | { type: 'combat'; events: CombatEvent[] }
   | { type: 'fightWon'; crumbs: number }
   | { type: 'rewardOffered'; offer: RewardOffer }
@@ -487,12 +495,14 @@ function startFight(r: RunState, events: RunEvent[], ambush: boolean): void {
   const boss = node.type === 'boss';
   const elite = node.type === 'elite';
   const enc = Rng.fromState(r.rng.encounters);
+  const habitat = node.habitat ? HABITATS[node.habitat] : null;
   let enemies: string[];
   if (boss) enemies = [...(ENCOUNTERS.boss[0] as readonly string[])];
   else if (elite) enemies = [...enc.pick(ENCOUNTERS.elite)];
   else enemies = [...enc.pick(encounterPool(depthOf(node)))];
-  if (!boss && enc.chance(FLAVORS[flavorOf(r.map, node, r.arrivedBy)].greebleChance))
-    enemies.push('greeble');
+  const greebleChance =
+    FLAVORS[flavorOf(r.map, node, r.arrivedBy)].greebleChance * (habitat?.greebleMultiplier ?? 1);
+  if (!boss && enc.chance(greebleChance)) enemies.push('greeble');
   r.rng.encounters = enc.state;
   // The roaming Greeble joins the fight on its node; never at the Boss, never twice.
   if (ambush && !boss && !enemies.includes('greeble')) enemies.push('greeble');
@@ -510,11 +520,19 @@ function startFight(r: RunState, events: RunEvent[], ambush: boolean): void {
       attackBonus: r.upgrades.includes('sharpened-mandibles') ? 1 : 0,
       firstTurnCharge: r.upgrades.includes('solar-panel') ? 1 : 0,
       pilferReduction: r.upgrades.includes('cats-whisker') ? 1 : 0,
+      ...habitat?.mods,
     },
   });
   r.combat = state;
   r.phase = 'fight';
-  events.push({ type: 'fightStarted', enemies, elite, boss, ambush: ambush && !boss });
+  events.push({
+    type: 'fightStarted',
+    enemies,
+    elite,
+    boss,
+    ambush: ambush && !boss,
+    ...(node.habitat ? { habitat: node.habitat } : {}),
+  });
   events.push({ type: 'combat', events: ce });
 }
 

@@ -54,6 +54,11 @@ export async function animateEvents(
         ui.setCharge(ev.charge, next.player.chargePerTurn);
         break;
 
+      case 'chargeRefunded':
+        ui.pop(PLAYER, `☀ refunded ${ev.amount}`, 'status');
+        await sleep(160);
+        break;
+
       case 'cardPlayed': {
         const taken = ui.takeCard(ev.uid);
         if (taken) await scene.flyCard(taken.face, { x: taken.x, y: taken.y }, ev.target ?? null);

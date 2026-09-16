@@ -2,6 +2,7 @@
  * Map generation — the structural constraints of spec.md §8.2 and the fog/signpost rules of
  * §8.4, checked across many seeds.
  */
+import { HABITAT_IDS } from '@content/habitats';
 import { FLAVORS } from '@content/trails';
 import { describe, expect, it } from 'vitest';
 import {
@@ -29,6 +30,36 @@ function reachesBoss(map: GameMap, from: string, seen = new Set<string>()): bool
 describe('generateMap', () => {
   it('is deterministic for a seed', () => {
     expect(generateMap(new Rng('x').fork('map'))).toEqual(generateMap(new Rng('x').fork('map')));
+  });
+
+  it('keeps the g52 layout HANDOFF documents (habitats never perturb the layout)', () => {
+    const m = generateMap(new Rng('g52').fork('map'));
+    const trails = m.trails.map(
+      (t) => `${t.flavor}:` + t.nodes.map((id) => `${id}=${nodeAt(m, id).type}`).join(','),
+    );
+    expect(trails).toEqual([
+      'sunny:t0-0=fight,t0-1=fight,t0-2=shop,t0-3=cocoon,t0-4=elite,t0-5=fight,t0-6=fight,x1=fight,t0-8=cocoon',
+      'market:t1-0=fight,t1-1=fight,t1-2=fight,x0=fight,t1-4=elite,t1-5=shop,t1-6=shop,x1=fight,t1-8=cocoon',
+      'thorny:t2-0=fight,t2-1=fight,t2-2=fight,x0=fight,t2-4=elite,t2-5=fight,t2-6=fight,t2-7=fight,t2-8=elite,t2-9=shop,t2-10=fight,t2-11=cocoon',
+    ]);
+  });
+
+  it('gives habitats only to Fight and Elite nodes, to about half of them (spec §8.9)', () => {
+    let fights = 0;
+    let withHabitat = 0;
+    for (const map of maps) {
+      for (const n of Object.values(map.nodes)) {
+        if (n.type === 'fight' || n.type === 'elite') {
+          fights++;
+          if (n.habitat) {
+            withHabitat++;
+            expect(HABITAT_IDS).toContain(n.habitat);
+          }
+        } else expect(n.habitat).toBeUndefined();
+      }
+    }
+    expect(withHabitat / fights).toBeGreaterThan(0.4);
+    expect(withHabitat / fights).toBeLessThan(0.6);
   });
 
   it('builds three trails with distinct flavours and lengths in range', () => {

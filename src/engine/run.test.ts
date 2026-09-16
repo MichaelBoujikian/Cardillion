@@ -3,6 +3,7 @@
  * deck so fights resolve deterministically.
  */
 import { CARDS } from '@content/cards';
+import { HABITATS } from '@content/habitats';
 import { FLAVORS } from '@content/trails';
 import { describe, expect, it } from 'vitest';
 import { seenEnemies } from './combat';
@@ -400,7 +401,11 @@ describe('general upgrades outside combat (spec §6.2)', () => {
     };
     const first = nodeAt(run.map, START).next[0]!.id;
     const r = step(upgraded, { type: 'travel', to: first }).run;
-    expect(r.combat!.mods).toEqual({ attackBonus: 1, firstTurnCharge: 1, pilferReduction: 1 });
+    expect(r.combat!.mods).toMatchObject({
+      attackBonus: 1,
+      firstTurnCharge: 1,
+      pilferReduction: 1,
+    });
     expect(r.combat!.player.charge).toBe(4);
   });
 });
@@ -536,6 +541,37 @@ describe('the wandering Snail (spec §8.6)', () => {
     expect(r.shop!.traveling).toBe(false);
     expect(r.pendingTravelingStall).toBe(false);
     expect(r.snailNode).not.toBeNull();
+  });
+});
+
+describe('habitats (spec §8.9)', () => {
+  it('a fight on a habitat node carries its mods and names it in fightStarted', () => {
+    // Find a seed whose first node has a habitat.
+    let run: RunState | null = null;
+    let first: string | null = null;
+    for (let i = 0; i < 100 && !run; i++) {
+      const r = createRun(`hab-${i}`, { deck: STRONG_DECK, hp: 999 });
+      const id = nodeAt(r.map, START).next[0]!.id;
+      if (nodeAt(r.map, id).habitat) {
+        run = r;
+        first = id;
+      }
+    }
+    expect(run).not.toBeNull();
+    const node = nodeAt(run!.map, first!);
+    const habitat = HABITATS[node.habitat!];
+    const s = step(run!, { type: 'travel', to: first! });
+    const started = s.events.find((e) => e.type === 'fightStarted')!;
+    expect(started).toMatchObject({ type: 'fightStarted', habitat: node.habitat });
+    expect(s.run.combat!.mods).toMatchObject(habitat.mods);
+  });
+
+  it('a fight without a habitat carries none', () => {
+    const run = createRun('g52', { deck: STRONG_DECK, hp: 999 });
+    const s = step(run, { type: 'travel', to: 't0-0' });
+    const started = s.events.find((e) => e.type === 'fightStarted')!;
+    expect('habitat' in started && started.habitat).toBeFalsy();
+    expect(s.run.combat!.mods.familyAttackBonus).toEqual({});
   });
 });
 

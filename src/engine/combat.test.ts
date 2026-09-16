@@ -535,3 +535,75 @@ describe('general-upgrade mods (spec §6.2)', () => {
     expect(s2.crumbs).toBe(22);
   });
 });
+
+describe('habitat mods (spec §8.9)', () => {
+  it('family attack and Block bonuses apply to that family only', () => {
+    const { state } = start({
+      deck: ['wormillion', 'chameleon', 'roly-poly', 'roly-poly', 'roly-poly'],
+      enemies: ['possum'],
+      mods: { familyAttackBonus: { wormillion: 1 }, familyBlockBonus: { 'roly-poly': 2 } },
+    });
+    const enemy = state.enemies[0]!.uid;
+    const worm = state.hand.find((c) => c.def === 'wormillion')!;
+    const a = applyAction(state, { type: 'playCard', uid: worm.uid, target: enemy });
+    expect(a.events).toContainEqual({
+      type: 'damageDealt',
+      source: worm.uid,
+      target: enemy,
+      amount: 5,
+      blocked: 0,
+    });
+    const roly0 = a.state.hand.find((c) => c.def === 'roly-poly')!;
+    const a2 = applyAction(a.state, { type: 'playCard', uid: roly0.uid });
+    expect(a2.events).toContainEqual({ type: 'blockGained', target: 'player', amount: 7 });
+    const a3 = applyAction(a2.state, { type: 'endTurn' });
+    const cham = a3.state.hand.find((c) => c.def === 'chameleon')!;
+    const b = applyAction(a3.state, { type: 'playCard', uid: cham.uid, target: enemy });
+    expect(b.events).toContainEqual({
+      type: 'damageDealt',
+      source: cham.uid,
+      target: enemy,
+      amount: 9,
+      blocked: 0,
+    });
+  });
+
+  it('the family refund returns the cost of the first such card each turn', () => {
+    const { state } = start({
+      deck: ['butterfly', 'butterfly', 'butterfly', 'butterfly', 'butterfly'],
+      enemies: ['possum'],
+      mods: { familyRefund: 'butterfly' },
+    });
+    const first = state.hand[0]!;
+    const a = applyAction(state, { type: 'playCard', uid: first.uid });
+    expect(a.state.player.charge).toBe(3);
+    expect(a.events).toContainEqual({ type: 'chargeRefunded', uid: first.uid, amount: 1 });
+    const second = a.state.hand[0]!;
+    const b = applyAction(a.state, { type: 'playCard', uid: second.uid });
+    expect(b.state.player.charge).toBe(2);
+    const c = applyAction(b.state, { type: 'endTurn' });
+    const third = c.state.hand[0]!;
+    const d = applyAction(c.state, { type: 'playCard', uid: third.uid });
+    expect(d.state.player.charge).toBe(3);
+  });
+
+  it('enemy Poison and Cobweb bonuses reach the player', () => {
+    const { state } = start({
+      deck: ['roly-poly'],
+      enemies: ['scorpion', 'spider'],
+      mods: { enemyPoisonBonus: 1, enemyCobwebBonus: 1 },
+    });
+    const forced = structuredClone(state);
+    forced.enemies[0]!.intent = 'sting';
+    forced.enemies[1]!.intent = 'spin-web';
+    const { state: after, events } = applyAction(forced, { type: 'endTurn' });
+    expect(events).toContainEqual({
+      type: 'statusApplied',
+      target: 'player',
+      status: 'poison',
+      amount: 4,
+    });
+    expect(events.filter((e) => e.type === 'cardAdded' && e.def === 'cobweb')).toHaveLength(2);
+    expect([...after.draw, ...after.hand].filter((c) => c.def === 'cobweb')).toHaveLength(2);
+  });
+});
