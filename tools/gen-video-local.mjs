@@ -6,7 +6,7 @@
  *   npm run video:local -- --image art/out/video/rat-first-frame-1280x720.png --out rat-idle \
  *     --prompt "..." [--negative "..."] [--seconds 5] [--seed 7] [--steps 20] [--cfg 5]
  *
- *   --image <png>      the still (any size; centre-cropped/scaled onto 1280x704, Wan's 720p)
+ *   --image <png>      the still (any size; fitted onto 1280x704, Wan's 720p, on its corner colour)
  *   --out <name>       writes art/out/video/<name>.mp4 (and <name>-still.png, what was sent)
  *   --prompt <text>    what moves; the default asks for a still body with only parts moving
  *   --negative <text>  what to avoid (default: the template's list minus its "static" terms)
@@ -17,11 +17,11 @@
  *                      from $COMFYUI_DIR or C:\Users\smite\ComfyUI_windows_portable
  *   --keep-server      leave a server this script started running
  */
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
+import { ensureServer, follow, output, queue, stopServer, upload } from './lib/comfy.mjs';
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const OUT_DIR = path.join(ROOT, 'art', 'out', 'video');
@@ -56,41 +56,10 @@ const prompt =
 const negative =
   opt('negative') ??
   'bright colors, overexposed, blurry, low quality, JPEG artifacts, ugly, deformed, extra limbs, extra fingers, fused fingers, malformed, cluttered background, walking backwards, camera movement, zoom, text, watermark';
-const comfyDir = process.env['COMFYUI_DIR'] ?? 'C:\\Users\\smite\\ComfyUI_windows_portable';
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function alive() {
-  try {
-    const res = await fetch(`${server}/system_stats`);
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-// 1. A server, ours or already running.
-let child = null;
-if (!(await alive())) {
-  const python = path.join(comfyDir, 'python_embeded', 'python.exe');
-  if (!fs.existsSync(python)) throw new Error(`ComfyUI not found at ${comfyDir} (set COMFYUI_DIR)`);
-  const port = new URL(server).port || '8188';
-  console.log(`starting ComfyUI from ${comfyDir} on port ${port} ...`);
-  child = spawn(
-    python,
-    ['-s', 'ComfyUI\\main.py', '--disable-auto-launch', '--listen', '127.0.0.1', '--port', port],
-    { cwd: comfyDir, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
-  );
-  const log = fs.createWriteStream(path.join(OUT_DIR, 'comfyui.log'), { flags: 'a' });
-  child.stdout.pipe(log);
-  child.stderr.pipe(log);
-  for (let i = 0; i < 120 && !(await alive()); i++) await sleep(1000);
-  if (!(await alive()))
-    throw new Error('ComfyUI did not come up in 2 minutes (see art/out/video/comfyui.log)');
-  console.log('ComfyUI is up');
-}
-
+const child = await ensureServer(server, path.join(OUT_DIR, 'comfyui.log'));
 try {
-  // 2. The still, fitted to Wan's 720p canvas (1280x704) on the image's own corner colour.
+  // The still, fitted to Wan's 720p canvas (1280x704) on the image's own corner colour.
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const src = sharp(path.resolve(ROOT, image));
   const meta = await src.metadata();
@@ -107,19 +76,9 @@ try {
     `still: ${meta.width}x${meta.height} -> ${WIDTH}x${HEIGHT} (${path.relative(ROOT, stillPath)})`,
   );
 
-  // 3. Upload it.
-  const form = new FormData();
-  form.append('image', new Blob([still], { type: 'image/png' }), `${outName}-still.png`);
-  form.append('overwrite', 'true');
-  const up = await fetch(`${server}/upload/image`, { method: 'POST', body: form });
-  if (!up.ok) throw new Error(`upload failed ${up.status}: ${await up.text()}`);
-  const { name, subfolder } = await up.json();
-  const imageRef = subfolder ? `${subfolder}/${name}` : name;
-
-  // 4. The graph.
   const graph = JSON.parse(fs.readFileSync(GRAPH, 'utf8'));
   delete graph['$comment'];
-  graph['56'].inputs.image = imageRef;
+  graph['56'].inputs.image = await upload(server, still, `${outName}-still.png`);
   graph['6'].inputs.text = prompt;
   graph['7'].inputs.text = negative;
   graph['55'].inputs.width = WIDTH;
@@ -131,20 +90,13 @@ try {
   graph['58'].inputs.filename_prefix = `video/${outName}`;
   const clientId = crypto.randomUUID();
 
-  // The SaveVideo node's format inputs are a nested combo; if this build names them differently,
+  // The SaveVideo node's format inputs are a nested combo; if a build names them differently,
   // fall back to the plain SaveWEBM node (ffmpeg reads either).
-  const queue = async () => {
-    const res = await fetch(`${server}/prompt`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: graph, client_id: clientId }),
-    });
-    const json = await res.json();
-    if (res.ok) return json.prompt_id;
-    return json;
-  };
-  let queued = await queue();
-  if (typeof queued !== 'string' && queued.node_errors?.['58']) {
+  let promptId;
+  try {
+    promptId = await queue(server, graph, clientId);
+  } catch (err) {
+    if (!err.nodeErrors?.['58']) throw err;
     console.log('SaveVideo refused its inputs; using SaveWEBM instead');
     delete graph['57'];
     graph['58'] = {
@@ -157,65 +109,18 @@ try {
         crf: 24,
       },
     };
-    queued = await queue();
+    promptId = await queue(server, graph, clientId);
   }
-  if (typeof queued !== 'string') throw new Error(`queue failed: ${JSON.stringify(queued)}`);
-  const promptId = queued;
   console.log(
     `queued ${promptId}: ${length} frames @ ${FPS} fps (${seconds}s), seed ${seed}, ${steps} steps, cfg ${cfg}`,
   );
-
-  // 5. Progress over the websocket, completion from history.
-  const t0 = Date.now();
-  await new Promise((resolve, reject) => {
-    const ws = new WebSocket(`${server.replace(/^http/, 'ws')}/ws?clientId=${clientId}`);
-    let lastLine = '';
-    ws.onmessage = (ev) => {
-      if (typeof ev.data !== 'string') return;
-      const msg = JSON.parse(ev.data);
-      if (msg.type === 'progress' && msg.data.prompt_id === promptId) {
-        const line = `  step ${msg.data.value}/${msg.data.max} (${Math.round((Date.now() - t0) / 1000)}s)`;
-        if (line !== lastLine) console.log((lastLine = line));
-      } else if (msg.type === 'execution_error' && msg.data.prompt_id === promptId) {
-        ws.close();
-        reject(
-          new Error(`ComfyUI error in node ${msg.data.node_id}: ${msg.data.exception_message}`),
-        );
-      } else if (
-        msg.type === 'executing' &&
-        msg.data.prompt_id === promptId &&
-        msg.data.node === null
-      ) {
-        ws.close();
-        resolve();
-      }
-    };
-    ws.onerror = () => reject(new Error('websocket error'));
-  });
-
-  // 6. Find the file and download it.
-  const hist = await (await fetch(`${server}/history/${promptId}`)).json();
-  const entry = hist[promptId];
-  if (!entry || entry.status?.status_str !== 'success')
-    throw new Error(`run did not succeed: ${JSON.stringify(entry?.status)}`);
-  const files = Object.values(entry.outputs).flatMap((o) => o.images ?? o.gifs ?? []);
-  const file = files.find((f) => /\.(mp4|webm|webp)$/i.test(f.filename));
-  if (!file) throw new Error(`no video in outputs: ${JSON.stringify(entry.outputs)}`);
-  const q = new URLSearchParams({
-    filename: file.filename,
-    subfolder: file.subfolder ?? '',
-    type: file.type ?? 'output',
-  });
-  const bytes = Buffer.from(await (await fetch(`${server}/view?${q}`)).arrayBuffer());
-  const ext = path.extname(file.filename);
-  const outPath = path.join(OUT_DIR, `${outName}${ext}`);
+  const secs = await follow(server, clientId, promptId);
+  const { bytes, filename } = await output(server, promptId, /\.(mp4|webm|webp)$/i);
+  const outPath = path.join(OUT_DIR, `${outName}${path.extname(filename)}`);
   fs.writeFileSync(outPath, bytes);
   console.log(
-    `saved ${path.relative(ROOT, outPath)} (${(bytes.length / 1024).toFixed(0)} KB) in ${Math.round((Date.now() - t0) / 1000)}s`,
+    `saved ${path.relative(ROOT, outPath)} (${(bytes.length / 1024).toFixed(0)} KB) in ${secs}s`,
   );
 } finally {
-  if (child && !flag('keep-server')) {
-    child.kill();
-    console.log('ComfyUI stopped');
-  }
+  stopServer(child, flag('keep-server'));
 }

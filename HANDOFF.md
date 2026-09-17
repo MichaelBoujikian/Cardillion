@@ -72,6 +72,18 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
+**2026-09-17 — the local rig, both halves, is in and tested.** `docs/art-pipeline.md` opens with
+"The recipe" — the ordered steps from a still to a living creature in the game; read that first.
+The rig (outside the repo, `C:\Users\smite\ComfyUI_windows_portable`, ComfyUI v0.36.0):
+`npm run video:local` (Wan 2.2 5B, docs/local-video.md, 5 s in ~5 min) and `npm run image:local`
+(FLUX.2 klein 4B edits + text-to-image, Z-Image text-to-image, docs/local-image.md, ~25 s each),
+both Apache-2.0, **no content policy** — the route for the gore the APIs refuse. First tests:
+a klein edit tore the rat open with ribs and blood in 24 s; a Z-Image possum came out
+illustrative and floaty. **gpt-image-2.5 stays the first choice for stills**; the local image
+models are the fallback for gore and free iteration. Runway (docs/runway-api.md) is still
+documented, key not in `.env`; the owner has not decided whether to buy its credits now that
+local video works.
+
 **2026-09-17 morning — local video works.** Runway's usage policy bans exposed muscle/bone, so
 for the gory stills the owner asked for a no-policy route: **Wan 2.2 5B in ComfyUI on his RTX
 5070 Ti** is installed and produced its first rat clip (5 s in ~5 min, free). `docs/local-video.md`

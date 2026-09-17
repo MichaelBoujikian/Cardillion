@@ -88,6 +88,37 @@ Then point the content row at the frames (`art` = the rest frame, `poses.windup/
 `poses.idle: [...]`), run `npm run art:optimize`, and check it in a fight: `END TURN` for the
 lunge, a card on it for the hit; the idle drift runs on its own.
 
+## The recipe: from a still to a living creature (read this first)
+
+Every enemy goes through the same steps; the rat (2026-09-16/17) is the worked example. Sample
+ids (`<id>-mutant…`) keep the live game untouched until the owner says yes; then rename to the
+real ids and commit art + content together.
+
+1. **The still.** `gpt-image-2.5-sunburst` through `npm run art` — a `subject` edit of the v1
+   sprite ("keep this exact creature, add …"). Or locally, with no content policy, through
+   `npm run image:local` (docs/local-image.md) when the gore is more than the API allows.
+   Look at it; iterate; show the owner.
+2. **The pose sheet** (strike and hit stills): a 2 × 2 sheet edited from the still's raw —
+   rest / wind-up / attack / hit — sliced by `npm run art:poses … --tone <v1 id>`.
+3. **The clip** (the passive state: body still, only parts moving, one short fidget):
+   compose the still onto a pure-green frame (`art/out/video/*-first-frame-*.png` shows the
+   layout; `tools/gen-video-local.mjs` does the fitting itself) and generate with
+   - `npm run video:local` — Wan 2.2 on the owner's GPU, free, no policy, ~5 min per 5 s
+     (docs/local-video.md); or
+   - Runway image-to-video (docs/runway-api.md) for Veo/Seedance quality on a _clean_ still —
+     its policy refuses exposed muscle and bone, and refusals are charged.
+     Write the prompt as "holds completely still … only the tentacles writhe … locked-off camera
+     … flat green background unchanged"; the sheet's tone match handles brightness later.
+4. **Cut the clip** with `npm run art:video … --like <id>-mutant-rest --tone <v1 id>` (below):
+   find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
+   frames on the pose frames' canvas.
+5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,
+   `poses.loop` / `poses.fidget` via `frames()`; `npm run art:optimize`; delete the stray sheet
+   WebPs. Check every frame finds exactly one amber cluster (the eye).
+6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
+   loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
+   Screenshot before/after, show the owner, wait for the yes, then commit.
+
 ## Video frames (`npm run art:video`)
 
 For the waiting state a clip beats stills: real in-betweens, and the creature can hold
