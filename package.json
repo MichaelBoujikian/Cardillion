@@ -21,7 +21,8 @@
     "art": "node tools/gen-art.mjs",
     "art:preview": "node tools/art-preview.mjs",
     "art:optimize": "node tools/art-optimize.mjs",
-    "art:poses": "node tools/art-poses.mjs"
+    "art:poses": "node tools/art-poses.mjs",
+    "art:video": "node tools/art-video.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"

@@ -88,6 +88,34 @@ Then point the content row at the frames (`art` = the rest frame, `poses.windup/
 `poses.idle: [...]`), run `npm run art:optimize`, and check it in a fight: `END TURN` for the
 lunge, a card on it for the hit; the idle drift runs on its own.
 
+## Video frames (`npm run art:video`)
+
+For the waiting state a clip beats stills: real in-betweens, and the creature can hold
+perfectly still while only part of it moves. The rat's came from Sora 2 Pro (8 s, 1280×720,
+$2.40; the API shuts down 2026-09-24 — the next clips need another provider), generated from
+the creature's keyed PNG composed onto a pure-green frame of the video's size, with a prompt
+that asks for a locked-off camera, a flat unchanged green screen, the creature still for the
+first seconds with only the tentacles moving, then one short movement and a return to rest.
+Blood and "vicious bite" wording got the honest version blocked by the output filter; keep
+the words mild — the picture carries the gore.
+
+Find the segments by motion (frame-to-frame difference; the still stretches are flat, the
+movement is a bump), then cut:
+
+```bash
+npm run art:video -- --video art/out/video/sora-rat-attack.mp4 --out enemy-rat-mutant \
+  --loop 4.25:8.08 --fidget 2.83:4.17 --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat
+```
+
+`--loop` is the still stretch the game plays back and forth (pick the one the fidget ends on,
+so fidget → loop is seamless); `--fidget` the movement, played once now and then. It needs
+`ffmpeg` (`--ffmpeg <exe>`, `$FFMPEG`, `art/out/bin/ffmpeg.exe`, or on PATH — the owner's
+machine has the gitignored copy). Every frame gets one shared crop and placement, the pose
+frames' scale and canvas (`--like`), the tone match, and the eye relit to amber (video
+compression dulls it below what the eye-glow finder accepts). Then the content row:
+`art` = `<out>-loop-01`, `poses.loop: { frames, fps }`, `poses.fidget: { frames, fps }`
+(`frames()` in `enemies.ts` builds the id lists), and `npm run art:optimize`.
+
 ## Chroma-key mode (the default for both styles)
 
 The API's native transparent mode drops thin dark limbs — rats came back with floating paws and
@@ -110,6 +138,7 @@ npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
 npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id]
+npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fps n] [--like frame] [--tone id]
 npm run art -- --model <id>          gpt-image-2.5-sunburst (default) | gpt-image-2.5-flare | gpt-image-1
 npm run art -- --dry-run             print prompts, call nothing
 npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)

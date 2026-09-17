@@ -53,12 +53,14 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
 
 **Decisions made 2026-09-16 (evening), all with him looking at the game:**
 
-- **Animation = pose sheets + cross-fades, not video.** He asked for both and compared: a
-  Sora-2-pro clip ($2.40, timid, and the honest "vicious bite" version was blocked by the
-  output moderation filter at 99%) versus a pose sheet on `gpt-image-2.5-sunburst` ($0.17,
-  four readable poses). Also decisive: **OpenAI shuts the Sora API down on 2026-09-24**, no
-  replacement named. The clip and its frames are in `art/out/video/` (gitignored) for the
-  record; `art/out/video/sora-rat.mjs` is the script.
+- **Animation = a clip for the waiting state, pose-sheet stills for the strike and hit.** He
+  compared both: a Sora-2-pro clip ($2.40; the honest "vicious bite" version was blocked by
+  the output moderation filter at 99%, the mild one passed) and a pose sheet on
+  `gpt-image-2.5-sunburst` ($0.17). Cross-faded stills failed for the idle (a dissolve, not
+  motion); the clip is real motion and the rat holds still in it. **OpenAI shuts the Sora
+  API down on 2026-09-24**, no replacement named: every other creature's clip must be made
+  before then, or on Veo/Runway after. The clip and its frames are in `art/out/video/`
+  (gitignored); `art/out/video/sora-rat.mjs` is the script that made it.
 - **Model:** `gpt-image-2.5-sunburst` (the precision-editing tier) is the manifest default;
   `-flare` is the fast tier at the same price. Quality runs `low..max`; default `max`
   (≈ $0.165 for a 1536×1024 sheet). The tool sends `moderation: low` and prints the real
@@ -70,14 +72,20 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
-**The rat as of tonight:** `src/content/enemies.ts` points the rat at **sample ids**
-(`enemy-rat-mutant-idle1` as `art`, `-windup/-attack/-hit`, idle `-idle2..4`), cut from two
-sheets (`enemy-rat-mutant-poses`, `enemy-rat-mutant-idle`, both in the manifest) and
-tone-matched to `enemy-rat`. **All of it is uncommitted** — the PNGs in `assets/art/`, the WebPs
-in `public/art/`, and the content row — because he has not said yes to the art. He said "not
-bad" and asked for smaller eye glows, feet on the shadow, and the darker tone; all three are in.
-Contact sheets: `art/out/contact-2026-09-16-rat-ingame-idle.png` (in-game frames),
-`-rat-pose-frames.png`, `-rat-idle-frames.png`, `-rat-tone.png`.
+**The rat as of tonight (late):** he watched the idle cross-fades and rejected them — "it
+clearly looks like a different image being switched out" — and asked for the **Sora clip
+as the passive state** (the rat is still, only the tentacles slither; the clip's startle
+becomes an occasional fidget, like the twitch was) with the **pose-sheet stills for the
+lunge and hit**, "okay if it's slightly different". That is what is in: `poses.loop` /
+`poses.fidget` frame sequences (spec §11.2), `tools/art-video.mjs` to cut them, and the rat
+row pointing at `enemy-rat-mutant-loop-01..47` / `-fidget-01..17` plus `-windup/-attack/-hit`.
+The idle sheet (`-idle1..4`) is superseded and unreferenced. **The content row and every
+mutant PNG/WebP are uncommitted** pending his yes. He also flagged, and told me to hold: the
+sprite still floats a little above its shadow (the shadow is centred on the feet, so half of
+it is in front); the occasional ~10° roll is the twitch in `poseBody` (`rz`/`x` kick) plus the
+sway — he wants the breathing kept and the twitch/sway gone. Do those next time he asks.
+Contact sheets: `art/out/contact-2026-09-16-rat-ingame-video.png` (in-game), `-rat-video-
+frames.png`, `-rat-tone.png`.
 
 **Per creature, the recipe** (`docs/art-pipeline.md`, "Editing an existing asset" and "Pose
 sheets"):
