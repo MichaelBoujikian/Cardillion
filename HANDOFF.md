@@ -110,10 +110,14 @@ lunge and hit**, "okay if it's slightly different". That is what is in: `poses.l
 `poses.fidget` frame sequences (spec §11.2), `tools/art-video.mjs` to cut them, and the rat
 row pointing at `enemy-rat-mutant-loop-01..47` / `-fidget-01..17` plus `-windup/-attack/-hit`.
 The idle sheet (`-idle1..4`) is superseded and unreferenced. **The content row and every
-mutant PNG/WebP are uncommitted** pending his yes. He also flagged, and told me to hold: the
-sprite still floats a little above its shadow (the shadow is centred on the feet, so half of
-it is in front); the occasional ~10° roll is the twitch in `poseBody` (`rz`/`x` kick) plus the
-sway — he wants the breathing kept and the twitch/sway gone. Do those next time he asks.
+mutant PNG/WebP are uncommitted** pending his yes. He also flagged the sprite floating a
+little above its shadow and rolling ~10° now and then; **both fixed 2026-09-17** while he was
+away: `findGroundLine` (textures.ts) finds each picture's ground line — the lowest wide row —
+and `baseFor` sets the plane's `baseY` so the feet meet the table whatever padding the frame
+carries (hit box and labels follow `baseY`); the shadow ellipse sits back in z so the feet
+stand on its front third; the idle sway, drift and twitch are gone — breathing and the
+threat lean stay (spec §11.2). Known trade-off: rows below the ground line (claw tips, a tail
+swishing lower in a fidget frame) sink into the moss and are hidden by the table.
 Contact sheets: `art/out/contact-2026-09-16-rat-ingame-video.png` (in-game), `-rat-video-
 frames.png`, `-rat-tone.png`.
 

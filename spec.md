@@ -505,13 +505,17 @@ enemy; the Thicket's fog creeps a little onto the table.
   cool hemisphere fill, enemies' eyes emissive.
 - **Enemies:** painted sprites (billboards) standing on the far half of the table, spaced across
   x. Intent above, HP bar below. The Greeble is a shimmer shader + HP bar until revealed.
-  They are never still: each breathes, sways, bobs and twitches on its own clock, and leans in
-  while its intent is an attack. Each move is a **body motion** cued by the `enemyActing`
+  Each breathes on its own clock and leans in while its intent is an attack; the sway, drift and
+  periodic twitch of the first version were removed 2026-09-17 at the owner's request (they
+  read as a rattle) — the rest of the life comes from the clip frames below. Every sprite
+  stands on its picture's **ground line** (the lowest wide row — feet and a resting tail, not a
+  tentacle tip — found at load, like the eyes), so the feet meet the table whatever padding the
+  frame carries, and its shadow ellipse sits back from the feet the way a cast shadow does. Each move is a **body motion** cued by the `enemyActing`
   event — attacks lunge toward the camera (the hit lands at the apex), Roar/Hiss rear up,
   webs spin, Pilfer darts sideways, a summon stamps, poison shudders. All of it is transforms
   on the billboard, so the art can be replaced without touching the motion (only the eye-glow
   finder cares what is in the picture: keep the amber eyes). Reduce motion keeps breathing,
-  the lean and the moves; the ambient sway and twitches go.
+  the lean and the moves; it stops the idle drift and the fidgets.
 - **Keyframe poses** (2026-09-16): a creature may name pose frames on its content row —
   `poses.windup`, `poses.attack`, `poses.hit` and an `poses.idle` list — each an image on the
   **same canvas** as its `art`, so it keeps its size. A lunge shows the wind-up while the body
@@ -522,7 +526,7 @@ enemy; the Thicket's fog creeps a little onto the table.
   lingers under the new — never a cut, and it rides on top of the procedural motion. Frames
   come from a **pose sheet**: one generated image holding every pose, so the creature stays
   the same animal (§11.4). Reduce motion keeps the strike and hit frames and stops the idle
-  drift along with the sway. The eye glow is sized from the painted eye it finds.
+  drift and the fidgets. The eye glow is sized from the painted eye it finds.
 - **Clips** (2026-09-16, the owner's call after seeing both): for the waiting state a creature
   may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
   (played back and forth at its `fps`, so it never seams: the rat holds still, only its

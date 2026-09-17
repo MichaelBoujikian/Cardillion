@@ -10,6 +10,7 @@ import { GRAIN_DEFAULT, makePost, type Post } from './post';
 import {
   PLACEHOLDER_EYES,
   findGlowPoints,
+  findGroundLine,
   type GlowPoint,
   imageTexture,
   makeGlowTexture,
@@ -94,6 +95,8 @@ interface EnemySprite {
   action: { kind: EnemyAction; start: number } | null;
   width: number;
   height: number;
+  /** The plane's centre height: set so the picture's ground line sits on the table. */
+  baseY: number;
   unseen: boolean;
   /** 0 = hidden (Unseen), 1 = fully shown. */
   reveal: number;
@@ -535,7 +538,10 @@ export class BattleScene {
         opacity: 1,
       }),
     );
-    plane.position.y = height / 2 - 0.08;
+    // Stand the creature on the table: the picture's ground line (its feet) goes at y = 0,
+    // sunk a touch so the paws meet the moss, whatever padding the frame's canvas has.
+    const baseY = this.baseFor(img, height);
+    plane.position.y = baseY;
     const root = new THREE.Group();
     const body = new THREE.Group();
     root.add(body);
@@ -545,6 +551,7 @@ export class BattleScene {
       img ? findGlowPoints(img) : PLACEHOLDER_EYES,
       width,
       height,
+      baseY,
       !!img,
     );
     const blob = new THREE.Mesh(
@@ -558,6 +565,9 @@ export class BattleScene {
     );
     blob.rotation.x = -Math.PI / 2;
     blob.position.y = 0.01;
+    // A creature hides most of its shadow behind itself from this camera, so the ellipse sits
+    // back from the feet: they stand on its front third instead of floating over its middle.
+    blob.position.z = -height * 0.1;
     // A pose canvas can be much wider than the creature standing on it; cap the shadow.
     blob.scale.set(Math.min(width, height * 1.1) * 0.5, height * 0.2, 1);
     root.add(blob);
@@ -583,6 +593,7 @@ export class BattleScene {
       action: null,
       width,
       height,
+      baseY,
       unseen,
       reveal: unseen ? 0 : 1,
       revealTarget: unseen ? 0 : 1,
@@ -675,18 +686,25 @@ export class BattleScene {
     return sleep(ACTION_TIMING[kind].impact * 1000);
   }
 
+  /** The plane centre that puts the picture's ground line on the table (placeholders: as drawn). */
+  private baseFor(img: HTMLImageElement | undefined, height: number): number {
+    const ground = img ? findGroundLine(img) : 1 - 0.08 / height;
+    return height / 2 - (1 - ground) * height - 0.02;
+  }
+
   /** Glowing-eye sprites at the given UV points (v down) of a plane of the given size. */
   private placeEyes(
     root: THREE.Group,
     points: readonly GlowPoint[],
     width: number,
     height: number,
+    baseY: number,
     generated: boolean,
   ): THREE.Sprite[] {
     const eyes: THREE.Sprite[] = [];
     for (const { u, v, size } of points) {
       const e = new THREE.Sprite(this.eyeMat);
-      e.position.set((u - 0.5) * width, (0.5 - v) * height + height / 2 - 0.08, 0.03);
+      e.position.set((u - 0.5) * width, (0.5 - v) * height + baseY, 0.03);
       // The glow scales with the painted eye (3.6 x its diameter in scene units, clamped),
       // so a small eye gets a small glow instead of a floating orb.
       const base = generated ? Math.min(0.3, Math.max(0.1, size * width * 3.6)) : 0.11;
@@ -730,11 +748,14 @@ export class BattleScene {
     }
     s.pose = artId;
     s.width = s.height / (img.height / img.width);
+    // Each pose stands on its own ground line, so a frame with more padding does not float.
+    s.baseY = this.baseFor(img, s.height);
+    s.plane.position.y = s.baseY;
     s.plane.geometry = new THREE.PlaneGeometry(s.width, s.height);
     s.plane.material.map = imageTexture(img);
     s.plane.material.needsUpdate = true;
     for (const e of s.eyes) s.body.remove(e);
-    s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, true);
+    s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, s.baseY, true);
     this.applyReveal(s);
     if (s.fade) s.plane.material.opacity = 0;
   }
@@ -758,7 +779,7 @@ export class BattleScene {
   /**
    * The idle loop: while a creature with idle frames is neither striking nor flinching, it
    * drifts through rest and its idle frames on a slow cross-fade, each creature on its own
-   * clock. Part of the ambient motion, so Reduce motion turns it off with the sway.
+   * clock. Part of the ambient motion, so Reduce motion turns it off with the fidgets.
    */
   private stepIdle(s: EnemySprite, t: number): void {
     const idle = s.poses?.idle;
@@ -804,7 +825,8 @@ export class BattleScene {
     const p = s.root.position;
     const corners = [
       this.project(p.x - s.width / 2, 0, p.z),
-      this.project(p.x + s.width / 2, s.height, p.z),
+      // The plane spans [baseY - h/2, baseY + h/2]; the box and the labels follow it, not the tier height.
+      this.project(p.x + s.width / 2, s.baseY + s.height / 2 + 0.05, p.z),
     ];
     const x0 = Math.min(corners[0]!.x, corners[1]!.x);
     const x1 = Math.max(corners[0]!.x, corners[1]!.x);
@@ -817,7 +839,7 @@ export class BattleScene {
     const s = this.sprites.get(uid);
     if (!s) return null;
     const p = s.root.position;
-    return this.project(p.x, where === 'head' ? s.height + 0.15 : -0.05, p.z + 0.4);
+    return this.project(p.x, where === 'head' ? s.baseY + s.height / 2 + 0.15 : -0.05, p.z + 0.4);
   }
 
   private project(x: number, y: number, z: number): { x: number; y: number } {
@@ -928,7 +950,7 @@ export class BattleScene {
         const k = Math.min(1, (performance.now() - t0) / 600);
         s.plane.material.opacity = (1 - k) * (s.unseen ? 0.5 : 1);
         s.plane.rotation.x = -k * 1.2;
-        s.plane.position.y = s.height / 2 - 0.08 - k * s.height * 0.45;
+        s.plane.position.y = s.baseY - k * s.height * 0.45;
         for (const e of s.eyes) e.scale.setScalar(this.eyeBase(e) * (1 - k));
         if (k < 1) requestAnimationFrame(step);
         else finish();
@@ -945,7 +967,7 @@ export class BattleScene {
     s.dead = false;
     s.root.visible = true;
     s.plane.rotation.x = 0;
-    s.plane.position.y = s.height / 2 - 0.08;
+    s.plane.position.y = s.baseY;
     this.applyReveal(s);
     s.recoil = 1;
   }
@@ -963,7 +985,7 @@ export class BattleScene {
       shake: opts.screenShake && !opts.reduceMotion,
       grain: !opts.reduceMotion,
       flicker: !opts.reduceMotion,
-      // Ambient sway and twitches go; breathing, leaning and the moves themselves stay.
+      // The idle cross-fades and the fidget clips go; breathing, leaning and the moves themselves stay.
       idle: !opts.reduceMotion,
     };
     this.post.setGrain(this.motion.grain ? GRAIN_DEFAULT : 0);
@@ -1046,8 +1068,8 @@ export class BattleScene {
 
   /**
    * Idle motion plus the current move, composed fresh every frame from the rest pose so
-   * nothing accumulates. Idle: breathing, a slow sway, a bob, an occasional twitch, and a
-   * lean-in while its intent is an attack. Moves: see EnemyAction.
+   * nothing accumulates. Idle: breathing, and a lean-in while its intent is an attack (the sway,
+   * bob, drift and twitch went 2026-09-17). Moves: see EnemyAction.
    */
   private poseBody(s: EnemySprite, t: number): void {
     const b = s.body;
@@ -1060,19 +1082,10 @@ export class BattleScene {
     let z = 0;
     let rx = s.threat ? 0.07 : 0;
     let rz = 0;
-    if (this.motion.idle) {
-      rz += Math.sin(t * 0.6 + k) * 0.03;
-      y += Math.sin(t * 1.1 + k * 1.7) * 0.02;
-      x += Math.sin(t * 0.35 + k * 0.9) * 0.04;
-      // A twitch every few seconds, each creature on its own clock.
-      const cycle = 3.5 + (k % 2.5);
-      const u = ((t + k * 7) % cycle) / cycle;
-      if (u < 0.05) {
-        const e = Math.sin((u / 0.05) * Math.PI);
-        rz += e * 0.05;
-        x += e * 0.05;
-      }
-    }
+    // At rest a creature only breathes (and leans in when it means to bite). The sway, the
+    // slow drift and the periodic twitch were removed 2026-09-17 at the owner's request: on
+    // a sprite standing on its shadow they read as a rattle and a slide, not as life. Life
+    // now comes from the clip frames (poses.loop / poses.fidget).
     if (s.action) {
       const { kind, start } = s.action;
       const { duration } = ACTION_TIMING[kind];

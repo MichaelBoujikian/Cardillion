@@ -153,6 +153,31 @@ export function findGlowPoints(img: HTMLImageElement): GlowPoint[] {
   }));
 }
 
+/**
+ * Where a sprite's feet are: the lowest row of the picture that is still wide — paws and a
+ * resting tail make a wide row, a hanging tentacle tip or a whisker does not. Returned as v
+ * (0 = top, 1 = bottom) so the renderer can stand the creature on its shadow whatever
+ * padding the frame's canvas carries. Falls back to the bottom edge for an empty image.
+ */
+export function findGroundLine(img: HTMLImageElement): number {
+  const w = 256;
+  const h = Math.max(1, Math.round((img.height / img.width) * w));
+  const [, ctx] = canvas(w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h).data;
+  const rows = new Array<number>(h).fill(0);
+  let widest = 0;
+  for (let y = 0; y < h; y++) {
+    let n = 0;
+    for (let x = 0; x < w; x++) if ((d[(y * w + x) * 4 + 3] as number) > 128) n++;
+    rows[y] = n;
+    widest = Math.max(widest, n);
+  }
+  if (widest === 0) return 1;
+  for (let y = h - 1; y >= 0; y--) if ((rows[y] as number) >= widest * 0.12) return (y + 1) / h;
+  return 1;
+}
+
 // ---------- environment ----------
 
 /** Long table: moss and flowers near the camera, soil in the middle, black earth far away. */
