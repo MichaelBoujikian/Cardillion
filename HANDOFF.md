@@ -72,6 +72,16 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
+**DECISION (2026-09-16, last thing): the pipeline is `gpt-image-2.5` for images, Runway for
+video.** He saw the clip-driven rat in the game and liked it a lot ("not bad at all"); the
+fidget now fires every 2.5–6 s at his request. The plan for every creature: generate/edit the
+still on `gpt-image-2.5-sunburst` (credits already bought), then send that still to **Runway**
+(image-to-video) for the passive clip — still body, only parts moving, one short fidget — and
+cut it with `npm run art:video`. Sora is out (shut down 2026-09-24). **Game work is paused
+until the Runway API is set up**: he wants to be walked through the account, key and credits;
+the key goes in `.env` as `RUNWAYML_API_SECRET`, never printed, never committed. Then port
+`art/out/video/sora-rat.mjs` into a real `tools/gen-video.mjs` against Runway.
+
 **The rat as of tonight (late):** he watched the idle cross-fades and rejected them — "it
 clearly looks like a different image being switched out" — and asked for the **Sora clip
 as the passive state** (the rat is still, only the tentacles slither; the clip's startle

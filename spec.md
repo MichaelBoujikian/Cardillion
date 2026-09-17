@@ -526,7 +526,7 @@ enemy; the Thicket's fog creeps a little onto the table.
 - **Clips** (2026-09-16, the owner's call after seeing both): for the waiting state a creature
   may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
   (played back and forth at its `fps`, so it never seams: the rat holds still, only its
-  tentacles slither) and `poses.fidget` (a short movement played once every 5–11 s, each
+  tentacles slither) and `poses.fidget` (a short movement played once every 2.5–6 s, each
   creature on its own clock, that ends where the loop starts). The first loop frame is the
   creature's `art`. Keyframes (strike, hit) still come from the pose sheet, so the picture
   changes at the strike; accepted. The eyes are placed once, from `art`, not per frame.

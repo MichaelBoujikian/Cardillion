@@ -624,14 +624,15 @@ export class BattleScene {
       fps: loop.fps,
       mode: 'loop',
       start: this.now,
-      nextFidgetAt: this.now + 4,
+      nextFidgetAt: this.now + 2,
     };
   }
 
   /**
    * Advance a creature's clip: the loop plays back and forth (so it never seams); when a
-   * fidget is due and the loop is passing its first frame, the fidget plays once and hands
-   * back to the loop's first frame, which is where it ends. Paused while a keyframe shows.
+   * fidget is due (every 2.5–6 s, the owner's call) and the loop is passing its first frame, the
+   * fidget plays once and hands back to the loop's first frame, which is where it ends. Paused
+   * while a keyframe shows.
    */
   private stepSequence(s: EnemySprite, t: number): void {
     const q = s.seq;
@@ -643,7 +644,7 @@ export class BattleScene {
       if (i >= q.fidget.length) {
         q.mode = 'loop';
         q.start = t;
-        q.nextFidgetAt = t + 5 + ((s.seed * 3.1 + 1) % 6);
+        q.nextFidgetAt = t + 2.5 + ((s.seed * 3.1 + 1) % 3.5);
         tex = q.loop[0];
       } else tex = q.fidget[i];
     } else {
