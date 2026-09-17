@@ -37,7 +37,7 @@ animates from **events**, never by diffing state. Randomness comes only from `Rn
   same on every push.
 - Commit straight to `main` with small, single-purpose commits during pre-alpha.
 - Two-world presentation is the identity: Garden (near, warm, painterly) fading into Thicket
-  (far, dark, grainy). Every screen keeps that gradient legible. Keep enemies menacing, never gory.
+  (far, dark, grainy). Every screen keeps that gradient legible. Enemies are menacing, gross and gory (spec §11.1).
 
 ## Verifying visuals
 

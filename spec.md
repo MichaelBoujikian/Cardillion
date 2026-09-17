@@ -482,8 +482,13 @@ Two palettes on one screen.
 | **Garden**  | buttery yellow, leaf green, cream, sky blue, copper/brass  | painterly, soft edges, warm key light                                                      | Diceomancer |
 | **Thicket** | near-black green, umber, bruised purple, amber (eyes only) | painted realism, photobashed texture, heavy grain, crushed blacks, one cold rim light, fog | Inscryption |
 
-The Thicket's creatures are **gross, never gory**: mange, wet matted fur, bare greasy skin, ribs,
-crusted glowing eyes, one joint too many. Realistic rendering, diseased subject.
+The Thicket's creatures are **gross, and gory is good** (owner, 2026-09-16 — this replaced
+"gross, never gory"): mange, wet matted fur, bare greasy skin, ribs, crusted glowing eyes, one
+joint too many; and, since the mutant direction, skin torn or sloughed away over wet muscle,
+exposed bone, open wounds, bundles of fleshy tentacles pushing out of the mouth (the Fallout 3
+centaur, the mutant, not the horse-man). Realistic rendering, diseased and mutilated subject, as
+far as the image model will go. Wounds read red-pink, never amber: the eye-glow finder keys on
+amber, and the eyes stay the only amber on the creature.
 
 The two must never be fully separated: the Garden's warm light spills a little onto the nearest
 enemy; the Thicket's fog creeps a little onto the table.

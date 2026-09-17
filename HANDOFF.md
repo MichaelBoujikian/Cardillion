@@ -46,7 +46,8 @@ test sessions. Do not propose or make number changes in passing.**
 
 The owner wants the vermin redone as **mutants — Fallout 3 centaur** (the mutant, not the
 horse-man): skin torn or sloughed away showing wet muscle and ribs, bundles of fleshy tentacles
-pushing out of the mouth, that kind of wrong. Still **gross, never gory** (spec §11.1), still
+pushing out of the mouth, that kind of wrong. **Gross and gory** (spec §11.1 — the owner dropped
+"never gory" on 2026-09-16; the thicket prefix in the manifest now invites wounds), still
 realistic-painted, still the glowing amber eyes. He wants the new look as **edits of the
 existing sprites**, not fresh creatures — same rat, same pose, mutated.
 
