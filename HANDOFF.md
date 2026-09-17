@@ -2,7 +2,7 @@
 
 For an agent picking this project up cold. Read this, then `CLAUDE.md` (the standing rules),
 then the `spec.md` section for whatever you build next. Written 2026-09-15; rewritten
-2026-09-16 at commit `d8806ad` after the overnight run and the owner's review of it.
+2026-09-16 (`22a9c08`) after the overnight run, and again that evening after the rat session.
 
 ## What this is
 
@@ -42,55 +42,76 @@ reading — greedy wins 0.3%, the Bear kills 43% of runs, then the late `scorpio
 `spider + scorpion`, the Wolf Spider. **The owner's decision: balance gets its own dedicated
 test sessions. Do not propose or make number changes in passing.**
 
-## NEXT: the enemy art pass
+## NEXT: the enemy art pass (in progress — the rat is the worked example)
 
 The owner wants the vermin redone as **mutants — Fallout 3 centaur** (the mutant, not the
 horse-man): skin torn or sloughed away showing wet muscle and ribs, bundles of fleshy tentacles
 pushing out of the mouth, that kind of wrong. **Gross and gory** (spec §11.1 — the owner dropped
-"never gory" on 2026-09-16; the thicket prefix in the manifest now invites wounds), still
-realistic-painted, still the glowing amber eyes. He wants the new look as **edits of the
-existing sprites**, not fresh creatures — same rat, same pose, mutated.
+"never gory" on 2026-09-16), realistic-painted, the glowing amber eyes, and **as dark as the v1
+art**: he judged the `gpt-image-2.5` renders "too much colour", so every frame is tone-matched
+to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh creatures.
 
-**A sample exists and he liked the direction:** `enemy-rat-mutant` in `art/manifest.json` (an
-edit of `enemy-rat`; the image is on disk in `assets/art/`, uncommitted, not a content id; the
-before/after sheet is `art/out/contact-2026-09-16-rat-mutant.png`). The rat is "mid-way" —
-expect him to want the Bear pushed further.
+**Decisions made 2026-09-16 (evening), all with him looking at the game:**
 
-**How to do it** (`docs/art-pipeline.md`, "Editing an existing asset"):
+- **Animation = pose sheets + cross-fades, not video.** He asked for both and compared: a
+  Sora-2-pro clip ($2.40, timid, and the honest "vicious bite" version was blocked by the
+  output moderation filter at 99%) versus a pose sheet on `gpt-image-2.5-sunburst` ($0.17,
+  four readable poses). Also decisive: **OpenAI shuts the Sora API down on 2026-09-24**, no
+  replacement named. The clip and its frames are in `art/out/video/` (gitignored) for the
+  record; `art/out/video/sora-rat.mjs` is the script.
+- **Model:** `gpt-image-2.5-sunburst` (the precision-editing tier) is the manifest default;
+  `-flare` is the fast tier at the same price. Quality runs `low..max`; default `max`
+  (≈ $0.165 for a 1536×1024 sheet). The tool sends `moderation: low` and prints the real
+  token cost.
+- **What's built** (spec §11.2/§11.4): `poses` on the enemy content row — `windup`, `attack`,
+  `hit`, `idle: [...]` — each frame on the same canvas as `art`. `scene.ts` cross-fades them:
+  wind-up while the lunge pulls back, strike from the spring to the recovery, hit for 0.35 s,
+  and an idle drift through rest + idle frames every 1–2 s (off under Reduce motion). The eye
+  glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
+  — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
-1. For each enemy, add a manifest entry with `"subject": "<existing id>"` and a prompt that
-   says only what changes. The tool sends the existing render first with a hint to keep the
-   creature and alter only what is described; the thicket style prefix still applies. Prefer
-   regenerating **into the same id** with `--force` once he has approved the look for that
-   creature — the content and the loader key by id, so nothing else changes. Until approval,
-   render to a sample id (`<id>-mutant`) so the live game is untouched.
-2. `npm run art -- --only <ids>` → look at each → `npm run art:optimize` → one contact sheet
-   (before/after per creature) → send it → **wait for his yes** → commit PNG + WebP.
-3. The roster: `enemy-rat`, `enemy-possum` **and `enemy-possum-dead` together** (the Play Dead
-   pose must be the same mutated possum — edit both from their raws in one batch and compare
-   them side by side), `enemy-spider`, `enemy-scorpion`, `enemy-greeble` (it is Unseen: drawn
-   as a shimmer until a Cat reveals it, so its wrongness only shows on reveal), `enemy-rat-king`,
-   `enemy-wolf-spider`, `boss-bear`. `boss-moose` exists but is act 2 (roadmap).
-4. Things that can bite: the eye-glow finder (`findGlowPoints` in `textures.ts`) looks for
-   bright warm saturated pixels — keep the amber eyes and avoid large amber/orange areas
-   elsewhere (raw wounds should read red-pink, not amber). The chroma key (`--rekey`, free) may
-   need a look on pale exposed-flesh edges. Raw green-screen renders live in `art/out/*-raw.png`
-   on **his machine only** (gitignored); the keyed PNG works as the subject too, just less
-   reliably for the screen colour. Expect drift in fur tone — it is a guided repaint — and
-   re-roll rather than accept a creature that stopped being the same animal.
-5. After each creature lands, check it in the fight: the motion (`poseBody`/`act` in
-   `scene.ts`) is billboard transforms and needs no change; amplitudes may want a nudge per
-   creature (a Bear should lunge less far than a rat).
+**The rat as of tonight:** `src/content/enemies.ts` points the rat at **sample ids**
+(`enemy-rat-mutant-idle1` as `art`, `-windup/-attack/-hit`, idle `-idle2..4`), cut from two
+sheets (`enemy-rat-mutant-poses`, `enemy-rat-mutant-idle`, both in the manifest) and
+tone-matched to `enemy-rat`. **All of it is uncommitted** — the PNGs in `assets/art/`, the WebPs
+in `public/art/`, and the content row — because he has not said yes to the art. He said "not
+bad" and asked for smaller eye glows, feet on the shadow, and the darker tone; all three are in.
+Contact sheets: `art/out/contact-2026-09-16-rat-ingame-idle.png` (in-game frames),
+`-rat-pose-frames.png`, `-rat-idle-frames.png`, `-rat-tone.png`.
 
-**Animation after the art (discussed, not started; he said "don't do this yet").** Agreed
-plan, in order: (1) 4–5 **keyframe pose sheets** per creature generated in _one_ image so the
-creature stays consistent (rest / wound-up / jaws open / recovering), snapped or cross-faded on
-top of the procedural lunge; (2) **masked edits** (inpainting a mask over the head or a limb
-only, `mask` support to be added to the tool) for "the same picture with the jaw moved" —
-pixel-identical outside the mask; (3) for the Bear and elites only, **image-to-video → sprite
-sheet** (OpenAI's video model on the same key, or Veo/Runway as fallbacks; confirm current
-endpoint and pricing when building) for real in-betweens, plus a sheet player in the renderer.
-Never rig sprites into parts. All of this derives from the final art, hence the order.
+**Per creature, the recipe** (`docs/art-pipeline.md`, "Editing an existing asset" and "Pose
+sheets"):
+
+1. Mutation sample: a manifest entry `<id>-mutant` with `"subject": "<id>"` and a prompt that
+   says only what changes. Show him; iterate until yes.
+2. Action sheet: `<id>-mutant-poses`, `"subject": "<id>-mutant"` (its raw), 2 × 2 —
+   rest / wind-up / attack / hit — on the one green screen. Idle sheet: `<id>-mutant-idle`,
+   subject the poses sheet's raw, "the top-left figure four times, only the <tentacles,
+   whiskers, breathing> differ".
+3. `npm run art:poses -- --sheet <id>-mutant-poses --names rest,windup,attack,hit --tone <id>`
+   then `... --sheet <id>-mutant-idle --names idle1,idle2,idle3,idle4 --out <id>-mutant --like
+<id>-mutant-rest --tone <id>`. Check every frame finds exactly one amber cluster (the eye);
+   the slicer protects the eye from the tone pass.
+4. Content row: `art` = `idle1`, `poses`. `npm run art:optimize` (it converts every PNG in
+   `assets/art`, so delete the stray sheet WebPs). Look at it in a fight — `END TURN` for the
+   lunge, a card on it for the hit.
+5. On his yes: rename the sample ids to the real ones (`enemy-<name>`, `enemy-<name>-windup`
+   …), commit PNG + WebP + content together.
+
+Roster still to do: `enemy-possum` **and `enemy-possum-dead` together** (no raw exists for the
+dead pose — it edits from the keyed PNG; consider editing it from the approved mutant possum
+instead), `enemy-spider`, `enemy-scorpion`, `enemy-greeble` (Unseen: alphaTest 0, so its edges
+must be clean), `enemy-rat-king`, `enemy-wolf-spider`, `boss-bear` (sample entries need
+`"size": "1024x1536"`; expect him to want it pushed further). `boss-moose` is act 2.
+
+Things that bite: `--force` into an id whose `subject` is itself overwrites `art/out/<id>-raw.png`
+— copy the raw to `<id>-vN-<why>.png` first. Wounds must read red-pink, never amber (the glow
+finder). The moves' amplitudes are literals in `poseBody` (`scene.ts`); a per-creature nudge
+means a seam on `EnemyDef`, not a tweak. Never `git add -A` while unapproved art is on disk.
+
+**Masked edits and video** (the rest of the old animation plan): masked inpainting (`mask` on
+the edits endpoint, prompt-guided) is still an option for "the same picture with the jaw
+moved"; video is off the table until a provider other than Sora is chosen (Veo/Runway).
 
 ## Then: the metamorphosis grilling session
 
@@ -228,8 +249,10 @@ it the same way: spec first, tests beside, checkpoint row per item, push after e
   lost and the URL's `?seed=` is not refreshed.
 - Reduce motion removes the film grain, which is a big part of the thicket's look. The spec
   asks for exactly that; if the owner wants a middle setting, `Post.setGrain` takes any amount.
-- `enemy-rat-mutant.png` (the direction sample) sits uncommitted in `assets/art/`; delete it or
-  fold it into the rat's real prompt when the art pass starts.
+- The rat's mutant PNGs/WebPs and its content row are uncommitted, awaiting the owner's yes
+  (see NEXT). `enemy-rat-mutant.png` (the first direction sample) is superseded by the sheets.
+- The left-hand enemy slot is much darker than the middle one (the warm light sits left-front
+  and close); any creature there reads as a silhouette. Noticed 2026-09-16, not addressed.
 
 ## How we got here (for context, not action)
 
