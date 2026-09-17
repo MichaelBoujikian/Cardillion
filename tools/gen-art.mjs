@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Cardillion art generator - renders every entry in art/manifest.json to assets/art/<id>.png
- * using the OpenAI Images API (gpt-image-1). See docs/art-pipeline.md for setup.
+ * using the OpenAI Images API. See docs/art-pipeline.md for setup.
  *
  *   npm run art                       # generate everything that is missing
  *   npm run art -- --only rat,possum  # just these ids
  *   npm run art -- --force            # regenerate even if the file exists
- *   npm run art -- --quality medium   # low | medium | high (default: manifest.defaults.quality)
+ *   npm run art -- --quality xhigh    # low | medium | high | xhigh | max (default: manifest.defaults.quality)
+ *   npm run art -- --model gpt-image-2.5-flare  # override the model (default: asset.model, then manifest.defaults.model)
  *   npm run art -- --dry-run          # print the prompts, call nothing
  *   npm run art -- --rekey --only rat  # re-run the chroma key on art/out/<id>-raw.png, no API call
  *
@@ -55,7 +56,13 @@ loadDotEnv();
 
 // ---------- manifest ----------
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
-const quality = opt('quality') ?? manifest.defaults?.quality ?? 'high';
+const quality = opt('quality') ?? manifest.defaults?.quality ?? 'max';
+// The model is per asset (an old asset can pin the model that made it), else the manifest default.
+// gpt-image-2.5-sunburst is the precision-editing tier, which is what `subject` edits want;
+// -flare is the fast tier at the same price. Quality on 2.5 runs low..max (its `high` is a
+// cheap middle tier, unlike gpt-image-1's).
+const modelFor = (asset) =>
+  opt('model') ?? asset.model ?? manifest.defaults?.model ?? 'gpt-image-2.5-sunburst';
 const assets = manifest.assets.filter((a) => !only || only.includes(a.id));
 if (assets.length === 0) {
   console.error('No matching assets in manifest.');
@@ -209,6 +216,7 @@ async function generate(asset, prompt) {
   if (!apiKey)
     throw new Error('OPENAI_API_KEY is not set (put it in .env - see docs/art-pipeline.md)');
   const size = asset.size ?? manifest.defaults.size;
+  const model = modelFor(asset);
   const key = keyFor(asset);
   const background = key ? 'opaque' : (asset.background ?? manifest.defaults.background ?? 'auto');
 
@@ -218,11 +226,12 @@ async function generate(asset, prompt) {
     // The subject goes first (the prompt says so); its raw chroma render is preferred so the
     // model sees the screen it must paint on.
     const form = new FormData();
-    form.append('model', 'gpt-image-1');
+    form.append('model', model);
     form.append('prompt', prompt);
     form.append('size', size);
     form.append('quality', quality);
     form.append('background', background);
+    form.append('moderation', 'low'); // the vermin are gory on purpose (spec §11.1)
     const images = [...[].concat(asset.subject ?? []), ...[].concat(asset.reference ?? [])];
     for (const ref of images) {
       // A reference is a generated asset (raw render if kept), or a local photo in art/refs.
@@ -249,11 +258,12 @@ async function generate(asset, prompt) {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'gpt-image-1',
+        model,
         prompt,
         size,
         quality,
         background,
+        moderation: 'low',
         output_format: 'png',
         n: 1,
       }),
@@ -261,8 +271,20 @@ async function generate(asset, prompt) {
   }
 
   if (res.status === 429) throw Object.assign(new Error('rate limited'), { retry: true });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}: ${await res.text()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    let hint = '';
+    try {
+      const d = JSON.parse(body).error?.moderation_details;
+      if (d) hint = ` (moderation ${d.moderation_stage}: ${(d.categories ?? []).join(', ')})`;
+    } catch {
+      /* not JSON */
+    }
+    throw new Error(`${res.status} ${res.statusText}${hint}: ${body}`);
+  }
   const json = await res.json();
+  const tokens = json.usage?.output_tokens;
+  if (tokens) console.log(`  ${tokens} output tokens (~$${((tokens * 30) / 1e6).toFixed(3)})`);
   const b64 = json.data?.[0]?.b64_json;
   if (!b64) throw new Error('no image data in response');
   const raw = Buffer.from(b64, 'base64');
@@ -306,7 +328,9 @@ for (const asset of assets) {
     continue;
   }
   const prompt = buildPrompt(asset);
-  console.log(`\n[${asset.id}] ${asset.size ?? manifest.defaults.size} ${quality}`);
+  console.log(
+    `\n[${asset.id}] ${modelFor(asset)} ${asset.size ?? manifest.defaults.size} ${quality}`,
+  );
   console.log(`  ${prompt}`);
   if (dryRun) continue;
   const png = await withRetry(() => generate(asset, prompt));

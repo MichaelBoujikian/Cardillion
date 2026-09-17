@@ -1,8 +1,9 @@
 {
   "$comment": "Prompt manifest for tools/gen-art.mjs. Output: assets/art/<id>.png. Style keys keep 40 images in two coherent looks. `reference` = ids of already-generated images to use as style anchors (edits endpoint). See docs/art-pipeline.md. Styles with `key` are rendered opaque on that chroma colour and keyed out by the tool (see tools/gen-art.mjs). `owner-cat` is a personal photo in art/refs (gitignored, not in the repo).",
   "defaults": {
+    "model": "gpt-image-2.5-sunburst",
     "size": "1024x1024",
-    "quality": "high",
+    "quality": "max",
     "background": "transparent"
   },
   "styles": {
@@ -12,7 +13,7 @@
       "key": "blue"
     },
     "thicket": {
-      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross, never gory. Centered, full body, no text, no border.",
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross and gory is welcome: open wounds, skin torn away over wet red muscle, exposed bone; wounds are red and pink, never amber or orange (only the eyes glow amber). Centered, full body, no text, no border.",
       "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
       "key": "green"
     },
@@ -304,6 +305,14 @@
       "subject": "enemy-rat",
       "prompt": "Mutate this rat: large patches of its skin have been torn or sloughed away, showing raw wet muscle and pale ribs beneath; from its open mouth a bundle of thin, glistening, pink-grey fleshy tentacles pushes out and droops toward the ground, like the mouth of a Fallout 3 centaur (the mutant, not the horse-man) - smooth tube-like tentacles with no suckers, a couple ending in small toothed openings. Keep the same rat, the same pose, size, fur, eyes and lighting; only the wounds and the mouth-tentacles are new.",
       "size": "1024x1024"
+    },
+    {
+      "id": "enemy-rat-mutant-poses",
+      "$comment": "Animation test (2026-09-16): a keyframe pose sheet of enemy-rat-mutant in ONE image so the creature stays consistent. Not a content id; compared against a Sora clip of the same rat.",
+      "style": "thicket",
+      "subject": "enemy-rat-mutant",
+      "prompt": "A keyframe pose sheet on the flat green chroma-key screen: this exact mutant rat drawn FOUR times in a 2 by 2 grid, all four figures floating on the one continuous green screen (no black, no panel borders, no backdrop), every figure the same creature at the same size, same strict side profile facing the viewer's left, same fur, same torn-open wounds, same mouth-tentacles, same amber eyes, same lighting, with a clean gap of screen colour between the panels. Top-left, REST: standing exactly as in the subject image, tentacles hanging slack from the mouth. Top-right, WIND-UP: crouched back onto its haunches, weight loaded on the rear legs, head lowered and pulled back, tentacles drawn up tight and bunched at the mouth, about to spring. Bottom-left, ATTACK: mid-lunge, body stretched long and low, front claws reaching forward, jaws wide, the tentacles whipping forward toward the left edge of the panel. Bottom-right, HIT: flinching from a blow, head thrown back, body twisted away, tentacles flung outward, blood spraying from the wounds. Four separate figures, none overlapping, no labels, no text.",
+      "size": "1536x1024"
     }
   ]
 }

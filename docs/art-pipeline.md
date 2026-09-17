@@ -41,8 +41,12 @@ That is the entire setup. From here the agent runs the pipeline.
    web-sized `public/art/<id>.webp` copies it writes — those are what the game loads; the PNG
    masters never ship. Placeholders for those ids become unused.
 
-Costs: roughly $0.02 / $0.07 / $0.19 per image at low / medium / high quality. Use
-`--quality medium` while iterating on prompts, `high` for the final render.
+Model: `gpt-image-2.5-sunburst` (the precision-editing tier; `manifest.defaults.model`, or
+`--model gpt-image-2.5-flare` for the fast tier at the same price). Costs at 1024×1024, from
+OpenAI's calculator: about $0.006 / $0.013 / $0.05 / $0.09 / $0.21 per image at low / medium /
+high / xhigh / max (landscape 1536×1024 is cheaper, ≈ $0.165 at max); the tool prints the real
+`output_tokens` after each render. Use `--quality high` while iterating on prompts, `max` for
+the final render. The v1 assets were made on `gpt-image-1` at its `high` (≈ $0.19).
 
 ## Editing an existing asset (`subject`)
 
@@ -74,7 +78,8 @@ override its style's key (`"key": "magenta"`) or disable it (`"key": null`) in t
 npm run art                          generate every missing asset
 npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
-npm run art -- --quality medium      low | medium | high
+npm run art -- --quality xhigh       low | medium | high | xhigh | max
+npm run art -- --model <id>          gpt-image-2.5-sunburst (default) | gpt-image-2.5-flare | gpt-image-1
 npm run art -- --dry-run             print prompts, call nothing
 npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)
 ```
