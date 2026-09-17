@@ -11,6 +11,7 @@
  *   --out <prefix>     frames are written to assets/art/<out>-loop-NN.png and <out>-fidget-NN.png
  *   --loop t0:t1       the still stretch to play back and forth, in seconds
  *   --fidget t0:t1     a movement to play once now and then; it should end where the loop starts
+ *   --fidget-video <f> take the fidget from this clip instead (its own t0:t1)
  *   --fps <n>          frames per second to keep (default 12)
  *   --key <name>       green | blue | magenta (default green)
  *   --like <id>        an existing frame: its canvas, and the first loop frame is scaled to its
@@ -58,7 +59,7 @@ const loopRange = range('loop');
 const fidgetRange = range('fidget');
 if (!video || !outPrefix || !loopRange) {
   console.error(
-    'usage: art-video --video <file> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fps n] [--key name] [--like id] [--tone id] [--ffmpeg exe]',
+    'usage: art-video --video <file> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video f] [--fps n] [--key name] [--like id] [--tone id] [--ffmpeg exe]',
   );
   process.exit(1);
 }
@@ -76,32 +77,42 @@ const ffmpeg = (() => {
 })();
 
 // 1. Extract every frame at the chosen rate; frame N (1-based) is at (N - 1) / fps seconds.
-const videoPath = path.resolve(ROOT, video);
-const frameDir = path.join(path.dirname(videoPath), `${outPrefix}-frames`);
-fs.rmSync(frameDir, { recursive: true, force: true });
-fs.mkdirSync(frameDir, { recursive: true });
-execFileSync(ffmpeg, [
-  '-v',
-  'error',
-  '-i',
-  videoPath,
-  '-vf',
-  `fps=${fps}`,
-  path.join(frameDir, 'f%04d.png'),
-]);
-const files = fs
-  .readdirSync(frameDir)
-  .filter((f) => f.endsWith('.png'))
-  .sort();
-console.log(`${path.relative(ROOT, videoPath)}: ${files.length} frames at ${fps} fps`);
-
-const pick = ([t0, t1]) => {
-  const a = Math.round(t0 * fps);
-  const b = Math.min(files.length - 1, Math.round(t1 * fps));
-  return files.slice(a, b + 1);
-};
-const segments = [{ name: 'loop', files: pick(loopRange) }];
-if (fidgetRange) segments.push({ name: 'fidget', files: pick(fidgetRange) });
+// The fidget may come from a second clip (--fidget-video), e.g. a clip of just the movement.
+function extract(file, tag) {
+  const videoPath = path.resolve(ROOT, file);
+  const frameDir = path.join(path.dirname(videoPath), `${outPrefix}-${tag}-frames`);
+  fs.rmSync(frameDir, { recursive: true, force: true });
+  fs.mkdirSync(frameDir, { recursive: true });
+  execFileSync(ffmpeg, [
+    '-v',
+    'error',
+    '-i',
+    videoPath,
+    '-vf',
+    `fps=${fps}`,
+    path.join(frameDir, 'f%04d.png'),
+  ]);
+  const files = fs
+    .readdirSync(frameDir)
+    .filter((f) => f.endsWith('.png'))
+    .sort()
+    .map((f) => path.join(frameDir, f));
+  console.log(`${path.relative(ROOT, videoPath)}: ${files.length} frames at ${fps} fps`);
+  const pick = ([t0, t1]) => {
+    const a = Math.round(t0 * fps);
+    const b = Math.min(files.length - 1, Math.round(t1 * fps));
+    return files.slice(a, b + 1);
+  };
+  return pick;
+}
+const pickLoop = extract(video, 'loop');
+const pickFidget = fidgetRange
+  ? opt('fidget-video')
+    ? extract(opt('fidget-video'), 'fidget')
+    : pickLoop
+  : null;
+const segments = [{ name: 'loop', files: pickLoop(loopRange) }];
+if (fidgetRange && pickFidget) segments.push({ name: 'fidget', files: pickFidget(fidgetRange) });
 
 // 2. Key every frame and find the figure's box in each; the crop is the union of them all.
 const keyed = new Map();
@@ -109,7 +120,7 @@ let union = null;
 let first = null;
 for (const seg of segments) {
   for (const f of seg.files) {
-    const raw = await readRawFile(path.join(frameDir, f));
+    const raw = await readRawFile(f);
     const png = chromaKey({ width: raw.w, height: raw.h, data: raw.data }, key);
     const { found } = blobs({ data: png.data, w: raw.w, h: raw.h });
     const parts = found.filter((b) => b.n >= MIN_BLOB);
