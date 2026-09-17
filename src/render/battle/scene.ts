@@ -70,6 +70,17 @@ interface EnemySprite {
   /** Where the idle loop is (an index into rest + idle frames) and when it next moves on. */
   idleIndex: number;
   nextIdleAt: number;
+  /** Frames cut from a clip: a loop played back and forth, and a fidget played now and then. */
+  seq: {
+    loop: THREE.Texture[];
+    fidget: THREE.Texture[];
+    fps: number;
+    mode: 'loop' | 'fidget';
+    start: number;
+    nextFidgetAt: number;
+  } | null;
+  /** Textures owned by the sequences, which pose swaps must not dispose. */
+  seqMaps: Set<THREE.Texture>;
   root: THREE.Group;
   /** Plane and eyes together: idle motion and moves are applied here; the plane itself keeps hit recoil and death. */
   body: THREE.Group;
@@ -464,7 +475,7 @@ export class BattleScene {
 
   /** Drop every enemy sprite (a new fight reuses uids, so stale sprites must not survive). */
   clearEnemies(): void {
-    for (const sprite of this.sprites.values()) this.enemyGroup.remove(sprite.root);
+    for (const sprite of this.sprites.values()) this.disposeSprite(sprite);
     this.sprites.clear();
   }
 
@@ -473,7 +484,7 @@ export class BattleScene {
     const keep = new Set(enemies.map((e) => e.uid));
     for (const [uid, sprite] of this.sprites) {
       if (!keep.has(uid)) {
-        this.enemyGroup.remove(sprite.root);
+        this.disposeSprite(sprite);
         this.sprites.delete(uid);
       }
     }
@@ -503,7 +514,12 @@ export class BattleScene {
     const poseArt = enemy.playingDead && def.deadArt ? def.deadArt : def.art;
     const img = this.art.get(poseArt);
     const unseen = def.traits.includes('unseen');
-    const texture = img ? imageTexture(img) : makeVerminPlaceholder(enemy.def);
+    const seq = this.makeSequence(def);
+    const texture = seq
+      ? (seq.loop[0] as THREE.Texture)
+      : img
+        ? imageTexture(img)
+        : makeVerminPlaceholder(enemy.def);
     const aspect = img ? img.height / img.width : 1;
     const height =
       (def.tier === 'boss' ? 4.2 : def.tier === 'elite' ? 3.3 : 2.6) * (img ? 1 : 0.85);
@@ -556,6 +572,8 @@ export class BattleScene {
       hitUntil: 0,
       idleIndex: 0,
       nextIdleAt: this.now + 0.5,
+      seq,
+      seqMaps: new Set(seq ? [...seq.loop, ...seq.fidget] : []),
       root,
       body,
       plane,
@@ -573,6 +591,76 @@ export class BattleScene {
     };
     this.applyReveal(sprite);
     return sprite;
+  }
+
+  /** Take a sprite out of the scene and free what it owns (its textures can be many). */
+  private disposeSprite(s: EnemySprite): void {
+    this.enemyGroup.remove(s.root);
+    this.endFade(s);
+    s.plane.geometry.dispose();
+    const map = s.plane.material.map;
+    if (map && !s.seqMaps.has(map)) map.dispose();
+    s.plane.material.dispose();
+    for (const t of s.seqMaps) t.dispose();
+  }
+
+  /** The loop and fidget textures of a creature cut from a clip, if it has them (spec §11.2). */
+  private makeSequence(def: EnemyDef): EnemySprite['seq'] {
+    const loop = def.poses?.loop;
+    if (!loop) return null;
+    const textures = (ids: string[]) =>
+      ids.flatMap((id) => {
+        const img = this.art.get(id);
+        return img ? [imageTexture(img)] : [];
+      });
+    const frames = textures(loop.frames);
+    if (frames.length < 2) {
+      for (const t of frames) t.dispose();
+      return null;
+    }
+    return {
+      loop: frames,
+      fidget: def.poses?.fidget ? textures(def.poses.fidget.frames) : [],
+      fps: loop.fps,
+      mode: 'loop',
+      start: this.now,
+      nextFidgetAt: this.now + 4,
+    };
+  }
+
+  /**
+   * Advance a creature's clip: the loop plays back and forth (so it never seams); when a
+   * fidget is due and the loop is passing its first frame, the fidget plays once and hands
+   * back to the loop's first frame, which is where it ends. Paused while a keyframe shows.
+   */
+  private stepSequence(s: EnemySprite, t: number): void {
+    const q = s.seq;
+    if (!q || s.pose !== s.restPose || s.fade) return;
+    if (t < q.start) q.start = t; // a clock that went backwards (dev tools) must not index off the end
+    let tex: THREE.Texture | undefined;
+    if (q.mode === 'fidget') {
+      const i = Math.floor((t - q.start) * q.fps);
+      if (i >= q.fidget.length) {
+        q.mode = 'loop';
+        q.start = t;
+        q.nextFidgetAt = t + 5 + ((s.seed * 3.1 + 1) % 6);
+        tex = q.loop[0];
+      } else tex = q.fidget[i];
+    } else {
+      const n = q.loop.length;
+      const period = 2 * n - 2;
+      const i = Math.floor((t - q.start) * q.fps) % period;
+      const idx = i < n ? i : period - i;
+      if (idx === 0 && q.fidget.length && this.motion.idle && t >= q.nextFidgetAt) {
+        q.mode = 'fidget';
+        q.start = t;
+        tex = q.fidget[0];
+      } else tex = q.loop[idx];
+    }
+    const old = s.plane.material.map;
+    if (!tex || old === tex) return;
+    s.plane.material.map = tex;
+    if (old && !s.seqMaps.has(old)) old.dispose();
   }
 
   /**
@@ -637,7 +725,7 @@ export class BattleScene {
       s.fade = { start: this.now, duration: fadeMs / 1000 };
     } else {
       oldGeometry.dispose();
-      oldMap?.dispose();
+      if (oldMap && !s.seqMaps.has(oldMap)) oldMap.dispose();
     }
     s.pose = artId;
     s.width = s.height / (img.height / img.width);
@@ -655,7 +743,8 @@ export class BattleScene {
     if (s.ghost) {
       s.body.remove(s.ghost);
       s.ghost.geometry.dispose();
-      s.ghost.material.map?.dispose();
+      const map = s.ghost.material.map;
+      if (map && !s.seqMaps.has(map)) map.dispose();
       s.ghost.material.dispose();
       s.ghost = null;
     }
@@ -926,6 +1015,7 @@ export class BattleScene {
         this.setPose(s.uid, s.restPose, 140);
       }
       this.stepIdle(s, t);
+      this.stepSequence(s, t);
       if (s.recoil > 0) {
         s.recoil = Math.max(0, s.recoil - dt * 4);
         s.plane.position.x = Math.sin(s.recoil * 30) * 0.08 * s.recoil;

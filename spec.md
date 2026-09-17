@@ -523,6 +523,14 @@ enemy; the Thicket's fog creeps a little onto the table.
   come from a **pose sheet**: one generated image holding every pose, so the creature stays
   the same animal (§11.4). Reduce motion keeps the strike and hit frames and stops the idle
   drift along with the sway. The eye glow is sized from the painted eye it finds.
+- **Clips** (2026-09-16, the owner's call after seeing both): for the waiting state a creature
+  may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
+  (played back and forth at its `fps`, so it never seams: the rat holds still, only its
+  tentacles slither) and `poses.fidget` (a short movement played once every 5–11 s, each
+  creature on its own clock, that ends where the loop starts). The first loop frame is the
+  creature's `art`. Keyframes (strike, hit) still come from the pose sheet, so the picture
+  changes at the strike; accepted. The eyes are placed once, from `art`, not per frame.
+  `npm run art:video` cuts a clip (§11.4).
 - **Hand:** DOM elements along the bottom edge in the bright zone. Hover lifts and enlarges.
 - **Playing a card:** it lifts off the hand, becomes a textured plane in the 3D scene, flies to
   its target and hits (impact flash, sprite recoil, number pop). Untargeted cards flash at the
@@ -544,17 +552,18 @@ Every visual asset is keyed by a stable **id** matching its content entry. Maste
 game loads. A missing asset falls back to a procedurally drawn placeholder, so the game is
 always fully playable without any generated art.
 
-| Kind          | Id pattern                    | Generated size  | Displayed as                                                         | Background  |
-| ------------- | ----------------------------- | --------------- | -------------------------------------------------------------------- | ----------- |
-| Card art      | `card-<card>`                 | 1024 × 1024 PNG | contain-fit in the art window                                        | transparent |
-| Upgraded card | `card-<card>-plus`            | 1024 × 1024 PNG | as above, only where the "+" form has its own look (Cat, Wormillion) | transparent |
-| Enemy sprite  | `enemy-<name>`                | 1024 × 1024 PNG | billboard, height ≈ 1.6 units                                        | transparent |
-| Enemy pose    | `enemy-<name>-<pose>`         | see below       | swapped onto the billboard while the pose holds (Possum's Play Dead) | transparent |
-| Pose sheet    | `enemy-<name>-poses`, `-idle` | 1536 × 1024 PNG | never shown: sliced into pose frames by `npm run art:poses`          | transparent |
-| Boss sprite   | `boss-<name>`                 | 1024 × 1536 PNG | billboard, height ≈ 3 units                                          | transparent |
-| NPC           | `npc-<name>`                  | 1024 × 1024 PNG | map marker / shop portrait                                           | transparent |
-| Backgrounds   | `bg-<scene>`                  | 1536 × 1024 PNG | table texture / map backdrop                                         | opaque      |
-| Icons         | `icon-<name>`                 | SVG             | UI                                                                   | —           |
+| Kind          | Id pattern                           | Generated size        | Displayed as                                                         | Background  |
+| ------------- | ------------------------------------ | --------------------- | -------------------------------------------------------------------- | ----------- |
+| Card art      | `card-<card>`                        | 1024 × 1024 PNG       | contain-fit in the art window                                        | transparent |
+| Upgraded card | `card-<card>-plus`                   | 1024 × 1024 PNG       | as above, only where the "+" form has its own look (Cat, Wormillion) | transparent |
+| Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height ≈ 1.6 units                                        | transparent |
+| Enemy pose    | `enemy-<name>-<pose>`                | see below             | swapped onto the billboard while the pose holds (Possum's Play Dead) | transparent |
+| Pose sheet    | `enemy-<name>-poses`, `-idle`        | 1536 × 1024 PNG       | never shown: sliced into pose frames by `npm run art:poses`          | transparent |
+| Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidget`)  | transparent |
+| Boss sprite   | `boss-<name>`                        | 1024 × 1536 PNG       | billboard, height ≈ 3 units                                          | transparent |
+| NPC           | `npc-<name>`                         | 1024 × 1024 PNG       | map marker / shop portrait                                           | transparent |
+| Backgrounds   | `bg-<scene>`                         | 1536 × 1024 PNG       | table texture / map backdrop                                         | opaque      |
+| Icons         | `icon-<name>`                        | SVG                   | UI                                                                   | —           |
 
 Content names its art explicitly (`art`, and `upgradedArt` / `deadArt` / `poses` where more
 images exist); the patterns above are the naming convention, not something the loader infers.
@@ -566,6 +575,12 @@ to the v1 thicket art (`--tone enemy-<name>`) because the 2.5 image models paint
 as bright and more colourful than the look the owner chose; the amber eyes are left as
 painted so the eye-glow finder keeps finding them. Enemy WebPs are capped at 1024 on the long
 side for the same reason. The first frame of a sheet (rest) is the creature's `art`.
+
+**Clip frames** are cut from a green-screen video by `npm run art:video`: keyed with the same
+chroma key as the renders, one shared crop and placement for every frame (so nothing drifts),
+scaled to the pose frames' figure height on their canvas, tone-matched, and the eye — dulled
+by video compression — relit to amber so the finder sees it. A clip holds one loop stretch
+and one fidget; ~60 frames at 12 fps is about 2 MB of WebP.
 Prompts live in `art/manifest.json`; `npm run art` renders them (see `docs/art-pipeline.md`).
 All v1 assets are generated and approved; new content gets a manifest entry and plays with a
 placeholder until its art is.

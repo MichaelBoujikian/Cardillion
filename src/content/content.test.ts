@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { CARDS, STARTING_DECK } from './cards';
 import { ENCOUNTERS } from './encounters';
 import { ENEMIES } from './enemies';
+import { poseArtIds } from '@engine/types';
 
 describe('cards', () => {
   it('every card is keyed by its id, has art, sane cost and text', () => {
@@ -92,12 +93,19 @@ describe('enemies', () => {
   it('poses are distinct enemy art ids', () => {
     for (const enemy of Object.values(ENEMIES)) {
       if (!enemy.poses) continue;
-      const ids = Object.values(enemy.poses).flat();
-      expect(ids.length).toBeGreaterThan(0);
-      for (const id of ids) {
-        expect(id).toMatch(/^(enemy|boss)-/);
-        expect(id).not.toBe(enemy.art);
+      const ids = poseArtIds(enemy.poses);
+      for (const seq of [enemy.poses.loop, enemy.poses.fidget]) {
+        if (!seq) continue;
+        expect(seq.frames.length).toBeGreaterThan(1);
+        expect(seq.fps).toBeGreaterThan(0);
       }
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) expect(id).toMatch(/^(enemy|boss)-/);
+      // Keyframes are other pictures than `art`; a loop's first frame is the rest, so it may be art.
+      const { loop, fidget, ...keyframes } = enemy.poses;
+      for (const id of poseArtIds(keyframes)) expect(id).not.toBe(enemy.art);
+      if (loop) expect(loop.frames[0]).toBe(enemy.art);
+      if (fidget) expect(fidget.frames.some((id) => loop?.frames.includes(id))).toBe(false);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });

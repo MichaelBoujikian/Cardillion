@@ -120,6 +120,20 @@ export interface EnemyMove {
 
 export type EnemyTrait = 'unseen' | 'playDead';
 
+/** Art ids played in order at a frame rate, all on the creature's canvas. */
+export interface FrameSequence {
+  frames: string[];
+  fps: number;
+}
+
+/** Every art id a creature's poses name, whatever their shape. */
+export function poseArtIds(poses: EnemyDef['poses']): string[] {
+  if (!poses) return [];
+  return Object.values(poses).flatMap((v) =>
+    typeof v === 'string' ? [v] : Array.isArray(v) ? v : v.frames,
+  );
+}
+
 export interface EnemyDef {
   id: string;
   name: string;
@@ -142,7 +156,16 @@ export interface EnemyDef {
    * and `idle` frames cross-faded in a slow loop with `art` while it waits. Any missing pose
    * keeps whatever is showing.
    */
-  poses?: { windup?: string; attack?: string; hit?: string; idle?: string[] };
+  poses?: {
+    windup?: string;
+    attack?: string;
+    hit?: string;
+    idle?: string[];
+    /** Frames played back and forth while the creature waits (cut from a clip). */
+    loop?: FrameSequence;
+    /** A short movement played once now and then; it should end where the loop starts. */
+    fidget?: FrameSequence;
+  };
 }
 
 export interface EnemyInstance {

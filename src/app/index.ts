@@ -6,6 +6,7 @@
 import { CARDS } from '@content/cards';
 import { ENEMIES } from '@content/enemies';
 import type { RunOptions } from '@engine/run';
+import { poseArtIds } from '@engine/types';
 import { BattleScene } from '@render/battle/scene';
 import { loadArt } from '@render/battle/textures';
 import { clearSave, readSave, writeSave } from '@save/save';
@@ -70,7 +71,7 @@ export async function boot(root: HTMLElement): Promise<void> {
     ...Object.values(ENEMIES).flatMap((e) => [
       e.art,
       ...(e.deadArt ? [e.deadArt] : []),
-      ...Object.values(e.poses ?? {}).flat(),
+      ...poseArtIds(e.poses),
     ]),
     ...EXTRA_ART,
   ];
