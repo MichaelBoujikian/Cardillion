@@ -72,6 +72,21 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
+**2026-09-17 (evening) — local clips for the rat, for the owner to review.** He asked for a
+passive clip from the gpt-image rat where the tentacles writhe and, now and then, a head bob
+like the Sora startle he liked; and for separate-vs-combined clips to compare. Made on the
+local rig (`art/out/video/`, gitignored): `rat-A2-tentacles` (best loop: body still, tentacles
+clearly moving), `rat-B-bob` (big head turn, never returns to pose), `rat-B2-bob` / `rat-B3-bob`
+(a slow head dip, subtler; neither returns exactly), `rat-C-both` (10 s, both in one — the 5B
+model lost the tentacles into a red smear and never held still; **10 s clips are out**). The
+cutter grew `--fidget-video` (fidget from a second clip) and `--fidget-pingpong` (forward then
+back, so a dip ends where it began), and only relights the eye where it actually finds it (a
+guessed box painted amber squares on fur once the head moved — removed). **In the game now:**
+`enemy-rat-local-*` = A2 loop (0.5–5 s) + B2's dip (0–2.6 s, ping-ponged), on the same canvas as
+the Sora set; the rat row in `enemies.ts` has both sets in a comment — flip by editing the
+three ids. During the dip the glow sprite stays at the rest eye (placed once); per-frame eye
+tracking for fidgets is a possible refinement. Uncommitted: the rat row and all frames.
+
 **2026-09-17 — the local rig, both halves, is in and tested.** `docs/art-pipeline.md` opens with
 "The recipe" — the ordered steps from a still to a living creature in the game; read that first.
 The rig (outside the repo, `C:\Users\smite\ComfyUI_windows_portable`, ComfyUI v0.36.0):

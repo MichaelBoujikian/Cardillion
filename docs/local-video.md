@@ -46,6 +46,17 @@ Double-click `C:\Users\smite\ComfyUI_windows_portable\run_nvidia_gpu.bat` to ope
 editor in a browser at http://127.0.0.1:8188 (the tool works against that server too). Templates
 → "Wan 2.2 5B video generation" is the graph the tool uses. Update with `update\update_comfyui.bat`.
 
+## What the rat clips taught (2026-09-17)
+
+- 5 s is the model's comfort zone: a 10 s clip lost the tentacles into a smear and never held
+  still. Ask for one thing per clip — a tentacles-only loop (`rat-A2-tentacles`, seed 11) and a
+  separate small movement — and combine them with `art:video --fidget-video`.
+- Wan rarely returns _exactly_ to the start pose; `--fidget-pingpong` plays the movement forward
+  then back so it always does (and a head dip becomes a bob).
+- The eye fades over a clip. The cutter relights it only where it can still find it; the game
+  places the glow from the first frame, which is enough for a still loop. Never paint a guessed
+  box — it lands on fur as soon as the head moves.
+
 ## Gotchas
 
 - 1280×**720** is not a valid 5B size (the server does not enforce the ×32 step, the model then

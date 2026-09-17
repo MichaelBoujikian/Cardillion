@@ -12,6 +12,7 @@
  *   --loop t0:t1       the still stretch to play back and forth, in seconds
  *   --fidget t0:t1     a movement to play once now and then; it should end where the loop starts
  *   --fidget-video <f> take the fidget from this clip instead (its own t0:t1)
+ *   --fidget-pingpong  play the fidget forward then backward, so it ends where it began
  *   --fps <n>          frames per second to keep (default 12)
  *   --key <name>       green | blue | magenta (default green)
  *   --like <id>        an existing frame: its canvas, and the first loop frame is scaled to its
@@ -45,6 +46,7 @@ const opt = (name) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args[i + 1] : undefined;
 };
+const flag = (name) => args.includes(`--${name}`);
 const video = opt('video');
 const outPrefix = opt('out');
 const fps = Number(opt('fps') ?? 12);
@@ -112,7 +114,12 @@ const pickFidget = fidgetRange
     : pickLoop
   : null;
 const segments = [{ name: 'loop', files: pickLoop(loopRange) }];
-if (fidgetRange && pickFidget) segments.push({ name: 'fidget', files: pickFidget(fidgetRange) });
+if (fidgetRange && pickFidget) {
+  let files = pickFidget(fidgetRange);
+  // Forward then back, so the movement ends exactly where it began (a dip becomes a bob).
+  if (flag('fidget-pingpong')) files = [...files, ...files.slice(1, -1).reverse()];
+  segments.push({ name: 'fidget', files });
+}
 
 // 2. Key every frame and find the figure's box in each; the crop is the union of them all.
 const keyed = new Map();
@@ -178,8 +185,9 @@ const top = H - sh;
 // 4. Relight the eye. Video compression dulls the amber glow below what the renderer's eye
 // finder (and the tone pass's eye protection) accept, so find it with a looser warm test -
 // the largest warm blob, tracked from frame to frame - and push it back to amber.
-const isWarm = (r, g, b, a) => a > 200 && r > 140 && g > 70 && b < 120 && r - b > 80 && r - g > 20;
+const isWarm = (r, g, b, a) => a > 200 && r > 120 && g > 60 && b < 120 && r - b > 60 && r - g > 15;
 let eyeAt = null;
+let faded = 0;
 for (const seg of segments) {
   for (const f of seg.files) {
     const k = keyed.get(f);
@@ -189,30 +197,42 @@ for (const seg of segments) {
     const { label, found } = blobs({ data: warm, w: k.w, h: k.h });
     const near = (b) =>
       !eyeAt || Math.hypot((b.x0 + b.x1) / 2 - eyeAt[0], (b.y0 + b.y1) / 2 - eyeAt[1]) < 80;
-    const eye = found.filter((b) => b.n >= 30 && near(b))[0];
-    if (!eye) {
-      console.warn(`  warning: ${f}: no eye found to relight`);
-      continue;
-    }
-    eyeAt = [(eye.x0 + eye.x1) / 2, (eye.y0 + eye.y1) / 2];
-    for (let y = Math.max(0, eye.y0 - 2); y < Math.min(k.h, eye.y1 + 2); y++)
-      for (let x = Math.max(0, eye.x0 - 2); x < Math.min(k.w, eye.x1 + 2); x++) {
-        let mine = false;
-        for (let dy = -2; dy <= 2 && !mine; dy++)
-          for (let dx = -2; dx <= 2 && !mine; dx++) {
+    const eye = found.filter((b) => b.n >= 20 && near(b))[0];
+    let box;
+    let mine;
+    if (eye) {
+      eyeAt = [(eye.x0 + eye.x1) / 2, (eye.y0 + eye.y1) / 2];
+      box = [eye.x0, eye.y0, eye.x1, eye.y1];
+      mine = (x, y) => {
+        for (let dy = -2; dy <= 2; dy++)
+          for (let dx = -2; dx <= 2; dx++) {
             const yy = y + dy;
             const xx = x + dx;
             if (yy >= 0 && yy < k.h && xx >= 0 && xx < k.w && label[yy * k.w + xx] === eye.id)
-              mine = true;
+              return true;
           }
-        if (!mine) continue;
+        return false;
+      };
+    } else {
+      // The eye faded below the test. Leave it: the game places the glow sprite from the first
+      // frame, and painting a guessed box would put amber on fur once the head moves.
+      faded++;
+      continue;
+    }
+    for (let y = Math.max(0, box[1] - 2); y < Math.min(k.h, box[3] + 2); y++)
+      for (let x = Math.max(0, box[0] - 2); x < Math.min(k.w, box[2] + 2); x++) {
+        if (!mine(x, y)) continue;
         const i = (y * k.w + x) * 4;
-        k.data[i] = Math.min(255, Math.round(k.data[i] * 1.35));
-        k.data[i + 1] = Math.min(255, Math.round(k.data[i + 1] * 1.1));
-        k.data[i + 2] = Math.round(k.data[i + 2] * 0.5);
+        if (k.data[i + 3] <= 200) continue;
+        // Paint it back toward the amber of a fresh render (the eye fades over a clip).
+        k.data[i] = Math.round(k.data[i] + (235 - k.data[i]) * 0.75);
+        k.data[i + 1] = Math.round(k.data[i + 1] + (140 - k.data[i + 1]) * 0.75);
+        k.data[i + 2] = Math.round(k.data[i + 2] * 0.3);
       }
   }
 }
+if (faded)
+  console.log(`  eye: too faint to relight in ${faded} frames (the game's glow sprite covers it)`);
 
 // 5. Tone from the first loop frame, applied identically to every frame.
 const cut = (k) => {
