@@ -136,6 +136,13 @@ export interface EnemyDef {
   art: string;
   /** Art shown from the moment Play Dead triggers until the creature next acts. */
   deadArt?: string;
+  /**
+   * Keyframe poses (spec §11.2), each an art id on the same canvas as `art` so the creature
+   * keeps its size: shown during the wind-up and strike of a lunge, for a moment after a hit,
+   * and `idle` frames cross-faded in a slow loop with `art` while it waits. Any missing pose
+   * keeps whatever is showing.
+   */
+  poses?: { windup?: string; attack?: string; hit?: string; idle?: string[] };
 }
 
 export interface EnemyInstance {

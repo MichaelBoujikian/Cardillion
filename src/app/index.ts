@@ -67,7 +67,11 @@ const NOTICES = {
 export async function boot(root: HTMLElement): Promise<void> {
   const artIds = [
     ...Object.values(CARDS).flatMap((c) => (c.upgradedArt ? [c.art, c.upgradedArt] : [c.art])),
-    ...Object.values(ENEMIES).flatMap((e) => (e.deadArt ? [e.art, e.deadArt] : [e.art])),
+    ...Object.values(ENEMIES).flatMap((e) => [
+      e.art,
+      ...(e.deadArt ? [e.deadArt] : []),
+      ...Object.values(e.poses ?? {}).flat(),
+    ]),
     ...EXTRA_ART,
   ];
   const art = await loadArt(artIds);

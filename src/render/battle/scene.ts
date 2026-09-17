@@ -4,12 +4,13 @@
  * Greeble reveal, camera shake). It never reads or mutates combat state itself.
  */
 import { enemyDef } from '@content/enemies';
-import type { EnemyInstance } from '@engine/types';
+import type { EnemyDef, EnemyInstance } from '@engine/types';
 import * as THREE from 'three';
 import { GRAIN_DEFAULT, makePost, type Post } from './post';
 import {
   PLACEHOLDER_EYES,
   findGlowPoints,
+  type GlowPoint,
   imageTexture,
   makeGlowTexture,
   makeGoboTexture,
@@ -57,6 +58,18 @@ interface EnemySprite {
   def: string;
   /** Art id currently on the plane (the def's art, or a pose such as Play Dead). */
   pose: string;
+  /** The pose it returns to after a strike or a hit. */
+  restPose: string;
+  /** Keyframe poses from content, if the creature has them. */
+  poses: EnemyDef['poses'];
+  /** The previous pose, fading out under the new one during a cross-fade. */
+  ghost: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> | null;
+  fade: { start: number; duration: number } | null;
+  /** Scene time until which the hit pose holds; 0 when it is not showing. */
+  hitUntil: number;
+  /** Where the idle loop is (an index into rest + idle frames) and when it next moves on. */
+  idleIndex: number;
+  nextIdleAt: number;
   root: THREE.Group;
   /** Plane and eyes together: idle motion and moves are applied here; the plane itself keeps hit recoil and death. */
   body: THREE.Group;
@@ -529,12 +542,20 @@ export class BattleScene {
     );
     blob.rotation.x = -Math.PI / 2;
     blob.position.y = 0.01;
-    blob.scale.set(width * 0.5, height * 0.2, 1);
+    // A pose canvas can be much wider than the creature standing on it; cap the shadow.
+    blob.scale.set(Math.min(width, height * 1.1) * 0.5, height * 0.2, 1);
     root.add(blob);
     const sprite: EnemySprite = {
       uid: enemy.uid,
       def: enemy.def,
       pose: poseArt,
+      restPose: poseArt,
+      poses: def.poses,
+      ghost: null,
+      fade: null,
+      hitUntil: 0,
+      idleIndex: 0,
+      nextIdleAt: this.now + 0.5,
       root,
       body,
       plane,
@@ -568,41 +589,104 @@ export class BattleScene {
   /** Glowing-eye sprites at the given UV points (v down) of a plane of the given size. */
   private placeEyes(
     root: THREE.Group,
-    points: readonly [number, number][],
+    points: readonly GlowPoint[],
     width: number,
     height: number,
     generated: boolean,
   ): THREE.Sprite[] {
     const eyes: THREE.Sprite[] = [];
-    for (const [u, v] of points) {
+    for (const { u, v, size } of points) {
       const e = new THREE.Sprite(this.eyeMat);
       e.position.set((u - 0.5) * width, (0.5 - v) * height + height / 2 - 0.08, 0.03);
-      e.scale.setScalar(generated ? 0.3 : 0.11);
+      // The glow scales with the painted eye (3.6 x its diameter in scene units, clamped),
+      // so a small eye gets a small glow instead of a floating orb.
+      const base = generated ? Math.min(0.3, Math.max(0.1, size * width * 3.6)) : 0.11;
+      e.userData['base'] = base;
+      e.scale.setScalar(base);
       root.add(e);
       eyes.push(e);
     }
     return eyes;
   }
 
+  /** The glow's full size, as set when the eye was placed. */
+  private eyeBase(e: THREE.Sprite): number {
+    return typeof e.userData['base'] === 'number' ? e.userData['base'] : 0.3;
+  }
+
   /**
-   * Swap an enemy's art for another pose (the Possum's Play Dead), keeping its height and
-   * re-finding its eyes. A pose with no art keeps whatever is showing.
+   * Swap an enemy's art for another pose (the Possum's Play Dead, a keyframe), keeping its
+   * height and re-finding its eyes. A pose with no art keeps whatever is showing. With
+   * `fadeMs` the old picture lingers as a ghost and fades out under the new one.
    */
-  setPose(uid: string, artId: string): void {
+  setPose(uid: string, artId: string, fadeMs = 0): void {
     const s = this.sprites.get(uid);
     if (!s || s.pose === artId) return;
     const img = this.art.get(artId);
     if (!img) return;
+    this.endFade(s);
+    const oldGeometry = s.plane.geometry;
+    const oldMap = s.plane.material.map;
+    if (fadeMs > 0 && !s.unseen) {
+      // The ghost takes over the old picture (geometry and texture), sitting just behind.
+      const ghost = new THREE.Mesh(oldGeometry, s.plane.material.clone());
+      ghost.position.copy(s.plane.position);
+      ghost.position.z -= 0.004;
+      s.body.add(ghost);
+      s.ghost = ghost;
+      s.fade = { start: this.now, duration: fadeMs / 1000 };
+    } else {
+      oldGeometry.dispose();
+      oldMap?.dispose();
+    }
     s.pose = artId;
     s.width = s.height / (img.height / img.width);
-    s.plane.geometry.dispose();
     s.plane.geometry = new THREE.PlaneGeometry(s.width, s.height);
-    s.plane.material.map?.dispose();
     s.plane.material.map = imageTexture(img);
     s.plane.material.needsUpdate = true;
     for (const e of s.eyes) s.body.remove(e);
     s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, true);
     this.applyReveal(s);
+    if (s.fade) s.plane.material.opacity = 0;
+  }
+
+  /** Drop a cross-fade's ghost at once (the fade finished, or a new pose pre-empted it). */
+  private endFade(s: EnemySprite): void {
+    if (s.ghost) {
+      s.body.remove(s.ghost);
+      s.ghost.geometry.dispose();
+      s.ghost.material.map?.dispose();
+      s.ghost.material.dispose();
+      s.ghost = null;
+    }
+    if (s.fade) {
+      s.fade = null;
+      this.applyReveal(s);
+    }
+  }
+
+  /**
+   * The idle loop: while a creature with idle frames is neither striking nor flinching, it
+   * drifts through rest and its idle frames on a slow cross-fade, each creature on its own
+   * clock. Part of the ambient motion, so Reduce motion turns it off with the sway.
+   */
+  private stepIdle(s: EnemySprite, t: number): void {
+    const idle = s.poses?.idle;
+    if (!idle?.length || !this.motion.idle || s.action || s.hitUntil || s.fade) return;
+    if (t < s.nextIdleAt) return;
+    const cycle = [s.restPose, ...idle];
+    s.idleIndex = (s.idleIndex + 1) % cycle.length;
+    this.setPose(s.uid, cycle[s.idleIndex] as string, 450);
+    s.nextIdleAt = t + 0.9 + ((s.seed * 1.7 + s.idleIndex * 0.6) % 1.1);
+  }
+
+  /** Advance a cross-fade: the new pose comes up as the ghost goes. */
+  private stepFade(s: EnemySprite, t: number): void {
+    if (!s.fade) return;
+    const k = Math.min(1, (t - s.fade.start) / s.fade.duration);
+    s.plane.material.opacity = k;
+    if (s.ghost) s.ghost.material.opacity = 1 - k;
+    if (k >= 1) this.endFade(s);
   }
 
   private applyReveal(sprite: EnemySprite): void {
@@ -612,7 +696,9 @@ export class BattleScene {
     sprite.plane.material.alphaTest = sprite.unseen ? 0 : 0.35;
     for (const e of sprite.eyes) e.material = this.eyeMat;
     for (const e of sprite.eyes)
-      e.scale.setScalar((sprite.unseen ? 0.12 + 0.18 * k : 0.3) * (sprite.width > 1.5 ? 1 : 0.4));
+      e.scale.setScalar(
+        this.eyeBase(e) * (sprite.unseen ? 0.4 + 0.6 * k : 1) * (sprite.width > 1.5 ? 1 : 0.4),
+      );
   }
 
   /** Reveal (or hide) an Unseen enemy; a no-op for seen ones. */
@@ -719,7 +805,13 @@ export class BattleScene {
 
   hitEnemy(uid: string): void {
     const s = this.sprites.get(uid);
-    if (s) s.recoil = 1;
+    if (!s) return;
+    s.recoil = 1;
+    // The hit keyframe, if it has one, for a beat; not mid-strike, where the strike pose wins.
+    if (s.poses?.hit && !s.dead && !s.action) {
+      this.setPose(uid, s.poses.hit, 60);
+      s.hitUntil = this.now + 0.35;
+    }
   }
 
   async killEnemy(uid: string): Promise<void> {
@@ -728,6 +820,8 @@ export class BattleScene {
     s.dead = true;
     // Whatever it was doing, it falls from the rest pose.
     s.action = null;
+    s.hitUntil = 0;
+    this.endFade(s);
     s.body.position.set(0, 0, 0);
     s.body.rotation.set(0, 0, 0);
     s.body.scale.set(1, 1, 1);
@@ -745,7 +839,7 @@ export class BattleScene {
         s.plane.material.opacity = (1 - k) * (s.unseen ? 0.5 : 1);
         s.plane.rotation.x = -k * 1.2;
         s.plane.position.y = s.height / 2 - 0.08 - k * s.height * 0.45;
-        for (const e of s.eyes) e.scale.setScalar(0.3 * (1 - k));
+        for (const e of s.eyes) e.scale.setScalar(this.eyeBase(e) * (1 - k));
         if (k < 1) requestAnimationFrame(step);
         else finish();
       };
@@ -826,6 +920,12 @@ export class BattleScene {
     for (const s of this.sprites.values()) {
       if (s.dead) continue;
       this.poseBody(s, t);
+      this.stepFade(s, t);
+      if (s.hitUntil && t >= s.hitUntil && !s.action) {
+        s.hitUntil = 0;
+        this.setPose(s.uid, s.restPose, 140);
+      }
+      this.stepIdle(s, t);
       if (s.recoil > 0) {
         s.recoil = Math.max(0, s.recoil - dt * 4);
         s.plane.position.x = Math.sin(s.recoil * 30) * 0.08 * s.recoil;
@@ -888,6 +988,12 @@ export class BattleScene {
       const u = Math.min(1, (t - start) / duration);
       if (u >= 1) s.action = null;
       const ease = (a: number) => 1 - (1 - a) * (1 - a);
+      if (kind === 'lunge' && s.poses) {
+        // Keyframes ride the curve: wind-up while pulling back, the strike from the moment it
+        // springs until it starts to recover, then back to rest.
+        const pose = u < 0.2 ? s.poses.windup : u < 0.75 ? s.poses.attack : s.restPose;
+        if (pose) this.setPose(s.uid, pose, u < 0.75 ? 70 : 160);
+      }
       switch (kind) {
         case 'lunge': {
           // Pull back, strike toward the camera, hold, recover.

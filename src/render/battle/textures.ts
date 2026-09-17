@@ -75,13 +75,22 @@ export function imageTexture(img: HTMLImageElement): THREE.Texture {
   return t;
 }
 
+/** A found eye: centroid in UV space (0..1, v down) and its diameter as a fraction of the width. */
+export interface GlowPoint {
+  u: number;
+  v: number;
+  size: number;
+}
+
 /**
  * Find glowing amber eyes in a sprite: bright, warm, saturated pixels clustered together.
- * Returns up to two centroids in UV space (0..1, v down), largest cluster first.
+ * Returns up to two, largest cluster first, each with its size so the glow can match the eye.
  */
-export function findGlowPoints(img: HTMLImageElement): [number, number][] {
-  const w = 256;
-  const h = Math.round((img.height / img.width) * 256);
+export function findGlowPoints(img: HTMLImageElement): GlowPoint[] {
+  // 512 wide: a pose frame shares a wide canvas with its creature's widest pose, so the eye
+  // of a rest frame can be a few pixels across; at 256 it vanished.
+  const w = 512;
+  const h = Math.round((img.height / img.width) * w);
   const [, ctx] = canvas(w, h);
   ctx.drawImage(img, 0, 0, w, h);
   const d = ctx.getImageData(0, 0, w, h).data;
@@ -137,7 +146,11 @@ export function findGlowPoints(img: HTMLImageElement): [number, number][] {
     if (acc.n >= 6) clusters.push(acc);
   }
   clusters.sort((p, q) => q.n - p.n);
-  return clusters.slice(0, 2).map((e) => [e.x / e.n / w, e.y / e.n / h]);
+  return clusters.slice(0, 2).map((e) => ({
+    u: e.x / e.n / w,
+    v: e.y / e.n / h,
+    size: (2 * Math.sqrt(e.n / Math.PI)) / w,
+  }));
 }
 
 // ---------- environment ----------
@@ -666,9 +679,9 @@ export function drawCardFace(
 // ---------- vermin placeholders ----------
 
 /** Eye positions (UV, v down) of the placeholder vermin drawings, for the emissive glow. */
-export const PLACEHOLDER_EYES: [number, number][] = [
-  [372 / 512, 262 / 512],
-  [402 / 512, 256 / 512],
+export const PLACEHOLDER_EYES: GlowPoint[] = [
+  { u: 372 / 512, v: 262 / 512, size: 0 },
+  { u: 402 / 512, v: 256 / 512, size: 0 },
 ];
 
 /**
@@ -806,7 +819,7 @@ export function makeVerminPlaceholder(kind: string): THREE.CanvasTexture {
   ctx.beginPath();
   ctx.ellipse(bodyCx, bodyCy, rx - 2, ry - 2, -0.1, -0.9, -0.25);
   ctx.stroke();
-  for (const [u, v] of PLACEHOLDER_EYES) {
+  for (const { u, v } of PLACEHOLDER_EYES) {
     const x = u * 512;
     const y = v * 512;
     const g = ctx.createRadialGradient(x, y, 1, x, y, 12);

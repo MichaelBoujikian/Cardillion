@@ -88,6 +88,19 @@ describe('enemies', () => {
     }
     expect(ENEMIES['possum']?.deadArt).toBe('enemy-possum-dead');
   });
+
+  it('poses are distinct enemy art ids', () => {
+    for (const enemy of Object.values(ENEMIES)) {
+      if (!enemy.poses) continue;
+      const ids = Object.values(enemy.poses).flat();
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) {
+        expect(id).toMatch(/^(enemy|boss)-/);
+        expect(id).not.toBe(enemy.art);
+      }
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
 });
 
 describe('encounters', () => {
