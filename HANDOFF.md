@@ -72,6 +72,14 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
 
+**2026-09-17 morning — local video works.** Runway's usage policy bans exposed muscle/bone, so
+for the gory stills the owner asked for a no-policy route: **Wan 2.2 5B in ComfyUI on his RTX
+5070 Ti** is installed and produced its first rat clip (5 s in ~5 min, free). `docs/local-video.md`
+has the install (outside the repo, `C:\Users\smite\ComfyUI_windows_portable`), the tool
+(`npm run video:local`, starts the server itself) and the gotchas. Runway stays the option for
+clean stills when Veo/Seedance quality is wanted; `docs/runway-api.md` covers its setup — the
+key is not yet in `.env`. Quality is a notch under Runway's best; free re-rolls compensate.
+
 **DECISION (2026-09-16, last thing): the pipeline is `gpt-image-2.5` for images, Runway for
 video.** He saw the clip-driven rat in the game and liked it a lot ("not bad at all"); the
 fidget now fires every 2.5–6 s at his request. The plan for every creature: generate/edit the
