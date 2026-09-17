@@ -58,6 +58,36 @@ detail not mentioned — and to change only what the prompt describes. The raw c
 is a guided repaint, not a pixel edit — but the creature and pose hold. This is how the mutant
 direction (torn skin, mouth-tentacles) was sampled from the existing rat.
 
+## Pose sheets (`npm run art:poses`)
+
+Animation frames are generated as a **sheet** — one image with every pose of the creature in a
+grid — because a single generation keeps it the same animal; separate renders drift. Two
+sheets per creature so far: `<id>-poses` (rest / wind-up / attack / hit, 2 × 2) and `<id>-idle`
+(the rest pose four times with only the tentacles, whiskers or breathing changing). The entry
+is an edit (`subject`) of the creature's raw render — or of a previous sheet's raw, naming the
+figure to copy — with a prompt that describes the grid and each panel, and asks for the figures
+on the one green screen with clean gaps (see `enemy-rat-mutant-poses` and `-idle`). Size
+1536×1024; `gpt-image-2.5` allows up to 3840×2160 if a creature needs more pixels per figure.
+
+Then slice it:
+
+```bash
+npm run art:poses -- --sheet enemy-rat-mutant-poses --names rest,windup,attack,hit --tone enemy-rat
+npm run art:poses -- --sheet enemy-rat-mutant-idle --names idle1,idle2,idle3,idle4 \
+  --out enemy-rat-mutant --like enemy-rat-mutant-rest --tone enemy-rat
+```
+
+The slicer finds the figures as blobs of alpha (folding blood specks into the nearest one),
+names them in reading order, and writes `assets/art/<out>-<name>.png`, all on **one canvas at
+one scale** so the sprite keeps its size across frames. `--like <frame>` matches a second
+sheet to the first one's canvas and figure height. `--tone <id>` matches mean brightness and
+chroma to an existing asset — the 2.5 models paint about twice as bright and more colourful
+than the v1 thicket art, and the owner wants the darker look — while leaving the amber eyes as
+painted, so the renderer's eye-glow finder still finds them (it looks for exactly that colour).
+Then point the content row at the frames (`art` = the rest frame, `poses.windup/attack/hit`,
+`poses.idle: [...]`), run `npm run art:optimize`, and check it in a fight: `END TURN` for the
+lunge, a card on it for the hit; the idle drift runs on its own.
+
 ## Chroma-key mode (the default for both styles)
 
 The API's native transparent mode drops thin dark limbs — rats came back with floating paws and
@@ -79,6 +109,7 @@ npm run art                          generate every missing asset
 npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
+npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id]
 npm run art -- --model <id>          gpt-image-2.5-sunburst (default) | gpt-image-2.5-flare | gpt-image-1
 npm run art -- --dry-run             print prompts, call nothing
 npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)

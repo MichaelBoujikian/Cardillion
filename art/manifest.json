@@ -13,7 +13,7 @@
       "key": "blue"
     },
     "thicket": {
-      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross and gory is welcome: open wounds, skin torn away over wet red muscle, exposed bone; wounds are red and pink, never amber or orange (only the eyes glow amber). Centered, full body, no text, no border.",
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and disgusting: mangy fur wet and clumped, large patches of bare greasy grey skin with weeping sores and scabs, ribs and spine pushing through, crusted eyes that glow amber, drool, cracked yellow teeth, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg, the tail joins the rump. No floating or detached parts. Gross and gory is welcome: open wounds, skin torn away over wet red muscle, exposed bone; wounds are red and pink, never amber or orange (only the eyes glow amber). Very dark overall: near-black fur, crushed blacks, muted desaturated colour, like a photograph taken by one dim lamp; the only bright things are the amber eyes and the wet red of the wounds. Centered, full body, no text, no border.",
       "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
       "key": "green"
     },
@@ -312,6 +312,14 @@
       "style": "thicket",
       "subject": "enemy-rat-mutant",
       "prompt": "A keyframe pose sheet on the flat green chroma-key screen: this exact mutant rat drawn FOUR times in a 2 by 2 grid, all four figures floating on the one continuous green screen (no black, no panel borders, no backdrop), every figure the same creature at the same size, same strict side profile facing the viewer's left, same fur, same torn-open wounds, same mouth-tentacles, same amber eyes, same lighting, with a clean gap of screen colour between the panels. Top-left, REST: standing exactly as in the subject image, tentacles hanging slack from the mouth. Top-right, WIND-UP: crouched back onto its haunches, weight loaded on the rear legs, head lowered and pulled back, tentacles drawn up tight and bunched at the mouth, about to spring. Bottom-left, ATTACK: mid-lunge, body stretched long and low, front claws reaching forward, jaws wide, the tentacles whipping forward toward the left edge of the panel. Bottom-right, HIT: flinching from a blow, head thrown back, body twisted away, tentacles flung outward, blood spraying from the wounds. Four separate figures, none overlapping, no labels, no text.",
+      "size": "1536x1024"
+    },
+    {
+      "id": "enemy-rat-mutant-idle",
+      "$comment": "Animation test (2026-09-16): four idle frames of the rat at rest, tentacles writhing, cross-faded in a slow loop. Not a content id.",
+      "style": "thicket",
+      "subject": "enemy-rat-mutant-poses",
+      "prompt": "An idle sheet on the flat green chroma-key screen: take ONLY the top-left figure of this sheet (the rat standing at rest) and draw it FOUR times in a 2 by 2 grid, all four in exactly that same standing pose: same feet on the same line, same tail, same body, same head position, same size, same fur, same wounds, same amber eye. The four differ only in the bundle of fleshy tentacles hanging from the mouth and the whiskers, as four moments of one slow writhe: top-left, tentacles hanging slack; top-right, tentacles curling upward and inward, bunching at the mouth; bottom-left, tentacles swung out toward the left with the whiskers pushed forward; bottom-right, tentacles drooping and splayed apart with one lifted. Nothing else changes between the four. Clean gaps of screen colour between the figures, no labels, no text.",
       "size": "1536x1024"
     }
   ]

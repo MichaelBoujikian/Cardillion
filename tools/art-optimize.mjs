@@ -21,7 +21,8 @@ const force = process.argv.includes('--force');
 function maxSide(id) {
   if (id.startsWith('bg-')) return 1536;
   if (id.startsWith('boss-')) return 1024;
-  if (id.startsWith('enemy-') || id.startsWith('npc-')) return 768;
+  // Pose frames share one wide canvas per creature, so the long side needs the room.
+  if (id.startsWith('enemy-') || id.startsWith('npc-')) return 1024;
   return 512; // cards, anchors
 }
 
