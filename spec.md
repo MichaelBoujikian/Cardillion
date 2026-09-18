@@ -549,9 +549,11 @@ enemy; the Thicket's fog creeps a little onto the table.
   (strike, hit) still come from the pose sheet, so the picture changes at the strike;
   accepted. The eyes are placed once, from `art`, not per frame. `npm run art:video` cuts a
   clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
-  (2026-09-17): the outgoing frame stays solid under the incoming clip for ~150 ms while the
-  clip keeps playing, so the hair of difference between two clips cut from separate renders
-  of the same still never pops; a keyframe swap dissolves instead. Reduce motion stops the
+  (2026-09-17): the outgoing frame stays solid under the incoming clip while the clip keeps
+  playing — 150 ms into the fidget, whose first frame is the stance cut from a separate
+  render of the same still, and 300 ms back to the loop, where the movement lands a few
+  pixels off the stance and the longer fade reads as a settle; a keyframe swap dissolves
+  instead. Reduce motion stops the
   fidgets; the loop keeps playing.
 - **Hand:** DOM elements along the bottom edge in the bright zone. Hover lifts and enlarges.
 - **Playing a card:** it lifts off the hand, becomes a textured plane in the 3D scene, flies to

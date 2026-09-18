@@ -32,7 +32,8 @@ real ids and commit art + content together.
 6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
    loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
    Screenshot before/after, show the owner, wait for the yes, then commit. The handovers
-   between loop and fidget cross-fade on their own (`SEQUENCE_FADE_MS` in scene.ts).
+   between loop and fidget cross-fade on their own (`FIDGET_IN_FADE_MS` / `FIDGET_OUT_FADE_MS`
+   in scene.ts).
 
 ## The contract
 

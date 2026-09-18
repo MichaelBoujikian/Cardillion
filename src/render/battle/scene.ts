@@ -56,10 +56,13 @@ const ACTION_TIMING: Record<EnemyAction, { duration: number; impact: number }> =
 
 /**
  * How long the outgoing clip frame lingers under the incoming one where the loop and the
- * fidget hand over (about two clip frames at 12 fps). The two clips are cut from separate
- * renders of the same still, so their first frames differ by a hair; a hard swap pops.
+ * fidget hand over. Into the fidget: its first frame is the stance itself, cut from a separate
+ * render of the same still, so a hair of difference is all a short fade has to cover. Back to
+ * the loop: the movement lands near the stance, not on it (a few pixels of body, the
+ * tentacles), and a longer fade turns that into a settle rather than a pop.
  */
-const SEQUENCE_FADE_MS = 150;
+const FIDGET_IN_FADE_MS = 150;
+const FIDGET_OUT_FADE_MS = 300;
 
 interface EnemySprite {
   uid: string;
@@ -688,7 +691,8 @@ export class BattleScene {
     }
     const old = s.plane.material.map;
     if (!tex || old === tex) return;
-    const ghosted = boundary && this.startGhost(s, SEQUENCE_FADE_MS, true);
+    const fadeMs = q.mode === 'fidget' ? FIDGET_IN_FADE_MS : FIDGET_OUT_FADE_MS;
+    const ghosted = boundary && this.startGhost(s, fadeMs, true);
     s.plane.material.map = tex;
     if (ghosted) s.plane.material.opacity = 0;
     else if (old && !s.seqMaps.has(old)) old.dispose(); // otherwise the ghost holds it until endFade
