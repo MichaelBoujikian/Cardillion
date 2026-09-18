@@ -13,7 +13,9 @@ real ids and commit art + content together.
    `npm run image:local` (docs/local-image.md) when the gore is more than the API allows.
    Look at it; iterate; show the owner.
 2. **The pose sheet** (strike and hit stills): a 2 × 2 sheet edited from the still's raw —
-   rest / wind-up / attack / hit — sliced by `npm run art:poses … --tone <v1 id>`.
+   rest / wind-up / attack / hit — sliced by `npm run art:poses … --tone enemy-possum` (every
+   creature is matched to the v1 possum's brightness, 2026-09-18: matched to its own v1 sprite the
+   rat was too dark to read; `npm run art:tone` re-tones a set after the fact).
 3. **The clip** (the passive state: body still, only parts moving, one short fidget):
    compose the still onto a pure-green frame (`art/out/video/*-first-frame-*.png` shows the
    layout; `tools/gen-video-local.mjs` does the fitting itself) and generate with
@@ -23,7 +25,7 @@ real ids and commit art + content together.
      its policy refuses exposed muscle and bone, and refusals are charged.
      Write the prompt as "holds completely still … only the tentacles writhe … locked-off camera
      … flat green background unchanged"; the sheet's tone match handles brightness later.
-4. **Cut the clip** with `npm run art:video … --like <id>-mutant-rest --tone <v1 id>` (below):
+4. **Cut the clip** with `npm run art:video … --like <id>-mutant-rest --tone enemy-possum` (below):
    find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
    frames on the pose frames' canvas.
 5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,

@@ -107,7 +107,9 @@
       "id": "enemy-rat",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A gaunt rat in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body. Fur mostly fallen out, showing wet grey skin covered in scabs and sores, ribs and spine visible, a raw pink naked tail attached at the rump and trailing along the ground behind it, both eyes glowing amber, lips pulled back over cracked yellow teeth with a string of drool."
+      "prompt": "A gaunt rat in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body. Fur mostly fallen out, showing wet grey skin covered in scabs and sores, ribs and spine visible, a raw pink naked tail attached at the rump and trailing along the ground behind it, both eyes glowing amber, lips pulled back over cracked yellow teeth with a string of drool.",
+      "ship": false,
+      "$comment": "v1 sprite, replaced in the game by enemy-rat-loop-01 (2026-09-17); kept as a master, not shipped."
     },
     {
       "id": "enemy-possum",
@@ -351,6 +353,15 @@
       "reference": "enemy-possum-mutant",
       "referenceRole": "The SECOND image is the same opossum standing, already mutated: copy its wounds and tentacles exactly onto the first.",
       "prompt": "This opossum is lying on its back playing dead. Give it exactly the mutations of the second image: the same patches of skin torn away over raw wet muscle and pale ribs, the same split belly with the thick, glistening pink-grey tentacle rising out of it and plunging into the eye socket beside the bulging, bright amber glowing eye, the same thinner tentacles pushing out of the belly wound, now drooping limply across its body and onto the ground. Keep this exact pose - on its back, all four legs drawn up against the belly and clearly attached, the tail curled beside it, the eye open and watching - and the same size, fur, grin and lighting; only the wounds and the tentacles are new.",
+      "size": "1024x1024",
+      "ship": false
+    },
+    {
+      "id": "enemy-spider-mutant",
+      "$comment": "Direction sample (2026-09-18): an EDIT of enemy-spider toward a thick furry tarantula carrying eggs and spiderlings, the owner's brief. Not a content id.",
+      "style": "thicket",
+      "subject": "enemy-spider",
+      "prompt": "Rebuild this spider as a huge tarantula: the same front view, the same amber eyes and the same stance, but the body and every leg much thicker and heavier, densely furred with coarse wet bristles like the hairy wolf spider, a bloated round abdomen. Its back and abdomen are crusted with a clutch of pale, translucent, glistening eggs, some split open, and dozens of tiny spiderlings crawling over the eggs and down its legs. One of its front legs is missing from the knee down, the stump torn and wet with a splinter of bone showing. Mangy, diseased and disgusting, fur falling out in patches over greasy skin. Keep its size and position in the frame; keep the eyes glowing amber; the eggs and spiderlings are pale and greenish-grey, never amber or orange. No shadow under the body, no web strands, nothing translucent around it.",
       "size": "1024x1024",
       "ship": false
     }

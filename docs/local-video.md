@@ -96,6 +96,21 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
   placement with PIL (align the alpha bbox's top-right corner — the back, which the tentacles
   never touch) and written as `enemy-rat-local-startle-NN` (now `enemy-rat-startle-NN`). A repeatable `--fidget` in one
   cutter run is the proper fix.
+- The possum's kept clips (2026-09-18; still = the klein seed-4 raw fitted to 1280×704, negative
+  prompt as for the rat plus "static, motionless"): **loop** seed 11, 5 s — _The mutant opossum
+  holds completely still, its body, legs, head and tail frozen in place, while only the bundle of
+  fleshy tentacles growing from its belly slowly writhes, curls and sways, and the thick one
+  reaching up to its eye pulses gently. Locked-off camera, no camera movement, no zoom. The flat
+  bright green background stays perfectly flat and unchanged._ **Retch** seed 201, 3 s — _One
+  sudden violent retch: the mutant opossum's jaws gape wide and a wet mass of pink intestines
+  and fleshy guts heaves out of its mouth and spills down toward the ground in a long
+  glistening rope, then hangs there swinging. The belly tentacles stay attached and hanging as
+  before. Its body, legs, head position and tail stay planted where they are. Locked-off
+  camera, no zoom, flat bright green background unchanged._ Cut together: `npm run art:video --
+--video art/out/video/possum2-loop-11.mp4 --out enemy-possum-mutant --loop 0.3:3.0 --fidget
+0.75:1.92 --fidget-video art/out/video/possum2-retch-201.mp4 --fidget-pingpong --fps 12 --like
+enemy-possum-mutant-rest --tone enemy-possum` (33 + 28 frames). A hiss (seed 101) was cut
+  first and rejected: past its first second the mouth spilled random shapes.
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 
