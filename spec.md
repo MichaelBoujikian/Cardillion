@@ -548,8 +548,11 @@ enemy; the Thicket's fog creeps a little onto the table.
   each creature on its own clock and starting at a different fidget; each ends where the
   loop starts). The first loop frame is the creature's `art`. Keyframes
   (strike, hit) still come from the pose sheet, so the picture changes at the strike;
-  accepted. The eyes are placed once, from `art`, not per frame. `npm run art:video` cuts a
-  clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
+  accepted. The eye glow follows the clip: each frame's eyes are found the first time it
+  shows and the glow moves with the head (a frame with no findable eye keeps the last
+  position). The glow is a glint on the painted eye — its diameter × 3, clamped — at a lower
+  intensity than the thicket's far eyes, so it never covers the face. `npm run art:video`
+  cuts a clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
   (2026-09-17): the outgoing frame stays solid under the incoming clip while the clip keeps
   playing — 150 ms into the fidget, whose first frame is the stance cut from a separate
   render of the same still, and 300 ms back to the loop, where the movement lands a few

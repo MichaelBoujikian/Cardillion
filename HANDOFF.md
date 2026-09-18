@@ -92,10 +92,13 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
   below 35% opacity, so a two-sided dissolve is really old-only → both → new-only, and the
   creature dips see-through at both ends; that is why the handover keeps the ghost solid
   instead.
-- Per-frame **eye tracking during fidgets** is a possible refinement: the glow sprite is placed
-  once from `art`, so it hangs above the head while the head dips. The cutter already finds
-  the eye per frame where it can (`art-video.mjs` relight step); storing an `(u, v)` per frame
-  and moving the glow would fix it. Not asked for; mention it if he notices.
+- **The eye glow follows the clip** (he noticed, 2026-09-17 late): `trackEyes` in `scene.ts`
+  runs `findGlowPoints` on each clip frame the first time it shows (cached per texture, so no
+  hitch) and moves the glow sprites; a frame where the finder sees nothing leaves the glow
+  where it was. He also asked for a dimmer, smaller glow so it stops covering the face:
+  creatures now have their own sprite material (`EYE_GLOW_INTENSITY` 4 instead of the far
+  eyes' 6, `EYE_GLOW_SCALE` 3 instead of 3.6, max 0.26) — the constants at the top of
+  `scene.ts` are the knobs.
 - **What the 2026-09-17 evening audit found (verified against the code):**
   - (a) `--fidget-pingpong` reverses only the interior frames, so the fidget ends one frame
     before where it began; the boundary pop it left was ~2–3× an adjacent-frame difference and

@@ -64,6 +64,16 @@ const ACTION_TIMING: Record<EnemyAction, { duration: number; impact: number }> =
 const FIDGET_IN_FADE_MS = 150;
 const FIDGET_OUT_FADE_MS = 300;
 
+/**
+ * The eye glow on a creature: how bright the additive sprite is (the far eyes in the thicket
+ * keep the brighter original), and how big it is against the painted eye — its diameter times
+ * this, clamped — so it reads as a glint on the eye, not an orb over the face (owner, 2026-09-17).
+ */
+const EYE_GLOW_INTENSITY = 4;
+const EYE_GLOW_SCALE = 3;
+const EYE_GLOW_MIN = 0.08;
+const EYE_GLOW_MAX = 0.26;
+
 interface EnemySprite {
   uid: string;
   def: string;
@@ -94,6 +104,8 @@ interface EnemySprite {
     loop: THREE.Texture[];
     fidgets: { frames: THREE.Texture[]; fps: number }[];
     current: number;
+    /** Where each frame's eyes are, found the first time the frame shows (empty: not found). */
+    eyes: Map<THREE.Texture, GlowPoint[]>;
     fps: number;
     mode: 'loop' | 'fidget';
     start: number;
@@ -140,6 +152,7 @@ export class BattleScene {
   private readonly art: ArtCache;
   private readonly glow: THREE.Texture;
   private readonly eyeMat: THREE.SpriteMaterial;
+  private readonly creatureEyeMat: THREE.SpriteMaterial;
   private readonly flash: THREE.Sprite;
   private readonly enemyGroup = new THREE.Group();
   private sprites = new Map<string, EnemySprite>();
@@ -190,6 +203,8 @@ export class BattleScene {
       blending: THREE.AdditiveBlending,
       fog: false,
     });
+    this.creatureEyeMat = this.eyeMat.clone();
+    this.creatureEyeMat.color = new THREE.Color(1.0, 0.62, 0.18).multiplyScalar(EYE_GLOW_INTENSITY);
     this.flash = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: this.glow,
@@ -657,6 +672,7 @@ export class BattleScene {
       fidgets,
       // Creatures start at different points of the cycle, so two of a kind do not fidget alike.
       current: fidgets.length ? this.sprites.size % fidgets.length : 0,
+      eyes: new Map(),
       fps: loop.fps,
       mode: 'loop',
       start: this.now,
@@ -714,6 +730,29 @@ export class BattleScene {
     s.plane.material.map = tex;
     if (ghosted) s.plane.material.opacity = 0;
     else if (old && !s.seqMaps.has(old)) old.dispose(); // otherwise the ghost holds it until endFade
+    this.trackEyes(s, q, tex);
+  }
+
+  /**
+   * Keep the glow on the eye as the clip moves the head: each frame's eyes are found the first
+   * time it shows and the sprites follow. A frame where the finder sees nothing (the eye faded
+   * in the video and the cutter could not relight it) leaves the glow where it last was.
+   */
+  private trackEyes(s: EnemySprite, q: NonNullable<EnemySprite['seq']>, tex: THREE.Texture): void {
+    let points = q.eyes.get(tex);
+    if (!points) {
+      const img: unknown = tex.image;
+      points = img instanceof HTMLImageElement ? findGlowPoints(img) : [];
+      q.eyes.set(tex, points);
+    }
+    for (let i = 0; i < s.eyes.length && i < points.length; i++) {
+      const { u, v } = points[i] as GlowPoint;
+      (s.eyes[i] as THREE.Sprite).position.set(
+        (u - 0.5) * s.width,
+        (0.5 - v) * s.height + s.baseY,
+        0.03,
+      );
+    }
   }
 
   /** Back to the loop after a fidget: the next fidget in turn is due in a few seconds. */
@@ -752,11 +791,13 @@ export class BattleScene {
   ): THREE.Sprite[] {
     const eyes: THREE.Sprite[] = [];
     for (const { u, v, size } of points) {
-      const e = new THREE.Sprite(this.eyeMat);
+      const e = new THREE.Sprite(this.creatureEyeMat);
       e.position.set((u - 0.5) * width, (0.5 - v) * height + baseY, 0.03);
-      // The glow scales with the painted eye (3.6 x its diameter in scene units, clamped),
-      // so a small eye gets a small glow instead of a floating orb.
-      const base = generated ? Math.min(0.3, Math.max(0.1, size * width * 3.6)) : 0.11;
+      // The glow scales with the painted eye (its diameter in scene units times EYE_GLOW_SCALE,
+      // clamped), so a small eye gets a small glow instead of a floating orb.
+      const base = generated
+        ? Math.min(EYE_GLOW_MAX, Math.max(EYE_GLOW_MIN, size * width * EYE_GLOW_SCALE))
+        : 0.11;
       e.userData['base'] = base;
       e.scale.setScalar(base);
       root.add(e);
@@ -869,7 +910,7 @@ export class BattleScene {
     // Unseen creatures are a heat-shimmer at rest: faint, flickering, no solid alpha edge.
     sprite.plane.material.opacity = sprite.unseen ? 0.08 + 0.92 * k : 1;
     sprite.plane.material.alphaTest = sprite.unseen ? 0 : 0.35;
-    for (const e of sprite.eyes) e.material = this.eyeMat;
+    for (const e of sprite.eyes) e.material = this.creatureEyeMat;
     for (const e of sprite.eyes)
       e.scale.setScalar(
         this.eyeBase(e) * (sprite.unseen ? 0.4 + 0.6 * k : 1) * (sprite.width > 1.5 ? 1 : 0.4),
