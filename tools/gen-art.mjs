@@ -22,6 +22,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { PNG } from 'pngjs';
 import { KEYS, chromaKey } from './lib/chroma.mjs';
+import { loadDotEnv } from './lib/env.mjs';
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const MANIFEST = path.join(ROOT, 'art', 'manifest.json');
@@ -44,16 +45,8 @@ const force = flag('force');
 const dryRun = flag('dry-run');
 const rekey = flag('rekey');
 
-// ---------- .env (tiny parser, no dependency) ----------
-function loadDotEnv() {
-  const file = path.join(ROOT, '.env');
-  if (!fs.existsSync(file)) return;
-  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
-    const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
-    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-  }
-}
-loadDotEnv();
+// ---------- .env ----------
+loadDotEnv(ROOT);
 
 // ---------- manifest ----------
 const manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));

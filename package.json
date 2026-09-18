@@ -24,6 +24,7 @@
     "art:poses": "node tools/art-poses.mjs",
     "art:video": "node tools/art-video.mjs",
     "video:local": "node tools/gen-video-local.mjs",
+    "video:runway": "node tools/gen-video-runway.mjs",
     "image:local": "node tools/gen-image-local.mjs"
   },
   "dependencies": {

@@ -14,7 +14,9 @@ the pricing page before budgeting; models and prices change monthly.
    card via Stripe, sales tax may apply. No free API credits are documented. Optional
    autobilling (recharge when below a threshold, min $10).
 4. **API Keys tab** → create a key (shown **once**; copy it immediately). Format `key_…`.
-5. Put it in `.env` as `RUNWAYML_API_SECRET=key_…` (the SDK reads that name). Never commit it.
+5. Put it in `.env` as `RUNWAYML_API_SECRET=key_…` (the tool and Runway's SDK read that name).
+   Never commit it. (The owner's account came with free credits on 2026-09-17, contrary to the
+   "none documented" note below.)
 
 New organizations are **Tier 1**: 1 video task at a time, 50 generations per rolling 24 h,
 $100 of purchases per 30 days. Tier 2 (3 at a time, 500/day) is automatic after $50 bought.
@@ -58,6 +60,25 @@ $RUNWAYML_API_SECRET`, `X-Runway-Version: 2024-11-06` (required, the only versio
   `CANCELLED`. **Output URLs expire in 24–48 h — download at once.**
 - Node: `npm i @runwayml/sdk` (Node 18+); `new RunwayML()` reads the env var and sets the
   version header; chain `.waitForTaskOutput()` on the **unawaited** `create()` call.
+
+## The tool (`npm run video:runway`, 2026-09-17 evening)
+
+```bash
+npm run video:runway -- --image art/out/video/rat-first-frame-1280x720.png --out rat-runway-1   --prompt "..." [--model gen4_turbo|gen4.5] [--seconds 5] [--seed n] [--ratio 1280:720] [--dry-run]
+```
+
+`tools/gen-video-runway.mjs` reads `RUNWAYML_API_SECRET` from `.env` (`tools/lib/env.mjs`; the
+value is never printed), fits the still onto the ratio's frame on its corner colour, sends it
+inline as a data URI, prints Runway's `estimatedCost`, polls the task every 5–6.5 s, and
+downloads the mp4 at once to `art/out/video/<out>.mp4`. It also writes `<out>.json` — model,
+prompt, seed, ratio, duration, task id, final `cost.credits`, and on failure `failureCode` +
+`failure` — so a kept clip can be re-rendered (copy that record into a tracked doc). Exit code 2
+on FAILED/CANCELLED. `--dry-run` builds the request and stops. Plain `fetch`, no SDK. The request
+shape was checked against https://docs.dev.runwayml.com/openapi.json on 2026-09-17: the same
+endpoint now also fronts `veo3.1`, `veo3.1_fast`, `seedance2*`, `wan3*`, `hailuo3`, `h3_max`,
+`grok_imagine_1_5`, `gemini_omni_flash*`, `happyhorse_1_0` with their own parameters (audio,
+resolution, other ratios); the tool only knows the two Runway models — extend `MODELS` and the
+body builder before pointing it at one of those.
 
 ## Input image rules
 
