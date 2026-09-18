@@ -11,11 +11,13 @@
  *                    inline as a data URI (the encoded image must stay under 5 MB)
  *   --out <name>     writes art/out/video/<name>.mp4, <name>-still.png (what was sent) and
  *                    <name>.json (the request, the task id, the cost or the failure code)
- *   --prompt <text>  what moves, 1-1000 characters (gen4.5 requires it; gen4_turbo does not)
- *   --model <id>     gen4_turbo (default, 5 credits per second) or gen4.5 (12 per second)
- *   --seconds <n>    clip length, 2..10 (default 5)
+ *   --prompt <text>  what moves, 1-1000 characters (most models require it)
+ *   --model <id>     gen4_turbo (default) | gen4.5 | veo3.1 | veo3.1_fast | seedance2_mini |
+ *                    seedance2_5 | wan3 | h3_max - see MODELS for each one's price and rules
+ *   --negative <t>   what to avoid (veo3.1 and veo3.1_fast only)
+ *   --seconds <n>    clip length (default 5; veo takes 4 | 6 | 8, seedance/h3 at least 4/5)
  *   --seed <n>       0..4294967295 (default: random; always printed and recorded)
- *   --ratio <w:h>    1280:720 (default) | 720:1280 | 1104:832 | 832:1104 | 960:960 | 1584:672
+ *   --ratio <w:h>    1280:720 (default); each model has its own list (h3_max takes a resolution)
  *   --dry-run        build and print the request (without the image data), call nothing
  *
  * Needs RUNWAYML_API_SECRET in .env; it is never printed. The task is polled every five-odd
@@ -31,8 +33,66 @@ const ROOT = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([
 const OUT_DIR = path.join(ROOT, 'art', 'out', 'video');
 const API = 'https://api.dev.runwayml.com/v1';
 const VERSION = '2024-11-06';
-const RATIOS = ['1280:720', '720:1280', '1104:832', '832:1104', '960:960', '1584:672'];
-const MODELS = { gen4_turbo: 5, 'gen4.5': 12 }; // credits per second, docs/runway-api.md
+const GEN4_RATIOS = ['1280:720', '720:1280', '1104:832', '832:1104', '960:960', '1584:672'];
+const VEO_RATIOS = ['1280:720', '720:1280', '1080:1920', '1920:1080'];
+const SEEDANCE_RATIOS = ['1280:720', '720:1280', '960:960', '1112:834', '834:1112', '1470:630'];
+const WAN_RATIOS = ['1280:720', '720:1280', '1104:832', '832:1104', '960:960', '1920:1080'];
+/**
+ * What the tool knows about each model (checked against Runway's OpenAPI spec and pricing page,
+ * 2026-09-17): credits per second at 720p with no audio, the durations allowed, the ratio list
+ * (or, for h3_max, a resolution), and which extras the body takes. Audio is always off.
+ */
+const MODELS = {
+  gen4_turbo: { credits: 5, seconds: (n) => n >= 2 && n <= 10, ratios: GEN4_RATIOS },
+  'gen4.5': {
+    credits: 12,
+    seconds: (n) => n >= 2 && n <= 10,
+    ratios: GEN4_RATIOS,
+    promptRequired: true,
+  },
+  'veo3.1': {
+    credits: 20,
+    seconds: (n) => [4, 6, 8].includes(n),
+    ratios: VEO_RATIOS,
+    audio: true,
+    negative: true,
+  },
+  'veo3.1_fast': {
+    credits: 10,
+    seconds: (n) => [4, 6, 8].includes(n),
+    ratios: VEO_RATIOS,
+    audio: true,
+    negative: true,
+  },
+  seedance2_mini: {
+    credits: 16,
+    minCredits: 64,
+    seconds: (n) => n >= 4 && n <= 15,
+    ratios: SEEDANCE_RATIOS,
+    audio: true,
+  },
+  seedance2_5: {
+    credits: 30,
+    seconds: (n) => n >= 4 && n <= 30,
+    ratios: SEEDANCE_RATIOS,
+    audio: true,
+  },
+  wan3: {
+    credits: 10,
+    seconds: (n) => n >= 2 && n <= 30,
+    ratios: WAN_RATIOS,
+    audio: true,
+    promptRequired: true,
+    noSeed: true,
+  },
+  h3_max: {
+    credits: 8,
+    seconds: (n) => n >= 5 && n <= 15,
+    resolution: '768p',
+    promptRequired: true,
+    expansion: 'disabled',
+  },
+};
 /** A data URI must stay under 5 MB encoded; base64 grows the bytes by a third. */
 const MAX_IMAGE_BYTES = Math.floor((5 * 1024 * 1024 * 3) / 4) - 64;
 
@@ -51,14 +111,18 @@ if (!image || !outName) {
   process.exit(1);
 }
 const model = opt('model') ?? 'gen4_turbo';
-if (!(model in MODELS))
-  throw new Error(`unknown model ${model}; use ${Object.keys(MODELS).join(' | ')}`);
-const seconds = Math.min(10, Math.max(2, Math.round(Number(opt('seconds') ?? 5))));
+const spec = MODELS[model];
+if (!spec) throw new Error(`unknown model ${model}; use ${Object.keys(MODELS).join(' | ')}`);
+const seconds = Math.round(Number(opt('seconds') ?? 5));
+if (!spec.seconds(seconds)) throw new Error(`${model} does not take --seconds ${seconds}`);
 const seed = Number(opt('seed') ?? Math.floor(Math.random() * 2 ** 32));
 const ratio = opt('ratio') ?? '1280:720';
-if (!RATIOS.includes(ratio)) throw new Error(`ratio must be one of ${RATIOS.join(', ')}`);
+if (spec.ratios && !spec.ratios.includes(ratio))
+  throw new Error(`${model} takes a ratio of ${spec.ratios.join(', ')}`);
 const prompt = opt('prompt');
-if (model === 'gen4.5' && !prompt) throw new Error('gen4.5 requires --prompt');
+if (spec.promptRequired && !prompt) throw new Error(`${model} requires --prompt`);
+const negative = opt('negative');
+if (negative && !spec.negative) throw new Error(`${model} has no negative prompt`);
 if (prompt && (prompt.length < 1 || prompt.length > 1000))
   throw new Error('--prompt is 1..1000 characters');
 
@@ -72,7 +136,8 @@ const headers = {
 
 // 1. The still, fitted to the ratio's frame on its top-left pixel colour (the chroma screen).
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const [rw, rh] = ratio.split(':').map(Number);
+// h3_max sizes by resolution, not ratio: the still goes at 1280x720 and the model keeps its shape.
+const [rw, rh] = (spec.ratios ? ratio : '1280:720').split(':').map(Number);
 const src = sharp(path.resolve(ROOT, image));
 const meta = await src.metadata();
 const { data } = await src.clone().raw().ensureAlpha().toBuffer({ resolveWithObject: true });
@@ -100,26 +165,30 @@ console.log(
 const body = {
   model,
   promptImage: `data:${mime};base64,${still.toString('base64')}`,
-  ratio,
   duration: seconds,
-  seed,
+  ...(spec.ratios ? { ratio } : { resolution: spec.resolution }),
+  ...(spec.noSeed ? {} : { seed }),
   ...(prompt ? { promptText: prompt } : {}),
+  ...(spec.negative && negative ? { negativePrompt: negative } : {}),
+  ...(spec.audio ? { audio: false } : {}),
+  ...(spec.expansion ? { promptExpansionMode: spec.expansion } : {}),
 };
 const record = {
   model,
   prompt: prompt ?? null,
-  seed,
-  ratio,
+  negative: negative ?? null,
+  seed: spec.noSeed ? null : seed,
+  ratio: spec.ratios ? ratio : spec.resolution,
   duration: seconds,
   image,
   still: path.relative(ROOT, stillPath),
-  estimatedCredits: MODELS[model] * seconds,
+  estimatedCredits: Math.max(spec.minCredits ?? 0, spec.credits * seconds),
   requestedAt: new Date().toISOString(),
 };
 const recordPath = path.join(OUT_DIR, `${outName}.json`);
 const save = () => fs.writeFileSync(recordPath, JSON.stringify(record, null, 2) + '\n');
 console.log(
-  `request: ${model}, ${seconds}s, ${ratio}, seed ${seed}, ~${record.estimatedCredits} credits${prompt ? `\nprompt: ${prompt}` : ''}`,
+  `request: ${model}, ${seconds}s, ${record.ratio}, seed ${record.seed ?? 'n/a'}, ~${record.estimatedCredits} credits${prompt ? `\nprompt: ${prompt}` : ''}${negative ? `\nnegative: ${negative}` : ''}`,
 );
 if (flag('dry-run')) {
   console.log('dry run: nothing sent');

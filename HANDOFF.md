@@ -51,9 +51,11 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
 
 **What the owner decided, in his words, at the end of this session:**
 
-- **The fidget is the tentacle lash from re-roll `rat-bark-103`** (0–0.83 s, forward then
-  back), chosen late on 2026-09-17 after the clip he first picked did not survive. History of
-  that pick: of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), B (`rat-B-bob`)
+- **The fidget is the Sora startle** (`enemy-rat-mutant-fidget-01..17`, translated onto the
+  loop's placement as `enemy-rat-local-startle-01..17`), the owner's call late on 2026-09-17
+  after every other clip — three cuts of B, the bark-103 lash, and four Runway/Veo renders
+  (below) — drifted off the pose after its movement; the Sora clip is the only one from any
+  model that came back to its own first frame. The lash held the slot for an hour. History: of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), B (`rat-B-bob`)
   was his favourite for the passive movement every now and then — "the new twitch" — to be
   played back in reverse to return to where it started (that was `art:video --fidget-pingpong`;
   on 2026-09-17 evening, watching it, he had the tentacles "get weird at a couple parts" — Wan
@@ -71,9 +73,10 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
   sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
 - **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
   `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidgets` = [the
-  bark-103 lash (0–0.83 s forward then back, 20 frames, 1.7 s)], plus the sheet stills. A fidget may start no sooner
+  Sora startle, 17 frames, 1.4 s, from a different render of the same still — the handover
+  differs by alpha 4/255, which the cross-fade covers], plus the sheet stills. A fidget may start no sooner
   than 2.5–6 s after the last, but only as the loop turns at its first frame, which for the
-  45-frame loop is every 7.3 s — so the real rhythm is ~1.7 s of fidget, ~7.3 s of loop, repeat
+  45-frame loop is every 7.3 s — so the real rhythm is ~1.4 s of fidget, ~7.3 s of loop, repeat
   (`scene.ts` `stepSequence`). The 2.5–6 s is a per-sprite constant, not a roll.
   The Sora frame set (`enemy-rat-mutant-loop/fidget-*`) is still on disk; the row's comment
   lists both, flip by editing the ids.

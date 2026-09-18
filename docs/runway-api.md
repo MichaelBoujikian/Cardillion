@@ -86,6 +86,25 @@ PNG/JPEG/WebP (no GIF); recommended between 640×640 and 4K; the input's aspect 
 0.5–2.358 (`gen4_turbo`) or 0.5–2 (`gen4.5`) and is **centre-cropped** to `ratio`, so send a
 1280×720 PNG for `1280:720`. No logos or overlaid text (a common `INTERNAL.BAD_OUTPUT` cause).
 
+## What the first four renders showed (2026-09-17 evening, 245 of the owner's 500 free credits)
+
+All four took the mutant rat still (`rat-first-frame-1280x720.png`, torn skin and all) with no
+moderation flag on image, prompt or output. Records with prompt, seed and cost: `art/out/video/
+rat-runway-*.json` (gitignored).
+
+| Clip                       | Model        | Credits | What happened                                                                                                |
+| -------------------------- | ------------ | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `rat-runway-whip-1`        | `gen4_turbo` | 25      | "sits still … whips its head": held still; tentacles slither with perfect consistency. A loop, not a fidget. |
+| `rat-runway-whip-2`        | `gen4.5`     | 60      | Action-first prompt: a violent head swing to camera at 0.8–1.5 s, then settles into a different pose.        |
+| `rat-runway-bark-veo-1`    | `veo3.1`     | 80      | The best bark drawn by any model (0.4–0.75 s); then a lens flare off the eye, thicker tentacles, a crouch.   |
+| `rat-runway-startle-veo-1` | `veo3.1`     | 80      | The Sora pattern (still, small startle, settle): landed 8/255 off the start pose, crouched from 2.9 s.       |
+
+Lessons: every model drifts off the pose within a second or two of a big movement — the Sora clip's
+small startle with a long still tail is the only one that returned; paid models draw the movement
+itself better than Wan; Veo's negative prompt is worth having ("lens flare, light bloom" after the
+first Veo render); ask for one small movement, and expect to mirror the first beat. The owner
+judged none of them better than Sora's and went back to it.
+
 ## Gotchas that matter here
 
 - **Moderation cannot be disabled**, runs on the image, the text and the output, charges in
