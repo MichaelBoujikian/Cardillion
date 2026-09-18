@@ -33,8 +33,28 @@ The flavour a trail advertises at a branch (Thorny Trail, Sunny Meadow, Market R
 Path). It states the odds of what lies ahead, not the sequence.
 
 **Cocoon**:
-The rest node. Heals the player.
+The rest node. Offers one of Rest (heal 30% max HP), Forage (18–28 crumbs) or Pupate.
 _Avoid_: rest site, campfire
+
+**Pupate**:
+The Cocoon choice that turns one Caterpillar-family card into a Chrysalis. Pupating and
+emerging together are metamorphosis.
+
+**Chrysalis**:
+The Butterfly-family card a pupating card becomes: it blocks, cannot attack, and emerges after
+the next won fight.
+_Avoid_: cocoon card, egg
+
+**Emerge**:
+What a Chrysalis does after the next won fight: it becomes its Butterfly counterpart
+(Caterpillar → Butterfly, Munch → Flutter).
+_Avoid_: hatch, evolve, transform
+
+**Habitat**:
+The patch of ground under about half the Fight and Elite nodes (Damp Soil, Flower Patch, Dry
+Stone, Dark Crevice). It gives one bug family a small bonus, sometimes one kind of vermin too,
+and shows on the map a step ahead and in the modified intents.
+_Avoid_: biome, terrain, tile
 
 **Snail**:
 The shopkeeper. Runs the fixed Shop nodes and wanders the map offering a travelling stall.
@@ -119,8 +139,8 @@ damaged only by Cat-family cards.
 _Avoid_: stealth, invisible, hidden
 
 **Roaming Greeble**:
-The map marker that shows where the Greeble will ambush next. Visible only when the deck
-contains a Cat.
+The map marker that shows where the Greeble will ambush next. Visible only when the deck holds
+a Cat-family card or the run owns Cat's Whisker.
 
 ### Presentation
 
@@ -131,4 +151,18 @@ The near, bright, painterly half of the world where the player's bugs and hand l
 The far, dark, grainy half of the world where vermin stand.
 
 **Placeholder**:
-A procedurally generated SVG stand-in for an art asset, used until generated art exists.
+A stand-in for an art asset drawn in code at runtime, used until generated art exists.
+
+**Pose sheet**:
+One generated image holding a creature's keyframe poses, sliced into stills so the creature
+stays the same animal from pose to pose.
+_Avoid_: sprite sheet, atlas
+
+**Keyframe pose**:
+A wind-up, strike or hit still sliced from a pose sheet and shown on the creature while it
+strikes or is hit.
+
+**Clip frames**:
+A creature's waiting state cut from a green-screen video: the loop plays back and forth; the
+fidget is a short movement played now and then, cross-faded at the handover.
+_Avoid_: animation, idle cycle, gif

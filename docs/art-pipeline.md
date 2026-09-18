@@ -2,12 +2,45 @@
 
 How generated art gets into the game, and how to set it up. Background: ADR 0006.
 
+## The recipe: from a still to a living creature (read this first)
+
+Every enemy goes through the same steps; the rat (2026-09-16/17) is the worked example. Sample
+ids (`<id>-mutant…`) keep the live game untouched until the owner says yes; then rename to the
+real ids and commit art + content together.
+
+1. **The still.** `gpt-image-2.5-sunburst` through `npm run art` — a `subject` edit of the v1
+   sprite ("keep this exact creature, add …"). Or locally, with no content policy, through
+   `npm run image:local` (docs/local-image.md) when the gore is more than the API allows.
+   Look at it; iterate; show the owner.
+2. **The pose sheet** (strike and hit stills): a 2 × 2 sheet edited from the still's raw —
+   rest / wind-up / attack / hit — sliced by `npm run art:poses … --tone <v1 id>`.
+3. **The clip** (the passive state: body still, only parts moving, one short fidget):
+   compose the still onto a pure-green frame (`art/out/video/*-first-frame-*.png` shows the
+   layout; `tools/gen-video-local.mjs` does the fitting itself) and generate with
+   - `npm run video:local` — Wan 2.2 on the owner's GPU, free, no policy, ~5 min per 5 s
+     (docs/local-video.md); or
+   - Runway image-to-video (docs/runway-api.md) for Veo/Seedance quality on a _clean_ still —
+     its policy refuses exposed muscle and bone, and refusals are charged.
+     Write the prompt as "holds completely still … only the tentacles writhe … locked-off camera
+     … flat green background unchanged"; the sheet's tone match handles brightness later.
+4. **Cut the clip** with `npm run art:video … --like <id>-mutant-rest --tone <v1 id>` (below):
+   find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
+   frames on the pose frames' canvas.
+5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,
+   `poses.loop` / `poses.fidget` via `frames()`; `npm run art:optimize`; delete the stray sheet
+   WebPs. Check every frame finds exactly one amber cluster (the eye).
+6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
+   loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
+   Screenshot before/after, show the owner, wait for the yes, then commit. The handovers
+   between loop and fidget cross-fade on their own (`SEQUENCE_FADE_MS` in scene.ts).
+
 ## The contract
 
 - Every asset has an **id** that matches its content entry (`card-wormillion`, `enemy-rat`,
   `boss-bear`, `npc-snail`, `bg-battle`…). Sizes and kinds are in `spec.md` §11.4.
-- The game loads `assets/art/<id>.png` if it exists, otherwise `assets/placeholders/<id>.svg`.
-  Placeholders are generated procedurally, so the game never depends on generated art.
+- The game loads `public/art/<id>.webp` (written from the `assets/art/<id>.png` master by
+  `npm run art:optimize`); a missing id falls back to a placeholder drawn in code, so the game
+  never depends on generated art.
 - Prompts live in `art/manifest.json`: two style blocks (`garden`, `thicket`, plus `scene` for
   backgrounds) and one entry per asset. Change a prompt there, never in code.
 - `assets/art/` is committed only once a batch is approved by the owner.
@@ -88,43 +121,13 @@ Then point the content row at the frames (`art` = the rest frame, `poses.windup/
 `poses.idle: [...]`), run `npm run art:optimize`, and check it in a fight: `END TURN` for the
 lunge, a card on it for the hit; the idle drift runs on its own.
 
-## The recipe: from a still to a living creature (read this first)
-
-Every enemy goes through the same steps; the rat (2026-09-16/17) is the worked example. Sample
-ids (`<id>-mutant…`) keep the live game untouched until the owner says yes; then rename to the
-real ids and commit art + content together.
-
-1. **The still.** `gpt-image-2.5-sunburst` through `npm run art` — a `subject` edit of the v1
-   sprite ("keep this exact creature, add …"). Or locally, with no content policy, through
-   `npm run image:local` (docs/local-image.md) when the gore is more than the API allows.
-   Look at it; iterate; show the owner.
-2. **The pose sheet** (strike and hit stills): a 2 × 2 sheet edited from the still's raw —
-   rest / wind-up / attack / hit — sliced by `npm run art:poses … --tone <v1 id>`.
-3. **The clip** (the passive state: body still, only parts moving, one short fidget):
-   compose the still onto a pure-green frame (`art/out/video/*-first-frame-*.png` shows the
-   layout; `tools/gen-video-local.mjs` does the fitting itself) and generate with
-   - `npm run video:local` — Wan 2.2 on the owner's GPU, free, no policy, ~5 min per 5 s
-     (docs/local-video.md); or
-   - Runway image-to-video (docs/runway-api.md) for Veo/Seedance quality on a _clean_ still —
-     its policy refuses exposed muscle and bone, and refusals are charged.
-     Write the prompt as "holds completely still … only the tentacles writhe … locked-off camera
-     … flat green background unchanged"; the sheet's tone match handles brightness later.
-4. **Cut the clip** with `npm run art:video … --like <id>-mutant-rest --tone <v1 id>` (below):
-   find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
-   frames on the pose frames' canvas.
-5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,
-   `poses.loop` / `poses.fidget` via `frames()`; `npm run art:optimize`; delete the stray sheet
-   WebPs. Check every frame finds exactly one amber cluster (the eye).
-6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
-   loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
-   Screenshot before/after, show the owner, wait for the yes, then commit.
-
 ## Video frames (`npm run art:video`)
 
 For the waiting state a clip beats stills: real in-betweens, and the creature can hold
-perfectly still while only part of it moves. The rat's came from Sora 2 Pro (8 s, 1280×720,
-$2.40; the API shuts down 2026-09-24 — the next clips need another provider), generated from
-the creature's keyed PNG composed onto a pure-green frame of the video's size, with a prompt
+perfectly still while only part of it moves. The first rat clip came from Sora 2 Pro (8 s,
+1280×720, $2.40; the API shuts down 2026-09-24 — the next clips need another provider), and the
+current rat clips from the local rig (docs/local-video.md), generated from the creature's keyed
+PNG composed onto a pure-green frame of the video's size, with a prompt
 that asks for a locked-off camera, a flat unchanged green screen, the creature still for the
 first seconds with only the tentacles moving, then one short movement and a return to rest.
 Blood and "vicious bite" wording got the honest version blocked by the output filter; keep
@@ -139,7 +142,10 @@ npm run art:video -- --video art/out/video/sora-rat-attack.mp4 --out enemy-rat-m
 ```
 
 `--loop` is the still stretch the game plays back and forth (pick the one the fidget ends on,
-so fidget → loop is seamless); `--fidget` the movement, played once now and then. It needs
+so fidget → loop is seamless); `--fidget` the movement, played once now and then.
+`--fidget-video` takes the fidget from a second clip and `--fidget-pingpong` plays it forward
+then back; the reversed run drops both end frames, so the fidget ends one frame before where it
+began — the renderer's handover cross-fade (spec §11.2) covers the hair that is left. It needs
 `ffmpeg` (`--ffmpeg <exe>`, `$FFMPEG`, `art/out/bin/ffmpeg.exe`, or on PATH — the owner's
 machine has the gitignored copy). Every frame gets one shared crop and placement, the pose
 frames' scale and canvas (`--like`), the tone match, and the eye relit to amber (video
@@ -159,7 +165,8 @@ blue; blue for the garden because worms are pink and caterpillars are leaf-green
 
 Raw renders are kept in `art/out/<id>-raw.png` (gitignored) so the key can be re-tuned for free:
 `npm run art -- --rekey --only <id>` re-runs only the key, no API call. A single asset can
-override its style's key (`"key": "magenta"`) or disable it (`"key": null`) in the manifest.
+override its style's key (`"key": "magenta"`) or disable it (`"key": false` — `null` falls
+through to the style's key) in the manifest.
 
 ## Flags
 
@@ -169,7 +176,7 @@ npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
 npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id]
-npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fps n] [--like frame] [--tone id]
+npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--ffmpeg exe]
 npm run art -- --model <id>          gpt-image-2.5-sunburst (default) | gpt-image-2.5-flare | gpt-image-1
 npm run art -- --dry-run             print prompts, call nothing
 npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)

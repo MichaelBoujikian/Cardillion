@@ -9,6 +9,11 @@ contact sheets for approval without a human relaying files. Style coherence acro
 comes from two approved **style anchor** images passed as references, not from prompt wording
 alone. The API key lives only in a gitignored `.env` that the owner creates.
 
+Amended 2026-09-17: the game now loads `public/art/<id>.webp`, produced from the PNG master by
+`npm run art:optimize`, and falls back to placeholders drawn in code (the `assets/art/<id>.png` →
+`assets/placeholders/<id>.svg` lookup above is superseded). The manifest default model is now
+`gpt-image-2.5-sunburst`; the v1 assets were made on `gpt-image-1`.
+
 ## Considered options
 
 - **Owner generates in Midjourney/ChatGPT and drops files in** — keeps a human in every loop.

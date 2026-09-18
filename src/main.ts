@@ -1,5 +1,5 @@
 /**
- * Entry point: boots the battle app (milestone M2 — one fight at a time).
+ * Entry point: boots the app (title → run → result, src/app).
  */
 import { boot } from './app';
 

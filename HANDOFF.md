@@ -34,7 +34,7 @@ Cocoon scenes; Cocoons offer Rest / Forage / Pupate (Caterpillar → Chrysalis �
 (Molt, Scavenge, Worm Swarm, Stink Cloud, Burrow, Chrysalis, §5.4); the Snail's pheromone trail
 (§8.6); enemies idle and act with body motions (§11.2).
 
-125 tests pass; `npm run check` is green; CI and the Pages deploy are green.
+126 tests pass; `npm run check` is green; CI and the Pages deploy are green.
 
 **Balance:** nothing is balanced; every number is a first guess marked _(tuning)_.
 `src/engine/fuzz.test.ts` plays 240 seeded runs (random and greedy policies) and gives a first
@@ -59,19 +59,49 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
   sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
 - **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
   `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidget` = B
-  (0–3.5 s forward then back, 84 frames), plus the sheet stills; fidgets fire every 2.5–6 s.
+  (0–3.5 s forward then back, 84 frames), plus the sheet stills. A fidget may start no sooner
+  than 2.5–6 s after the last, but only as the loop turns at its first frame, which for the
+  45-frame loop is every 7.3 s — so the real rhythm is ~7 s of fidget, ~7.3 s of loop, repeat
+  (`scene.ts` `stepSequence`). The 2.5–6 s is a per-sprite constant, not a roll.
   The Sora frame set (`enemy-rat-mutant-loop/fidget-*`) is still on disk; the row's comment
   lists both, flip by editing the ids.
-- **"Cross-fading" between the loop and the fidget is NOT built yet** — that is the first
-  thing to do. Today the sequence player (`stepSequence` in `scene.ts`) hard-swaps
-  `material.map`; the ping-pong makes the fidget end on its own first frame, which is the same
-  still as the loop's first frame but from a different clip, so the handoff can pop by a hair.
-  Reuse the ghost cross-fade that `setPose` already has (`endFade`/`stepFade`, 100–150 ms) at
-  the loop→fidget and fidget→loop boundaries, and possibly a fade across the ping-pong turn.
+- **Cross-fading at the loop↔fidget handover is built (2026-09-17 evening).** `startGhost` in
+  `scene.ts` is the ghost mechanism factored out of `setPose`; at each handover the outgoing
+  frame stays solid under the incoming clip for 150 ms (`SEQUENCE_FADE_MS`) while the clip
+  keeps playing (a `seq` flag on the fade record stops `stepSequence` from pausing). Keyframe
+  fades (strike, hit) dissolve as before. Measured in the browser: ghost holds loop frame 1 /
+  fidget frame 84 at opacity 1 while the plane ramps 0→1 and the clip advances two frames
+  underneath. Note for the future: the materials' `alphaTest: 0.35` cuts a picture entirely
+  below 35% opacity, so a two-sided dissolve is really old-only → both → new-only, and the
+  creature dips see-through at both ends; that is why the handover keeps the ghost solid
+  instead.
 - Per-frame **eye tracking during fidgets** is a possible refinement: the glow sprite is placed
   once from `art`, so it hangs above the head while the head dips. The cutter already finds
   the eye per frame where it can (`art-video.mjs` relight step); storing an `(u, v)` per frame
   and moving the glow would fix it. Not asked for; mention it if he notices.
+- **What the 2026-09-17 evening audit found (verified against the code):**
+  - (a) `--fidget-pingpong` reverses only the interior frames, so the fidget ends one frame
+    before where it began; the boundary pop it left was ~2–3× an adjacent-frame difference and
+    the cross-fade above covers it.
+  - (b) GPU memory: `makeSequence` makes one `THREE.Texture` per frame PER SPRITE (992×560 ×
+    129 frames ≈ 380 MB per rat, two rats ≈ 750 MB, not shared between sprites) — decide frame
+    counts for the next creatures with this in mind (shorter loop, lower fps, or a per-def
+    texture cache).
+  - (c) The v1 `enemy-possum.png` has NO amber cluster the eye finder can see (its prompt asked
+    for "black eyes with an amber glint"), and the cutter's eye tracker can lock onto pink
+    flesh: the mutant possum still must ask for clearly glowing amber eyes and keep wounds dark
+    red.
+  - (d) `deadArt` + `poses` together has never run: `restPose` is frozen at `makeSprite` (a
+    fight resumed while playing dead loops the standing clip on a lying plane), `hitEnemy` on a
+    playing-dead possum snaps back to the standing art after 0.35 s, and `animate.ts` calls
+    `setPose` for Play Dead down/up with fadeMs 0 (cuts).
+  - (e) The prompts and seeds that produced clips B and B3 were not recorded anywhere; the cut
+    that made the current row was `npm run art:video -- --video art/out/video/rat-B3-bob.mp4
+--out enemy-rat-local --loop 0.3:4.0 --fidget 0:3.5 --fidget-video
+art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone
+enemy-rat`. Record prompt + seed next time.
+  - (f) Metamorphosis: the only Cocoon every run guarantees is the one before the Boss, and a
+    boss win skips `emerge` — Pupate there is a trap; question one for the grilling.
 
 **How the local rig works (both halves tested today, all free, no content policy):**
 
@@ -108,16 +138,20 @@ sc['now']; for (...) { t += 1/30; sc.update(1/30, t); sc.render(); }` then read 
   markdown tables, so match the padded row or insert by regex.
 - `art:optimize` converts every PNG in `assets/art` — delete the stray sheet WebPs
   (`enemy-rat-mutant.webp`, `-poses.webp`, `-idle.webp`) after running it.
-- Every frame the game will place a glow on needs exactly one amber cluster at 512 px
-  (`findGlowPoints`); the slicer and cutter protect/relight the eye; check with a quick
-  Python replica when in doubt (`docs/local-video.md`).
+- Every frame the game will place a glow on should carry exactly one amber cluster at 512 px:
+  `findGlowPoints` keeps up to two clusters and places a glow on each, so "exactly one" is a
+  rule for the art — a second amber patch (a wound) becomes a second glow. The slicer and
+  cutter protect/relight the eye; check with a quick Python replica when in doubt
+  (`docs/local-video.md`).
 
 **Renderer facts a new agent needs (all in spec §11.2 and `scene.ts`):** sprites stand on
 their picture's **ground line** (`findGroundLine`, the lowest wide alpha row) via `baseY`;
-hit box and labels follow `baseY`; the shadow ellipse sits back `height * 0.1`; at rest a
-creature only breathes and leans in (sway, drift, twitch removed 2026-09-17 at the owner's
-request); keyframes cross-fade via `setPose`; clip frames play via `stepSequence`. Rows below
-the ground line (claw tips, a tail swishing low) sink into the moss by design.
+only the hit box's top edge and the head label follow `baseY` — the bottom edge and the feet
+anchor stay at the table (`scene.ts` `enemyRect`/`enemyAnchor`); the shadow ellipse sits back
+`height * 0.1`; at rest a creature only breathes and leans in (sway, drift, twitch removed
+2026-09-17 at the owner's request); keyframes cross-fade via `setPose`; clip frames play via
+`stepSequence`. Rows below the ground line (claw tips, a tail swishing low) sink into the moss
+by design.
 
 **Open with the owner:** approve the rat (then rename `enemy-rat-mutant-*`/`enemy-rat-local-*`
 to the real `enemy-rat*` ids and commit art + content together); the possum next; Runway
@@ -147,7 +181,8 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   (≈ $0.165 for a 1536×1024 sheet). The tool sends `moderation: low` and prints the real
   token cost.
 - **What's built** (spec §11.2/§11.4): `poses` on the enemy content row — `windup`, `attack`,
-  `hit`, `idle: [...]` — each frame on the same canvas as `art`. `scene.ts` cross-fades them:
+  `hit`, `idle: [...]`, and, for a clip-driven creature, `loop` / `fidget` frame sequences
+  (spec §11.2) — each frame on the same canvas as `art`. `scene.ts` cross-fades them:
   wind-up while the lunge pulls back, strike from the spring to the recovery, hit for 0.35 s,
   and an idle drift through rest + idle frames every 1–2 s (off under Reduce motion). The eye
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
@@ -173,6 +208,7 @@ has the install (outside the repo, `C:\Users\smite\ComfyUI_windows_portable`), t
 clean stills when Veo/Seedance quality is wanted; `docs/runway-api.md` covers its setup — the
 key is not yet in `.env`. Quality is a notch under Runway's best; free re-rolls compensate.
 
+**(Superseded 2026-09-17 — local video works, Runway is optional; kept for the record.)**
 **DECISION (2026-09-16, last thing): the pipeline is `gpt-image-2.5` for images, Runway for
 video.** He saw the clip-driven rat in the game and liked it a lot ("not bad at all"); the
 fidget now fires every 2.5–6 s at his request. The plan for every creature: generate/edit the
@@ -183,7 +219,9 @@ until the Runway API is set up**: he wants to be walked through the account, key
 the key goes in `.env` as `RUNWAYML_API_SECRET`, never printed, never committed. Then port
 `art/out/video/sora-rat.mjs` into a real `tools/gen-video.mjs` against Runway.
 
-**The rat as of tonight (late):** he watched the idle cross-fades and rejected them — "it
+**(Historical — the Sora ids below were replaced by the local clip set described in START
+HERE; the ground-line and shadow fixes described here stand.)** **The rat as of tonight
+(late):** he watched the idle cross-fades and rejected them — "it
 clearly looks like a different image being switched out" — and asked for the **Sora clip
 as the passive state** (the rat is still, only the tentacles slither; the clip's startle
 becomes an occasional fidget, like the twitch was) with the **pose-sheet stills for the
@@ -195,15 +233,20 @@ mutant PNG/WebP are uncommitted** pending his yes. He also flagged the sprite fl
 little above its shadow and rolling ~10° now and then; **both fixed 2026-09-17** while he was
 away: `findGroundLine` (textures.ts) finds each picture's ground line — the lowest wide row —
 and `baseFor` sets the plane's `baseY` so the feet meet the table whatever padding the frame
-carries (hit box and labels follow `baseY`); the shadow ellipse sits back in z so the feet
-stand on its front third; the idle sway, drift and twitch are gone — breathing and the
-threat lean stay (spec §11.2). Known trade-off: rows below the ground line (claw tips, a tail
-swishing lower in a fidget frame) sink into the moss and are hidden by the table.
+carries (only the hit box's top edge and the head label follow `baseY`; the bottom edge and
+the feet anchor stay at the table — `scene.ts` `enemyRect`/`enemyAnchor`); the shadow ellipse
+sits back in z so the feet stand on its front third; the idle sway, drift and twitch are gone —
+breathing and the threat lean stay (spec §11.2). Known trade-off: rows below the ground line
+(claw tips, a tail swishing lower in a fidget frame) sink into the moss and are hidden by the
+table.
 Contact sheets: `art/out/contact-2026-09-16-rat-ingame-video.png` (in-game), `-rat-video-
 frames.png`, `-rat-tone.png`.
 
 **Per creature, the recipe** (`docs/art-pipeline.md`, "Editing an existing asset" and "Pose
 sheets"):
+
+(The current, clip-based version of this recipe is `docs/art-pipeline.md` "The recipe"; the
+idle sheet in steps 2–3 is optional and superseded by the clip.)
 
 1. Mutation sample: a manifest entry `<id>-mutant` with `"subject": "<id>"` and a prompt that
    says only what changes. Show him; iterate until yes.
@@ -215,9 +258,11 @@ sheets"):
    then `... --sheet <id>-mutant-idle --names idle1,idle2,idle3,idle4 --out <id>-mutant --like
 <id>-mutant-rest --tone <id>`. Check every frame finds exactly one amber cluster (the eye);
    the slicer protects the eye from the tone pass.
-4. Content row: `art` = `idle1`, `poses`. `npm run art:optimize` (it converts every PNG in
-   `assets/art`, so delete the stray sheet WebPs). Look at it in a fight — `END TURN` for the
-   lunge, a card on it for the hit.
+4. Content row: `art` = `<id>-loop-01` (the cutter's first loop frame; `content.test.ts`
+   requires `loop.frames[0] === art`), `poses.windup/attack/hit`, `poses.loop` / `poses.fidget`
+   via `frames()`. `npm run art:optimize` (it converts every PNG in `assets/art`, so delete the
+   stray sheet WebPs). Look at it in a fight — `END TURN` for the lunge, a card on it for the
+   hit.
 5. On his yes: rename the sample ids to the real ones (`enemy-<name>`, `enemy-<name>-windup`
    …), commit PNG + WebP + content together.
 
@@ -234,7 +279,8 @@ means a seam on `EnemyDef`, not a tweak. Never `git add -A` while unapproved art
 
 **Masked edits and video** (the rest of the old animation plan): masked inpainting (`mask` on
 the edits endpoint, prompt-guided) is still an option for "the same picture with the jaw
-moved"; video is off the table until a provider other than Sora is chosen (Veo/Runway).
+moved"; video is off the table until a provider other than Sora is chosen (Veo/Runway)
+(superseded: local video via Wan 2.2 is the route, see START HERE).
 
 ## Then: the metamorphosis grilling session
 
@@ -329,15 +375,19 @@ src/app/      index.ts (boot, storage, settings, dev hooks) · run-controller.ts
               animations with a running ledger; enemyActing → scene.act)
 src/save/     store.ts · save.ts (one slot, versioned + shape-checked) · settings.ts — pure
 tools/        gen-art.mjs (OpenAI Images: generate, edit with `subject`, chroma key) ·
-              art-preview.mjs · art-optimize.mjs (PNG masters → WebP)
+              art-preview.mjs · art-optimize.mjs (PNG masters → WebP) · art-poses.mjs (sheet
+              slicer) · art-video.mjs (clip cutter) · gen-video-local.mjs / gen-image-local.mjs
+              (ComfyUI) · lib/{chroma,comfy,frames}.mjs · workflows/*.json
 ```
 
 Rules that matter when you touch it: the engine emits **events** and the renderer only
 animates from them (ADR 0003) — when an animation needs a cue, add an event (`enemyActing` was
-added for the wind-up); content names every image it uses (`art`, `upgradedArt`, `deadArt`) and
-`src/app/index.ts` collects the ids for the loader — a new image is a new field, never a naming
-convention the loader guesses; randomness only from `Rng` streams (`map`, `encounters`,
-`combat`, `rewards`, `shop`, `markers`, plus `map.fork('habitats')`); `run.ts` keeps
+added for the wind-up); content names every image it uses (`art`, `upgradedArt`, `deadArt`, and
+every id under `poses`, collected by `poseArtIds`) and `src/app/index.ts` collects the ids for
+the loader — a new image is a new field, never a naming convention the loader guesses;
+randomness only from `Rng` streams (`map` → `habitats`, `markers`, `encounters`, `rewards`,
+`shop`; there is no combat fork — each fight is seeded from `"<seed>:combat:<node id>"`,
+`run.ts:517`); `run.ts` keeps
 `lastCombat` so a fight's closing events can still animate; `returnToMap()` in `run.ts` is
 where a node hands control back and where deferred content (Greeble-ambushed Shop/Cocoon, the
 Snail's cart) is intercepted; the run is saved in `RunController.dispatch` _before_ the
@@ -376,6 +426,10 @@ it the same way: spec first, tests beside, checkpoint row per item, push after e
   (see NEXT). `enemy-rat-mutant.png` (the first direction sample) is superseded by the sheets.
 - The left-hand enemy slot is much darker than the middle one (the warm light sits left-front
   and close); any creature there reads as a silhouette. Noticed 2026-09-16, not addressed.
+- Play Dead down/up in `animate.ts` call `setPose` with no fade (a cut, against spec §11.2
+  "never a cut"); passing ~140 ms is enough once the possum's `deadArt` + `poses` combination
+  is sorted out (see the audit in START HERE, point d).
+- `disposeSprite` leaks the shadow blob's geometry/material (minor).
 
 ## How we got here (for context, not action)
 

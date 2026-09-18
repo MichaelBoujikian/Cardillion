@@ -1,5 +1,5 @@
 ---
-status: accepted (provisional until milestone M1)
+status: accepted — the M1 look-prototype gate passed 2026-09-13
 ---
 
 # Web + TypeScript + three.js, gated by a look prototype; Godot 4 is the fallback

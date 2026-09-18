@@ -32,7 +32,8 @@ npm run video:local -- --image art/out/video/rat-first-frame-1280x720.png --out 
 720p canvas (1280×704 — the 5B model wants multiples of 32, so a 1280×720 still gets 14 px of its
 own corner colour on each side), uploads it, queues the graph in `tools/workflows/wan22-5b-i2v.json`
 (the official 5B template: shift 8, 20 steps, cfg 5, `uni_pc`/`simple`, 24 fps, frames = 4n+1),
-prints each sampler step, and downloads `art/out/video/<out>.mp4`. Flags: `--prompt`,
+prints each sampler step, and downloads `art/out/video/<out>.mp4` (or `.webm` if the server's
+SaveVideo node refuses its inputs and the tool falls back to SaveWEBM). Flags: `--prompt`,
 `--negative`, `--seconds` (1–10), `--seed`, `--steps`, `--cfg`, `--server`, `--keep-server`.
 Then cut it exactly like a Sora clip: `npm run art:video -- --video art/out/video/<out>.mp4 …`.
 
@@ -56,6 +57,10 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
 - The eye fades over a clip. The cutter relights it only where it can still find it; the game
   places the glow from the first frame, which is enough for a still loop. Never paint a guessed
   box — it lands on fur as soon as the head moves.
+- Record the prompt and seed of every clip you keep — the ones behind B (`rat-B-bob`) and B3
+  (`rat-B3-bob`), the clips the owner chose, were not written down. The cut that made the
+  current rat row:
+  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:3.5 --fidget-video art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`.
 
 ## Gotchas
 

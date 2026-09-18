@@ -19,7 +19,8 @@ The game lives in the tension between two worlds sharing one screen:
 - **The Garden** (near, bright, yours) — Diceomancer-warm: painterly, sunlit, cute.
   Your bugs are cyborgs — brass gears, glass lenses, springs — and they are happy about it.
 - **The Thicket** (far, dark, theirs) — Inscryption-dark: grainy, desaturated, wrong.
-  Rats, possums, spiders, scorpions, and worse. Menace, no gore. ~T rating.
+  Rats, possums, spiders, scorpions, and worse. Menace and gore (§11.1; the "no gore" rule
+  was dropped 2026-09-16).
 
 The battle screen is staged with **depth**: your hand and your bugs live in the sunlit
 foreground; the enemies stand in the fog at the back; the scene fades from one world into the
@@ -65,11 +66,12 @@ Title ──► New Run ──► Map ──► [Fight | Elite | Shop | Cocoon] 
   own a Cat), the Snail marker. Tap a reachable node to travel.
 - **Fight / Elite / Boss:** the battle screen (§4).
 - **Reward:** crumbs, then pick 1 of 3 cards (skip allowed). Elites add a choice of 1 of 2
-  general upgrades.
+  general upgrades _(not yet implemented — elite rewards are crumbs and a card pick; general
+  upgrades are sold only by shops)_.
 - **Shop:** stock in §9. Leaving is free.
 - **Cocoon:** choose one of Rest, Forage or Pupate (§8.8), or leave.
-- **Victory / Death:** stats (turns, damage, crumbs, cards), seed shown with copy button, back
-  to Title. The save is deleted either way.
+- **Victory / Death:** stats (fights, elites, cards gained, crumbs earned), seed shown with copy
+  button, back to Title. The save is deleted either way.
 
 Desktop landscape (16:9) is the design target; layout scales. Touch is roadmap.
 
@@ -81,8 +83,8 @@ Slay the Spire model. One player (no avatar — hits land on the screen), 1–3 
 
 ### 4.1 Turn structure
 
-1. **Start of your turn:** Block resets to 0. Gain 3 Charge _(tuning)_. Draw 5 cards.
-   Poison on you ticks (see 4.5).
+1. **Start of your turn:** Block resets to 0. Gain 3 Charge _(tuning)_. Poison on you ticks
+   (see 4.5). Burrow strikes resolve (§5.4). Draw 5 cards.
 2. **Your turn:** play any number of cards you can afford. Drag a card onto an enemy for a
    targeted card; drag it upward (anywhere above the hand) for untargeted. Click-card-then-
    click-target also works.
@@ -152,12 +154,12 @@ sage (uncommon), gold (rare). Upgraded forms carry a brass "+" rivet and a small
 
 ### 5.2 Rarity & reward odds
 
-| Source          | Common | Uncommon | Rare            |
-| --------------- | ------ | -------- | --------------- |
-| Fight reward    | 60%    | 33%      | 7%              |
-| Elite reward    | 40%    | 45%      | 15%             |
-| Boss (act end)  | —      | —        | 3 rares offered |
-| Shop card stock | 50%    | 35%      | 15%             |
+| Source          | Common | Uncommon | Rare                                                                          |
+| --------------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| Fight reward    | 60%    | 33%      | 7%                                                                            |
+| Elite reward    | 40%    | 45%      | 15%                                                                           |
+| Boss (act end)  | —      | —        | 3 rares offered _(not yet implemented — a boss win goes straight to Victory)_ |
+| Shop card stock | 50%    | 35%      | 15%                                                                           |
 
 _Shadow Path_ signposts add +8 to rare odds on that trail.
 
@@ -177,7 +179,7 @@ Cat's upgraded art: top hat and gold monocle over the robotic eye.
 
 All numbers _(tuning)_.
 
-### 5.4 Families (v1 — one extra card per bug, 14 cards total)
+### 5.4 Families (v1 — family cards; 20 cards in all, plus the Cobweb status card)
 
 | Card         | Family      | Rarity   | Type   | Cost | Effect                              | Upgraded form (+)                   |
 | ------------ | ----------- | -------- | ------ | ---- | ----------------------------------- | ----------------------------------- |
@@ -192,14 +194,14 @@ All numbers _(tuning)_.
 Second wave (2026-09-15, from the owner's "insect behaviours" list — molting, swarming, chemical
 warfare, foraging):
 
-| Card        | Family      | Rarity   | Type   | Cost | Effect                                                                        | Upgraded form (+)       |
-| ----------- | ----------- | -------- | ------ | ---- | ----------------------------------------------------------------------------- | ----------------------- |
-| Molt        | Roly Poly   | Common   | Skill  | 1    | Gain 11 Block. Exhaust. (Shed the shell; it's gone.)                          | Gain 15 Block. Exhaust. |
-| Scavenge    | Roly Poly   | Common   | Skill  | 0    | Gain 5 crumbs. Exhaust. (Forage mid-fight.)                                   | Gain 8 crumbs. Exhaust. |
-| Worm Swarm  | Wormillion  | Uncommon | Attack | 1    | Deal 2, once per Wormillion-family card in your hand (this one included).     | Deal 3, once per …      |
-| Burrow      | Wormillion  | Uncommon | Skill  | 1    | Gain 4 Block. Next turn: deal 8 to a random enemy from below, ignoring Block. | Gain 6 Block; deal 11.  |
-| Stink Cloud | Caterpillar | Uncommon | Skill  | 1    | Apply 2 Poison to ALL enemies.                                                | Apply 3 Poison to ALL.  |
-| Chrysalis   | Butterfly   | special  | Skill  | 0    | Gain 6 Block. Exhaust. Only via Pupate (§8.8); never offered.                 | Gain 8 Block. Exhaust.  |
+| Card        | Family      | Rarity                            | Type   | Cost | Effect                                                                        | Upgraded form (+)       |
+| ----------- | ----------- | --------------------------------- | ------ | ---- | ----------------------------------------------------------------------------- | ----------------------- |
+| Molt        | Roly Poly   | Common                            | Skill  | 1    | Gain 11 Block. Exhaust. (Shed the shell; it's gone.)                          | Gain 15 Block. Exhaust. |
+| Scavenge    | Roly Poly   | Common                            | Skill  | 0    | Gain 5 crumbs. Exhaust. (Forage mid-fight.)                                   | Gain 8 crumbs. Exhaust. |
+| Worm Swarm  | Wormillion  | Uncommon                          | Attack | 1    | Deal 2, once per Wormillion-family card in your hand (this one included).     | Deal 3, once per …      |
+| Burrow      | Wormillion  | Uncommon                          | Skill  | 1    | Gain 4 Block. Next turn: deal 8 to a random enemy from below, ignoring Block. | Gain 6 Block; deal 11.  |
+| Stink Cloud | Caterpillar | Uncommon                          | Skill  | 1    | Apply 2 Poison to ALL enemies.                                                | Apply 3 Poison to ALL.  |
+| Chrysalis   | Butterfly   | uncommon (special: never offered) | Skill  | 0    | Gain 6 Block. Exhaust. Only via Pupate (§8.8); never offered.                 | Gain 8 Block. Exhaust.  |
 
 _Swarm_ is the first family-count mechanic (ADR 0007): it rewards holding many of one bug,
 which Wormillionaire and Mr. Wormsley already encourage. _Burrow_ is the first **delayed**
@@ -253,6 +255,8 @@ you actually own cards of.
 | **Cat's Whisker**       | The roaming Greeble is visible on the map even without a Cat, and Greebles steal 1 fewer crumb per turn. |
 
 Each can be bought once per run. Shops stock 2 at a time. Elite rewards offer a choice of 2.
+_(not yet implemented — elite rewards are crumbs and a card pick; general upgrades are sold only
+by shops)_
 
 ### 6.3 Wormillionaire — sold at shops, 85 crumbs _(tuning)_
 
@@ -291,12 +295,14 @@ the roll.
 
 ### 7.3 Elites
 
-| Elite           | HP  | Moves (weight)                                                                          |
-| --------------- | --- | --------------------------------------------------------------------------------------- |
-| **Rat King**    | 48  | Summon Rat (40, only while fewer than 2 Rats present) · Gnaw ⚔8 (40) · Frenzy ⚔3×3 (20) |
-| **Wolf Spider** | 55  | Double Web: 2 Cobwebs (35, max 6 per fight) · Pounce ⚔11 (35) · Bite ⚔6 + 1 Weak (30)   |
+| Elite           | HP  | Moves (weight)                                                                                     |
+| --------------- | --- | -------------------------------------------------------------------------------------------------- |
+| **Rat King**    | 48  | Summon Rat (40, only while fewer than 2 Rats present) · Gnaw ⚔8 (40) · Frenzy ⚔3×3 (20)            |
+| **Wolf Spider** | 55  | Double Web: 2 Cobwebs (35, 3 uses per fight = 6 Cobwebs) · Pounce ⚔11 (35) · Bite ⚔6 + 1 Weak (30) |
 
-Elite rewards: 35 crumbs, a card pick at elite odds, and a choice of 1 of 2 general upgrades.
+Elite rewards: 35 crumbs, a card pick at elite odds, and a choice of 1 of 2 general upgrades
+_(not yet implemented — elite rewards are crumbs and a card pick; general upgrades are sold only
+by shops)_.
 
 ### 7.4 Boss — the Bear (act 1)
 
@@ -361,7 +367,7 @@ unknown markers along the trail. A node's **habitat** (§8.9) shows only **1 ste
 
 - Placed on a random non-start, non-boss node at map creation.
 - After every move you make, it moves to a random adjacent node (either direction along a
-  trail), never the Boss.
+  trail), never Start or the Boss.
 - **Visible only if your deck contains a Cat-family card** (or you own Cat's Whisker).
 - If you enter its node, that node's fight includes a Greeble (added to a Shop/Cocoon node as an
   ambush fight first). The marker then relocates at least 4 nodes away.
@@ -449,10 +455,13 @@ No healing at shops — that's what Cocoons are for.
 
 ### Seeds
 
-- A run has one 32-bit seed (random, or typed on the title screen). The seed is shown in
+- A run has one seed: any text up to 32 characters (letters, digits, `_`, `-`), random by
+  default or typed on the title screen; `Rng` hashes it to 32 bits. The seed is shown in
   Settings and on the Victory/Death screens with a copy button.
-- The engine forks independent RNG streams from it: `map`, `encounters`, `combat`, `rewards`,
-  `shop`, `markers`. A decision in one stream never perturbs another.
+- The engine forks independent RNG streams from it: `map` (which forks `habitats`), `markers`,
+  `encounters`, `rewards`, `shop`. Each fight is seeded from `<seed>:combat:<node id>`, so a
+  fight's shuffle and intents depend only on the seed, the node and what you bring in. A
+  decision in one stream never perturbs another.
 - Same seed + same inputs = same run, exactly. This is a test contract, not just a feature.
 
 ### Save & resume
@@ -465,7 +474,8 @@ No healing at shops — that's what Cocoons are for.
 
 ### Settings (v1)
 
-Screen shake · Reduce motion & flashing (disables grain, shake, shimmer; keeps vignette) ·
+Screen shake · Reduce motion & flashing (disables grain, shake, shimmer, the idle cross-fades
+and the fidget clips; keeps vignette, breathing, the lean, the moves and the loop) ·
 Fullscreen · Show run seed (with copy) · Abandon run · Reset save data.
 Stored in `localStorage` (`cardillion.settings.v1`). A volume slider arrives with audio.
 
@@ -499,10 +509,12 @@ enemy; the Thicket's fog creeps a little onto the table.
   slightly down toward the far side. Think "sitting at the table".
 - **Table:** a long plane of moss and soil running away from the camera. Near end: flowers,
   pebbles, dappled light. Far end: roots, thorns, darkness.
-- **Fog:** exponential, near-black; begins mid-table, total at the far edge. This is the
-  bright→dark gradient. Nothing else is needed to create it.
-- **Lights:** one warm point light near the camera (sunlight, gently flickering), a very dim
-  cool hemisphere fill, enemies' eyes emissive.
+- **Fog:** linear, near-black (`THREE.Fog`, 10 → 34 units); begins mid-table, total at the far
+  edge. This is the bright→dark gradient. Nothing else is needed to create it.
+- **Lights:** one warm point light near the camera (sunlight, gently flickering), a gobo'd
+  sun spotlight that casts the shadows, a dim cool hemisphere fill, a faint blue moon
+  directional from behind the far edge, a warm spill spot over the table's middle and a cool
+  gloom point light far back; enemies' eyes emissive.
 - **Enemies:** painted sprites (billboards) standing on the far half of the table, spaced across
   x. Intent above, HP bar below. The Greeble is a shimmer shader + HP bar until revealed.
   Each breathes on its own clock and leans in while its intent is an attack; the sway, drift and
@@ -530,11 +542,17 @@ enemy; the Thicket's fog creeps a little onto the table.
 - **Clips** (2026-09-16, the owner's call after seeing both): for the waiting state a creature
   may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
   (played back and forth at its `fps`, so it never seams: the rat holds still, only its
-  tentacles slither) and `poses.fidget` (a short movement played once every 2.5–6 s, each
-  creature on its own clock, that ends where the loop starts). The first loop frame is the
-  creature's `art`. Keyframes (strike, hit) still come from the pose sheet, so the picture
-  changes at the strike; accepted. The eyes are placed once, from `art`, not per frame.
-  `npm run art:video` cuts a clip (§11.4).
+  tentacles slither) and `poses.fidget` (a short movement played once now and then: no sooner
+  than 2.5–6 s after the last, and only as the loop turns at its first frame, so a long loop
+  sets the rhythm — the rat's 45-frame loop turns every 7.3 s; each creature on its own clock;
+  it ends where the loop starts). The first loop frame is the creature's `art`. Keyframes
+  (strike, hit) still come from the pose sheet, so the picture changes at the strike;
+  accepted. The eyes are placed once, from `art`, not per frame. `npm run art:video` cuts a
+  clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
+  (2026-09-17): the outgoing frame stays solid under the incoming clip for ~150 ms while the
+  clip keeps playing, so the hair of difference between two clips cut from separate renders
+  of the same still never pops; a keyframe swap dissolves instead. Reduce motion stops the
+  fidgets; the loop keeps playing.
 - **Hand:** DOM elements along the bottom edge in the bright zone. Hover lifts and enlarges.
 - **Playing a card:** it lifts off the hand, becomes a textured plane in the 3D scene, flies to
   its target and hits (impact flash, sprite recoil, number pop). Untargeted cards flash at the
@@ -556,18 +574,18 @@ Every visual asset is keyed by a stable **id** matching its content entry. Maste
 game loads. A missing asset falls back to a procedurally drawn placeholder, so the game is
 always fully playable without any generated art.
 
-| Kind          | Id pattern                           | Generated size        | Displayed as                                                         | Background  |
-| ------------- | ------------------------------------ | --------------------- | -------------------------------------------------------------------- | ----------- |
-| Card art      | `card-<card>`                        | 1024 × 1024 PNG       | contain-fit in the art window                                        | transparent |
-| Upgraded card | `card-<card>-plus`                   | 1024 × 1024 PNG       | as above, only where the "+" form has its own look (Cat, Wormillion) | transparent |
-| Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height ≈ 1.6 units                                        | transparent |
-| Enemy pose    | `enemy-<name>-<pose>`                | see below             | swapped onto the billboard while the pose holds (Possum's Play Dead) | transparent |
-| Pose sheet    | `enemy-<name>-poses`, `-idle`        | 1536 × 1024 PNG       | never shown: sliced into pose frames by `npm run art:poses`          | transparent |
-| Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidget`)  | transparent |
-| Boss sprite   | `boss-<name>`                        | 1024 × 1536 PNG       | billboard, height ≈ 3 units                                          | transparent |
-| NPC           | `npc-<name>`                         | 1024 × 1024 PNG       | map marker / shop portrait                                           | transparent |
-| Backgrounds   | `bg-<scene>`                         | 1536 × 1024 PNG       | table texture / map backdrop                                         | opaque      |
-| Icons         | `icon-<name>`                        | SVG                   | UI                                                                   | —           |
+| Kind          | Id pattern                           | Generated size        | Displayed as                                                                                                               | Background  |
+| ------------- | ------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Card art      | `card-<card>`                        | 1024 × 1024 PNG       | contain-fit in the art window                                                                                              | transparent |
+| Upgraded card | `card-<card>-plus`                   | 1024 × 1024 PNG       | as above, only where the "+" form has its own look (Cat, Wormillion)                                                       | transparent |
+| Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height 2.6 units (elite 3.3)                                                                                    | transparent |
+| Enemy pose    | `enemy-<name>-<pose>`                | see below             | swapped onto the billboard while the pose holds (the rat's wind-up, strike and hit); the Possum's Play Dead uses `deadArt` | transparent |
+| Pose sheet    | `enemy-<name>-poses`, `-idle`        | 1536 × 1024 PNG       | never shown: sliced into pose frames by `npm run art:poses`                                                                | transparent |
+| Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidget`)                                                        | transparent |
+| Boss sprite   | `boss-<name>`                        | 1024 × 1536 PNG       | billboard, height 4.2 units                                                                                                | transparent |
+| NPC           | `npc-<name>`                         | 1024 × 1024 PNG       | map marker / shop portrait                                                                                                 | transparent |
+| Backgrounds   | `bg-<scene>`                         | 1536 × 1024 PNG       | table texture / map backdrop                                                                                               | opaque      |
+| Icons         | `icon-<name>`                        | SVG                   | UI                                                                                                                         | —           |
 
 Content names its art explicitly (`art`, and `upgradedArt` / `deadArt` / `poses` where more
 images exist); the patterns above are the naming convention, not something the loader infers.
@@ -594,8 +612,8 @@ placeholder until its art is.
 ## 12. Tech architecture
 
 **Stack:** TypeScript · Vite · three.js (scene) · DOM/CSS (UI) · Vitest · ESLint/Prettier ·
-GitHub Actions. Decided provisionally, pending the **look prototype** gate (M1) — see
-`docs/adr/0001-web-threejs-with-godot-fallback.md`. Fallback: Godot 4 via Godot MCP Pro.
+GitHub Actions. Decided: the **look prototype** gate (M1) passed 2026-09-13 — see
+`docs/adr/0001-web-threejs-with-godot-fallback.md` (Godot 4 was the fallback).
 
 ### 12.1 Layers
 
@@ -604,23 +622,26 @@ src/engine    pure rules: state + action → state + events. No DOM, no three.js
 src/content   typed data tables (cards, enemies, upgrades, encounters, flavours). No logic.
 src/render    three.js scenes, effects, post-processing. Reads state, animates events.
 src/ui        DOM overlay: hand, HUD, map, shop, settings, title. Dispatches actions.
-src/save      localStorage adapter, versioning, migrations.
-src/app       router + game loop; the only layer that imports everything.
+src/save      localStorage adapter, versioned (an older save is discarded with a notice; no migrations yet).
+src/app       router + render loop; the only layer that imports everything.
 src/prototype throwaway experiments (M1 look prototype). Never imported by the game.
-tools/        node scripts (art generation).
+tools/        node scripts: gen-art (OpenAI Images), art-poses (sheet slicer), art-video (clip cutter),
+              art-optimize (PNG → WebP), gen-video-local / gen-image-local (ComfyUI on the owner's GPU).
 art/          prompt manifest.
-assets/       art/ (generated PNGs, gitignored until approved) · placeholders/ (generated SVG).
-docs/         adr/ (ADRs), art-pipeline.md.
+assets/       art/ (PNG masters; committed only once approved — by not staging them, not by gitignore) ·
+              public/art/ holds the web-sized WebP the game loads; placeholders are drawn in code.
+docs/         adr/, art-pipeline.md, local-video.md, local-image.md, runway-api.md.
 ```
 
 Dependency direction is enforced by ESLint: `engine` and `content` may not import `three`, the
-DOM globals, or any outer layer.
+DOM globals, or any outer layer. The outer layers' direction is by convention.
 
 ### 12.2 Engine contract
 
-- `applyAction(state, action, rng) → { state, events }` — a pure reducer. `state` is plain JSON.
-- Events (`CardPlayed`, `DamageDealt`, `BlockGained`, `StatusApplied`, `EnemyDied`,
-  `GreebleEscaped`, `CrumbsStolen`, `IntentRolled`, `TurnStarted`, …) are the only thing the
+- `applyAction(state, action) → { state, events }` — a pure reducer; the RNG state rides inside
+  `state`. `state` is plain JSON.
+- Events (`cardPlayed`, `damageDealt`, `blockGained`, `statusApplied`, `enemyDied`,
+  `greebleEscaped`, `crumbsStolen`, `intentRolled`, `turnStarted`, …) are the only thing the
   renderer animates from. The renderer never derives what happened by diffing state.
 - The run state carries the state of every RNG stream, so a save is just the state object.
 - Content is validated by a test: every card/enemy/upgrade has an id, an art id, sane numbers.
@@ -628,7 +649,8 @@ DOM globals, or any outer layer.
 ### 12.3 Testing policy
 
 - **Engine: test-first.** Every rule in §4–§9 gets a Vitest test before or with its
-  implementation. Determinism tests replay a seed and assert identical event logs.
+  implementation. Determinism tests replay a seed's action list and assert an identical final
+  state (and identical events for a single step).
 - **Content: schema tests.** Tables are validated, not hand-checked.
 - **Render/UI: manual + screenshots.** Checked in the browser during development; no unit tests.
 - CI runs typecheck, lint, format check, tests and a production build on every push to `main`.
@@ -637,15 +659,15 @@ DOM globals, or any outer layer.
 
 ## 13. Milestones
 
-| #      | Name                 | Done when                                                                                                                                                                                                                         |
-| ------ | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M0** | Scaffold             | Repo, toolchain, CI, this spec, `CLAUDE.md`. ✅                                                                                                                                                                                   |
-| **M1** | Look prototype       | A throwaway three.js scene: table, fog, warm light, two card planes, one enemy with glowing eyes, vignette + grain. **Gate:** you judge it in the browser. Pass → continue on web. Fail → Godot (ADR 0001). ✅ Passed 2026-09-13. |
-| **M2** | First playable fight | Seven base cards, Rat pack, Charge, statuses, intents, drag-to-target, hit feedback, win/lose. Engine fully tested. ✅ 2026-09-13.                                                                                                |
-| **M3** | Run loop             | Map generation (trails, fog, signposts), rewards, fixed shops, cocoon, the Bear, death/victory, title screen. ✅ 2026-09-13.                                                                                                      |
-| **M4** | Content              | Families (14 cards), elites, Greeble + roaming marker, Snail travelling stall, titled unlocks, general upgrades, Wormillionaire. ✅ 2026-09-15.                                                                                   |
-| **M5** | Systems              | Save/resume, seeds on title, settings menu, reduce-motion path. ✅ 2026-09-16.                                                                                                                                                    |
-| **M6** | Art                  | OpenAI Images pipeline, style anchors approved, all placeholders replaced, contact sheets in `docs/`.                                                                                                                             |
+| #      | Name                 | Done when                                                                                                                                                                                                                                                                                                                 |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M0** | Scaffold             | Repo, toolchain, CI, this spec, `CLAUDE.md`. ✅                                                                                                                                                                                                                                                                           |
+| **M1** | Look prototype       | A throwaway three.js scene: table, fog, warm light, two card planes, one enemy with glowing eyes, vignette + grain. **Gate:** you judge it in the browser. Pass → continue on web. Fail → Godot (ADR 0001). ✅ Passed 2026-09-13.                                                                                         |
+| **M2** | First playable fight | Seven base cards, Rat pack, Charge, statuses, intents, drag-to-target, hit feedback, win/lose. Engine fully tested. ✅ 2026-09-13.                                                                                                                                                                                        |
+| **M3** | Run loop             | Map generation (trails, fog, signposts), rewards, fixed shops, cocoon, the Bear, death/victory, title screen. ✅ 2026-09-13.                                                                                                                                                                                              |
+| **M4** | Content              | Families (14 cards), elites, Greeble + roaming marker, Snail travelling stall, titled unlocks, general upgrades, Wormillionaire. ✅ 2026-09-15.                                                                                                                                                                           |
+| **M5** | Systems              | Save/resume, seeds on title, settings menu, reduce-motion path. ✅ 2026-09-16.                                                                                                                                                                                                                                            |
+| **M6** | Art                  | OpenAI Images pipeline, style anchors approved, all placeholders replaced, contact sheets in `docs/`. ✅ 2026-09-16 for v1 (40 assets; contact sheets live in gitignored `art/out/`, approvals are recorded in commit messages). The enemy art is being redone as mutants with clip-driven waiting states (2026-09-16 →). |
 
 ---
 
@@ -662,8 +684,10 @@ DOM globals, or any outer layer.
 - **Metamorphosis for every bug** (owner, 2026-09-16): §8.8's Pupate is meant to become a
   roster-wide mechanic, not a Caterpillar-only one. Open questions: what each bug's next stage
   is (grub → beetle? roly poly → …?), whether stages chain, and whether the Cocoon is the only
-  place it happens. The engine is already generic (`PUPATION` is a table); the design is not
-  decided.
+  place it happens. The source → target mapping is a table (`PUPATION`) and emergence is
+  generic, but the pupa card `chrysalis` is hard-coded in `run.ts`, the fuzz invariant, the
+  cocoon copy and the reward note — one pupa per bug is more than a content row. The design
+  is not decided.
 
 ---
 

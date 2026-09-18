@@ -2,8 +2,10 @@
 
 Game developers often let the scene graph own game state. We deliberately do the opposite:
 `src/engine` is plain TypeScript with no DOM or three.js imports (ESLint enforces it),
-`applyAction(state, action, rng) → { state, events }`, and all randomness comes from seeded,
-forkable `Rng` streams. The renderer animates from the emitted events and never mutates state.
+`applyAction(state, action) → { state, events }` (the RNG state is carried inside the state —
+`src/engine/combat.ts:171`, `types.ts:225` — so there is no separate `rng` argument), and all
+randomness comes from seeded, forkable `Rng` streams. The renderer animates from the emitted
+events and never mutates state.
 
 Why: agents build this game test-first, so every rule must be checkable in Node in milliseconds;
 seeded determinism makes bugs reproducible from a seed and makes save/resume a matter of
