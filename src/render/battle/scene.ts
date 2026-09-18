@@ -54,6 +54,13 @@ const ACTION_TIMING: Record<EnemyAction, { duration: number; impact: number }> =
   stamp: { duration: 0.4, impact: 0.18 },
 };
 
+/**
+ * How long the outgoing clip frame lingers under the incoming one where the loop and the
+ * fidget hand over (about two clip frames at 12 fps). The two clips are cut from separate
+ * renders of the same still, so their first frames differ by a hair; a hard swap pops.
+ */
+const SEQUENCE_FADE_MS = 150;
+
 interface EnemySprite {
   uid: string;
   def: string;
@@ -63,9 +70,14 @@ interface EnemySprite {
   restPose: string;
   /** Keyframe poses from content, if the creature has them. */
   poses: EnemyDef['poses'];
-  /** The previous pose, fading out under the new one during a cross-fade. */
+  /** The previous picture, lingering under the new one during a cross-fade. */
   ghost: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial> | null;
-  fade: { start: number; duration: number } | null;
+  /**
+   * A cross-fade in progress. A keyframe fade (`seq` false) pauses the clip and dissolves the
+   * ghost as the new pose comes up; a clip-boundary fade (`seq` true) lets the clip play on
+   * and keeps the ghost solid underneath until the incoming frames are fully up.
+   */
+  fade: { start: number; duration: number; seq: boolean } | null;
   /** Scene time until which the hit pose holds; 0 when it is not showing. */
   hitUntil: number;
   /** Where the idle loop is (an index into rest + idle frames) and when it next moves on. */
@@ -641,15 +653,18 @@ export class BattleScene {
 
   /**
    * Advance a creature's clip: the loop plays back and forth (so it never seams); when a
-   * fidget is due (every 2.5–6 s, the owner's call) and the loop is passing its first frame, the
-   * fidget plays once and hands back to the loop's first frame, which is where it ends. Paused
-   * while a keyframe shows.
+   * fidget is due (no sooner than 2.5–6 s after the last one, and only as the loop turns at
+   * its first frame, so a long loop sets the cadence) the fidget plays once and hands back to
+   * the loop's first frame, which is where it ends. Each handover is a cross-fade: the
+   * outgoing frame stays under the incoming clip for a beat (spec §11.2). Paused while a
+   * keyframe shows or fades.
    */
   private stepSequence(s: EnemySprite, t: number): void {
     const q = s.seq;
-    if (!q || s.pose !== s.restPose || s.fade) return;
+    if (!q || s.pose !== s.restPose || (s.fade && !s.fade.seq)) return;
     if (t < q.start) q.start = t; // a clock that went backwards (dev tools) must not index off the end
     let tex: THREE.Texture | undefined;
+    let boundary = false;
     if (q.mode === 'fidget') {
       const i = Math.floor((t - q.start) * q.fps);
       if (i >= q.fidget.length) {
@@ -657,6 +672,7 @@ export class BattleScene {
         q.start = t;
         q.nextFidgetAt = t + 2.5 + ((s.seed * 3.1 + 1) % 3.5);
         tex = q.loop[0];
+        boundary = true;
       } else tex = q.fidget[i];
     } else {
       const n = q.loop.length;
@@ -667,12 +683,15 @@ export class BattleScene {
         q.mode = 'fidget';
         q.start = t;
         tex = q.fidget[0];
+        boundary = true;
       } else tex = q.loop[idx];
     }
     const old = s.plane.material.map;
     if (!tex || old === tex) return;
+    const ghosted = boundary && this.startGhost(s, SEQUENCE_FADE_MS, true);
     s.plane.material.map = tex;
-    if (old && !s.seqMaps.has(old)) old.dispose();
+    if (ghosted) s.plane.material.opacity = 0;
+    else if (old && !s.seqMaps.has(old)) old.dispose(); // otherwise the ghost holds it until endFade
   }
 
   /**
@@ -731,21 +750,11 @@ export class BattleScene {
     if (!s || s.pose === artId) return;
     const img = this.art.get(artId);
     if (!img) return;
-    this.endFade(s);
-    const oldGeometry = s.plane.geometry;
+    const ghosted = this.startGhost(s, fadeMs, false);
     const oldMap = s.plane.material.map;
-    if (fadeMs > 0 && !s.unseen) {
-      // The ghost takes over the old picture (geometry and texture), sitting just behind.
-      const ghost = new THREE.Mesh(oldGeometry, s.plane.material.clone());
-      ghost.position.copy(s.plane.position);
-      ghost.position.z -= 0.004;
-      s.body.add(ghost);
-      s.ghost = ghost;
-      s.fade = { start: this.now, duration: fadeMs / 1000 };
-    } else {
-      oldGeometry.dispose();
-      if (oldMap && !s.seqMaps.has(oldMap)) oldMap.dispose();
-    }
+    s.plane.geometry.dispose();
+    // A ghost keeps showing the old picture and frees it when the fade ends (endFade).
+    if (oldMap && !ghosted && !s.seqMaps.has(oldMap)) oldMap.dispose();
     s.pose = artId;
     s.width = s.height / (img.height / img.width);
     // Each pose stands on its own ground line, so a frame with more padding does not float.
@@ -758,6 +767,25 @@ export class BattleScene {
     s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, s.baseY, true);
     this.applyReveal(s);
     if (s.fade) s.plane.material.opacity = 0;
+  }
+
+  /**
+   * Begin a cross-fade: a ghost mesh takes a copy of what the plane shows now and sits just
+   * behind it, so the caller can put the next picture on the plane and bring it up from
+   * transparent (stepFade). Any fade already running ends first. Returns false — no ghost —
+   * for a zero fade and for Unseen creatures, whose opacity belongs to the reveal.
+   */
+  private startGhost(s: EnemySprite, fadeMs: number, seq: boolean): boolean {
+    this.endFade(s);
+    if (fadeMs <= 0 || s.unseen) return false;
+    // Its own copy of the geometry: at a clip boundary the plane keeps the original.
+    const ghost = new THREE.Mesh(s.plane.geometry.clone(), s.plane.material.clone());
+    ghost.position.copy(s.plane.position);
+    ghost.position.z -= 0.004;
+    s.body.add(ghost);
+    s.ghost = ghost;
+    s.fade = { start: this.now, duration: fadeMs / 1000, seq };
+    return true;
   }
 
   /** Drop a cross-fade's ghost at once (the fade finished, or a new pose pre-empted it). */
@@ -791,12 +819,18 @@ export class BattleScene {
     s.nextIdleAt = t + 0.9 + ((s.seed * 1.7 + s.idleIndex * 0.6) % 1.1);
   }
 
-  /** Advance a cross-fade: the new pose comes up as the ghost goes. */
+  /**
+   * Advance a cross-fade. A keyframe dissolves: the new pose comes up as the ghost goes. At a
+   * clip boundary the ghost stays solid under the incoming frames, so a creature swapping
+   * between two near-identical pictures never turns see-through for a beat. (The materials'
+   * alphaTest cuts a picture entirely below 35% opacity, so a dissolve is really old-only,
+   * then both, then new-only — fine for a strike, not for a handover meant to be invisible.)
+   */
   private stepFade(s: EnemySprite, t: number): void {
     if (!s.fade) return;
     const k = Math.min(1, (t - s.fade.start) / s.fade.duration);
     s.plane.material.opacity = k;
-    if (s.ghost) s.ghost.material.opacity = 1 - k;
+    if (s.ghost) s.ghost.material.opacity = s.fade.seq ? 1 : 1 - k;
     if (k >= 1) this.endFade(s);
   }
 
