@@ -46,8 +46,15 @@ test sessions. Do not propose or make number changes in passing.**
 
 **Read `docs/art-pipeline.md` "The recipe" first**, then this section, then the rest of this
 file. The owner reviews by eye, wants one recommendation per question, and approves art in
-batches (see "How to work here"). Nothing below is committed art: every mutant PNG/WebP and
-the rat's content row are **uncommitted working-tree changes** — do not `git add -A`.
+batches (see "How to work here"). **The rat is approved and committed** (2026-09-17, last
+thing): real ids `enemy-rat-loop-01..45`, `enemy-rat-startle-01..17`, `enemy-rat-windup` /
+`-attack` / `-hit`, plus `enemy-rat-rest` (the cutter's `--like` canvas) and the three
+generated sheets (`enemy-rat-mutant*.png`, `"ship": false` in the manifest — kept as the
+record, never loaded). The superseded Sora frames and idle stills are parked in the
+gitignored `art/out/rat-samples/`. The sections below were written while it was a sample and
+still use the `enemy-rat-local-*` / `enemy-rat-mutant-*` names — read them as history. The
+next creature starts from the recipe with no unapproved art on disk; keep it that way until
+its yes, and never `git add -A`.
 
 **What the owner decided, in his words, at the end of this session:**
 
@@ -71,7 +78,8 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
   to `art/out/video/rejected/`.) **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
   sway. **Combine them with cross-fading**, and **keep the three attack frames from the pose
   sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
-- **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
+- **That is what the game shows now** (ids since renamed, see the top of this section):
+  `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
   `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidgets` = [the
   Sora startle, 17 frames, 1.4 s, from a different render of the same still — the handover
   differs by alpha 4/255, which the cross-fade covers], plus the sheet stills. A fidget may start no sooner
@@ -159,8 +167,8 @@ sc['now']; for (...) { t += 1/30; sc.update(1/30, t); sc.render(); }` then read 
 - Python edit scripts: write them with the Write tool (Bash truncates ~8 KB); use raw strings
   for anything containing `C:\Users` (a `\U` escape error bit twice); prettier reformats
   markdown tables, so match the padded row or insert by regex.
-- `art:optimize` converts every PNG in `assets/art` — delete the stray sheet WebPs
-  (`enemy-rat-mutant.webp`, `-poses.webp`, `-idle.webp`) after running it.
+- `art:optimize` converts every PNG in `assets/art` except those whose manifest entry says
+  `"ship": false` (sheets, direction samples) — flag those, and the stray-WebP chore is gone.
 - Every frame the game will place a glow on should carry exactly one amber cluster at 512 px:
   `findGlowPoints` keeps up to two clusters and places a glow on each, so "exactly one" is a
   rule for the art — a second amber patch (a wound) becomes a second glow. The slicer and
@@ -283,11 +291,12 @@ idle sheet in steps 2–3 is optional and superseded by the clip.)
    the slicer protects the eye from the tone pass.
 4. Content row: `art` = `<id>-loop-01` (the cutter's first loop frame; `content.test.ts`
    requires `loop.frames[0] === art`), `poses.windup/attack/hit`, `poses.loop` / `poses.fidgets`
-   via `frames()`. `npm run art:optimize` (it converts every PNG in `assets/art`, so delete the
-   stray sheet WebPs). Look at it in a fight — `END TURN` for the lunge, a card on it for the
+   via `frames()`. `npm run art:optimize` (mark the sheets `"ship": false` in the manifest so
+   they get no WebP). Look at it in a fight — `END TURN` for the lunge, a card on it for the
    hit.
-5. On his yes: rename the sample ids to the real ones (`enemy-<name>`, `enemy-<name>-windup`
-   …), commit PNG + WebP + content together.
+5. On his yes: rename the sample ids to the real ones (`enemy-<name>-loop-NN`,
+   `enemy-<name>-windup` …; `enemy-<name>` itself stays the v1 sprite, the cutter's `--tone`
+   reference), park superseded frames in `art/out/`, commit PNG + WebP + content together.
 
 Roster still to do: `enemy-possum` **and `enemy-possum-dead` together** (no raw exists for the
 dead pose — it edits from the keyed PNG; consider editing it from the approved mutant possum
@@ -445,8 +454,8 @@ it the same way: spec first, tests beside, checkpoint row per item, push after e
   lost and the URL's `?seed=` is not refreshed.
 - Reduce motion removes the film grain, which is a big part of the thicket's look. The spec
   asks for exactly that; if the owner wants a middle setting, `Post.setGrain` takes any amount.
-- The rat's mutant PNGs/WebPs and its content row are uncommitted, awaiting the owner's yes
-  (see NEXT). `enemy-rat-mutant.png` (the first direction sample) is superseded by the sheets.
+- The rat is committed (see START HERE). `enemy-rat-mutant.png` (the first direction sample)
+  and the two sheets stay in `assets/art` as the record, flagged `"ship": false`.
 - The left-hand enemy slot is much darker than the middle one (the warm light sits left-front
   and close); any creature there reads as a silhouette. Noticed 2026-09-16, not addressed.
 - Play Dead down/up in `animate.ts` call `setPose` with no fade (a cut, against spec §11.2

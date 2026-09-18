@@ -5,6 +5,10 @@
  */
 import type { EnemyDef } from '@engine/types';
 
+/** Ids `<prefix>-01` .. `<prefix>-NN`, as the video cutter writes them. */
+const frames = (prefix: string, n: number): string[] =>
+  Array.from({ length: n }, (_, i) => `${prefix}-${String(i + 1).padStart(2, '0')}`);
+
 const ENEMY_LIST: EnemyDef[] = [
   {
     id: 'rat',
@@ -21,7 +25,19 @@ const ENEMY_LIST: EnemyDef[] = [
         effects: [{ kind: 'attack', amount: 2, times: 2 }],
       },
     ],
-    art: 'enemy-rat',
+    // The mutant rat, approved 2026-09-17 (docs/art-pipeline.md "The recipe"): the loop is a
+    // local Wan 2.2 clip of the still (only the tentacles sway), the one fidget is the Sora clip's
+    // startle - the only movement from any model that came back to its own first frame - and
+    // the strike and hit are stills from the gpt-image-2.5 pose sheet. `enemy-rat` itself is the
+    // v1 sprite, kept as the tone reference for the cutter (`--tone enemy-rat`).
+    art: 'enemy-rat-loop-01',
+    poses: {
+      windup: 'enemy-rat-windup',
+      attack: 'enemy-rat-attack',
+      hit: 'enemy-rat-hit',
+      loop: { frames: frames('enemy-rat-loop', 45), fps: 12 },
+      fidgets: [{ frames: frames('enemy-rat-startle', 17), fps: 12 }],
+    },
   },
   {
     id: 'possum',

@@ -94,7 +94,7 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
   the Sora fidget frames sat 73 px left and 30 px up of the B3 loop's rat at the same scale
   (`--like` matches figure height, not position). They were translated onto the loop's
   placement with PIL (align the alpha bbox's top-right corner — the back, which the tentacles
-  never touch) and written as `enemy-rat-local-startle-NN`. A repeatable `--fidget` in one
+  never touch) and written as `enemy-rat-local-startle-NN` (now `enemy-rat-startle-NN`). A repeatable `--fidget` in one
   cutter run is the proper fix.
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.

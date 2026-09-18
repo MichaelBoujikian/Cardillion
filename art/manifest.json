@@ -304,7 +304,8 @@
       "style": "thicket",
       "subject": "enemy-rat",
       "prompt": "Mutate this rat: large patches of its skin have been torn or sloughed away, showing raw wet muscle and pale ribs beneath; from its open mouth a bundle of thin, glistening, pink-grey fleshy tentacles pushes out and droops toward the ground, like the mouth of a Fallout 3 centaur (the mutant, not the horse-man) - smooth tube-like tentacles with no suckers, a couple ending in small toothed openings. Keep the same rat, the same pose, size, fur, eyes and lighting; only the wounds and the mouth-tentacles are new.",
-      "size": "1024x1024"
+      "size": "1024x1024",
+      "ship": false
     },
     {
       "id": "enemy-rat-mutant-poses",
@@ -312,7 +313,8 @@
       "style": "thicket",
       "subject": "enemy-rat-mutant",
       "prompt": "A keyframe pose sheet on the flat green chroma-key screen: this exact mutant rat drawn FOUR times in a 2 by 2 grid, all four figures floating on the one continuous green screen (no black, no panel borders, no backdrop), every figure the same creature at the same size, same strict side profile facing the viewer's left, same fur, same torn-open wounds, same mouth-tentacles, same amber eyes, same lighting, with a clean gap of screen colour between the panels. Top-left, REST: standing exactly as in the subject image, tentacles hanging slack from the mouth. Top-right, WIND-UP: crouched back onto its haunches, weight loaded on the rear legs, head lowered and pulled back, tentacles drawn up tight and bunched at the mouth, about to spring. Bottom-left, ATTACK: mid-lunge, body stretched long and low, front claws reaching forward, jaws wide, the tentacles whipping forward toward the left edge of the panel. Bottom-right, HIT: flinching from a blow, head thrown back, body twisted away, tentacles flung outward, blood spraying from the wounds. Four separate figures, none overlapping, no labels, no text.",
-      "size": "1536x1024"
+      "size": "1536x1024",
+      "ship": false
     },
     {
       "id": "enemy-rat-mutant-idle",
@@ -320,7 +322,8 @@
       "style": "thicket",
       "subject": "enemy-rat-mutant-poses",
       "prompt": "An idle sheet on the flat green chroma-key screen: take ONLY the top-left figure of this sheet (the rat standing at rest) and draw it FOUR times in a 2 by 2 grid, all four in exactly that same standing pose: same feet on the same line, same tail, same body, same head position, same size, same fur, same wounds, same amber eye. The four differ only in the bundle of fleshy tentacles hanging from the mouth and the whiskers, as four moments of one slow writhe: top-left, tentacles hanging slack; top-right, tentacles curling upward and inward, bunching at the mouth; bottom-left, tentacles swung out toward the left with the whiskers pushed forward; bottom-right, tentacles drooping and splayed apart with one lifted. Nothing else changes between the four. Clean gaps of screen colour between the figures, no labels, no text.",
-      "size": "1536x1024"
+      "size": "1536x1024",
+      "ship": false
     }
   ]
 }

@@ -6,6 +6,10 @@
  *
  *   npm run art:optimize              # every master whose webp is missing or older
  *   npm run art:optimize -- --force   # everything
+ *
+ * A master whose manifest entry says `"ship": false` (a pose sheet, a direction sample: kept as
+ * the record of how a creature was made, never loaded by the game) gets no webp, and a stale
+ * one is removed.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,7 +19,13 @@ import sharp from 'sharp';
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const SRC = path.join(ROOT, 'assets', 'art');
 const OUT = path.join(ROOT, 'public', 'art');
+const MANIFEST = path.join(ROOT, 'art', 'manifest.json');
 const force = process.argv.includes('--force');
+const unshipped = new Set(
+  JSON.parse(fs.readFileSync(MANIFEST, 'utf8'))
+    .assets.filter((a) => a.ship === false)
+    .map((a) => a.id),
+);
 
 /** Longest side per asset kind - the game never shows art larger than this. */
 function maxSide(id) {
@@ -32,9 +42,17 @@ const ids = fs
   .filter((f) => f.endsWith('.png'))
   .map((f) => f.replace(/\.png$/, ''));
 let made = 0;
+let dropped = 0;
 for (const id of ids) {
   const src = path.join(SRC, `${id}.png`);
   const out = path.join(OUT, `${id}.webp`);
+  if (unshipped.has(id)) {
+    if (fs.existsSync(out)) {
+      fs.rmSync(out);
+      dropped++;
+    }
+    continue;
+  }
   if (!force && fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(src).mtimeMs)
     continue;
   const side = maxSide(id);
@@ -47,4 +65,6 @@ for (const id of ids) {
     `${id}: ${(fs.statSync(src).size / 1024 / 1024).toFixed(1)} MB -> ${(fs.statSync(out).size / 1024).toFixed(0)} KB`,
   );
 }
-console.log(`${made} written, ${ids.length - made} up to date -> ${path.relative(ROOT, OUT)}`);
+console.log(
+  `${made} written, ${ids.length - made - unshipped.size} up to date, ${unshipped.size} not shipped${dropped ? ` (${dropped} stale webp removed)` : ''} -> ${path.relative(ROOT, OUT)}`,
+);

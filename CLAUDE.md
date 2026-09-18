@@ -40,7 +40,8 @@ from `Rng` (`src/engine/rng.ts`). A run forks one stream each for `map` (which f
   without generated art. Prompts live in `art/manifest.json`; `docs/art-pipeline.md` covers
   generation, and `docs/local-video.md` / `docs/local-image.md` cover the owner's local ComfyUI
   rig — reach for them only when generating or approving art.
-- Never `git add -A` — unapproved art sits uncommitted in `assets/art` and `public/art`.
+- Never `git add -A` — unapproved art sits uncommitted in `assets/art` and `public/art` until
+  the owner says yes.
 - **Done means `npm run check` passes** (typecheck, lint, format, tests, build). CI runs the
   same on every push.
 - Commit straight to `main` with small, single-purpose commits during pre-alpha.
@@ -59,8 +60,8 @@ tool gotchas, and what to build next.
 
 M1–M6 are done (M5 systems and M6 v1 art on 2026-09-16). Current work is the **enemy art
 pass** — every vermin redone as a mutant with a clip-driven waiting state (spec §11.2,
-`docs/art-pipeline.md` "The recipe"); the rat is the worked example, and its art + content row
-are uncommitted pending the owner's approval. Engine: `combat.ts` (fight reducer, `CombatMods`
+`docs/art-pipeline.md` "The recipe"); the rat is done and committed (2026-09-17: `enemy-rat-loop-NN`,
+`-startle-NN`, `-windup/-attack/-hit`); the possum is next. Engine: `combat.ts` (fight reducer, `CombatMods`
 for upgrade effects), `map.ts`, `run.ts` (run reducer: shops, upgrades, the two map markers).
 Screens live in `src/ui/run-screens.ts`; `src/app/run-controller.ts` sequences events into
 animations. In dev, `window.__cardillion.autoRun()` / `autoFight()` play the game from the

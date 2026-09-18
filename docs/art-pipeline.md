@@ -27,8 +27,9 @@ real ids and commit art + content together.
    find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
    frames on the pose frames' canvas.
 5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,
-   `poses.loop` / `poses.fidgets` via `frames()`; `npm run art:optimize`; delete the stray sheet
-   WebPs. Check every frame finds exactly one amber cluster (the eye).
+   `poses.loop` / `poses.fidgets` via `frames()`; mark the sheet and sample entries in the
+   manifest `"ship": false` so `npm run art:optimize` gives them no WebP; run it. Check every
+   frame finds one amber cluster (the eye).
 6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
    loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
    Screenshot before/after, show the owner, wait for the yes, then commit. The handovers
@@ -73,7 +74,8 @@ That is the entire setup. From here the agent runs the pipeline.
    scratch space), send it to the owner, and record approved ids in the commit message.
 5. **Commit approved PNGs** to `assets/art/`, then run `npm run art:optimize` and commit the
    web-sized `public/art/<id>.webp` copies it writes — those are what the game loads; the PNG
-   masters never ship. Placeholders for those ids become unused.
+   masters never ship. A master the game never loads (a pose sheet, a direction sample) gets
+   `"ship": false` on its manifest entry and no WebP. Placeholders for those ids become unused.
 
 Model: `gpt-image-2.5-sunburst` (the precision-editing tier; `manifest.defaults.model`, or
 `--model gpt-image-2.5-flare` for the fast tier at the same price). Costs at 1024×1024, from
