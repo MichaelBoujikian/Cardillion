@@ -118,6 +118,12 @@ interface EnemySprite {
   body: THREE.Group;
   plane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
   eyes: THREE.Sprite[];
+  /**
+   * During a keyframe cross-fade, where each glow is gliding from and to: the old picture's
+   * eye is still showing under the new one, so the glow moves with the dissolve instead of
+   * jumping to the new picture's eye and leaving the painted one bare for a beat.
+   */
+  eyeGlide: { from: THREE.Vector3; to: THREE.Vector3 }[] | null;
   /** Desynchronises the idle motion between creatures. */
   seed: number;
   /** Its shown intent is an attack: it leans in and breathes faster. */
@@ -618,6 +624,7 @@ export class BattleScene {
       nextIdleAt: this.now + 0.5,
       seq,
       seqMaps: new Set(seq ? [...seq.loop, ...seq.fidgets.flatMap((f) => f.frames)] : []),
+      eyeGlide: null,
       root,
       body,
       plane,
@@ -834,10 +841,21 @@ export class BattleScene {
     s.plane.geometry = new THREE.PlaneGeometry(s.width, s.height);
     s.plane.material.map = imageTexture(img);
     s.plane.material.needsUpdate = true;
+    const wasAt = s.eyes.map((e) => e.position.clone());
     for (const e of s.eyes) s.body.remove(e);
     s.eyes = this.placeEyes(s.body, findGlowPoints(img), s.width, s.height, s.baseY, true);
     this.applyReveal(s);
     if (s.fade) s.plane.material.opacity = 0;
+    // Glide each glow from where it was to the new eye over the fade (a matched pair per eye).
+    s.eyeGlide = ghosted
+      ? s.eyes.flatMap((e, i) => {
+          const from = wasAt[i];
+          if (!from) return [];
+          const to = e.position.clone();
+          e.position.copy(from);
+          return [{ from, to }];
+        })
+      : null;
   }
 
   /**
@@ -873,6 +891,10 @@ export class BattleScene {
       s.fade = null;
       this.applyReveal(s);
     }
+    if (s.eyeGlide) {
+      s.eyeGlide.forEach((g, i) => s.eyes[i]?.position.copy(g.to));
+      s.eyeGlide = null;
+    }
   }
 
   /**
@@ -902,6 +924,7 @@ export class BattleScene {
     const k = Math.min(1, (t - s.fade.start) / s.fade.duration);
     s.plane.material.opacity = k;
     if (s.ghost) s.ghost.material.opacity = s.fade.seq ? 1 : 1 - k;
+    if (s.eyeGlide) s.eyeGlide.forEach((g, i) => s.eyes[i]?.position.lerpVectors(g.from, g.to, k));
     if (k >= 1) this.endFade(s);
   }
 

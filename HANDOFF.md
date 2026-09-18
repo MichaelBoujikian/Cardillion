@@ -103,7 +103,10 @@ its yes, and never `git add -A`.
 - **The eye glow follows the clip** (he noticed, 2026-09-17 late): `trackEyes` in `scene.ts`
   runs `findGlowPoints` on each clip frame the first time it shows (cached per texture, so no
   hitch) and moves the glow sprites; a frame where the finder sees nothing leaves the glow
-  where it was. He also asked for a dimmer, smaller glow so it stops covering the face:
+  where it was. Across a keyframe cross-fade (wind-up, strike, hit, back to rest) the glow
+  glides from the old picture's eye to the new one over the fade (`eyeGlide`) — before, it
+  jumped at the start and bared the painted eye for a beat, which he spotted at the end of
+  the lunge. He also asked for a dimmer, smaller glow so it stops covering the face:
   creatures now have their own sprite material (`EYE_GLOW_INTENSITY` 4 instead of the far
   eyes' 6, `EYE_GLOW_SCALE` 3 instead of 3.6, max 0.26) — the constants at the top of
   `scene.ts` are the knobs.
