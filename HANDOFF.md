@@ -54,16 +54,20 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
 - Of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), **B (`rat-B-bob`) is his
   favourite for the passive movement every now and then — "the new twitch"** — and it is to be
   played back in reverse to return to where it started (that was `art:video --fidget-pingpong`;
-  on 2026-09-17 evening, watching it, he changed this: **only the first ~3.3 s of B, forward**,
-  because the rat lands back on the stance there and the tentacles went weird later). **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
+  on 2026-09-17 evening, watching it, he had the tentacles "get weird at a couple parts" — Wan
+  drifts from ~0.6 s on and grows a second bundle of tentacles — so it became **only the
+  turn-away, 0–0.58 s of B, played forward then back**: a glance that never shows the drift
+  and lands on the stance by construction. A forward-only cut to 3.33 s was tried between
+  the two and rejected: it landed with more tentacles than the loop has, and fading between
+  the two counts showed). **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
   sway. **Combine them with cross-fading**, and **keep the three attack frames from the pose
   sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
 - **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
   `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidget` = B
-  (0–3.33 s, forward once, 41 frames — the landing frame was picked by measurement: the
-  stillest frame before the second head turn starts at 3.5 s), plus the sheet stills. A fidget may start no sooner
+  (0–0.58 s forward then back, 14 frames, a 1.2 s glance away and back), plus the sheet
+  stills. A fidget may start no sooner
   than 2.5–6 s after the last, but only as the loop turns at its first frame, which for the
-  45-frame loop is every 7.3 s — so the real rhythm is ~3.4 s of fidget, ~7.3 s of loop, repeat
+  45-frame loop is every 7.3 s — so the real rhythm is ~1.2 s of fidget, ~7.3 s of loop, repeat
   (`scene.ts` `stepSequence`). The 2.5–6 s is a per-sprite constant, not a roll.
   The Sora frame set (`enemy-rat-mutant-loop/fidget-*`) is still on disk; the row's comment
   lists both, flip by editing the ids.
@@ -101,8 +105,9 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
     `setPose` for Play Dead down/up with fadeMs 0 (cuts).
   - (e) The prompts and seeds that produced clips B and B3 were not recorded anywhere; the cut
     that made the current row is `npm run art:video -- --video art/out/video/rat-B3-bob.mp4
---out enemy-rat-local --loop 0.3:4.0 --fidget 0:3.33 --fidget-video
-art/out/video/rat-B-bob.mp4 --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat` (delete
+--out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.58 --fidget-video
+art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone
+enemy-rat` (delete
     the old `enemy-rat-local-fidget-*` PNG + WebP first — the cutter never removes stale frames).
     Record prompt + seed next time.
   - (f) Metamorphosis: the only Cocoon every run guarantees is the one before the Boss, and a

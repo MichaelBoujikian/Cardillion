@@ -53,19 +53,22 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
   still. Ask for one thing per clip — a tentacles-only loop (`rat-A2-tentacles`, seed 11) and a
   separate small movement — and combine them with `art:video --fidget-video`.
 - Wan rarely returns _exactly_ to the start pose; `--fidget-pingpong` plays the movement forward
-  then back so it always does (and a head dip becomes a bob). The rat ended up not needing it:
-  its clip settles near the stance on its own, and the renderer's 300 ms handover covers the
-  rest. Pick the landing frame by measuring frame-to-frame difference (stillest before the next
-  movement) rather than by eye.
+  then back so it always does (and a head dip becomes a bob). Keep the forward part short:
+  Wan drifts within a second of a big movement (the rat grew a second bundle of tentacles
+  from ~0.6 s), and a ping-pong through the drift shows it twice. A forward-only cut that
+  ends where the creature has "settled" lands on Wan's drifted version of the stance, not
+  the stance — the rat's landed with more tentacles than the loop has, and the handover
+  showed. Measure frame-to-frame difference to find where the movement peaks and where
+  drift begins; cut there.
 - The eye fades over a clip. The cutter relights it only where it can still find it; the game
   places the glow from the first frame, which is enough for a still loop. Never paint a guessed
   box — it lands on fur as soon as the head moves.
 - Record the prompt and seed of every clip you keep — the ones behind B (`rat-B-bob`) and B3
   (`rat-B3-bob`), the clips the owner chose, were not written down. The cut that made the
   current rat row:
-  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:3.33 --fidget-video art/out/video/rat-B-bob.mp4 --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`
-  (the fidget is B's first 3.33 s forward, where it lands back on the stance; the earlier
-  ping-pong of all 3.5 s was dropped because the tentacles went weird at the turn).
+  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.58 --fidget-video art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`
+  (the fidget is B's turn-away, forward then back — 14 frames; the ping-pong of all 3.5 s
+  and a forward-only cut to 3.33 s were both rejected by the owner, see above).
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 
