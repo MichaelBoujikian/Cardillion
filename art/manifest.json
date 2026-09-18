@@ -324,6 +324,35 @@
       "prompt": "An idle sheet on the flat green chroma-key screen: take ONLY the top-left figure of this sheet (the rat standing at rest) and draw it FOUR times in a 2 by 2 grid, all four in exactly that same standing pose: same feet on the same line, same tail, same body, same head position, same size, same fur, same wounds, same amber eye. The four differ only in the bundle of fleshy tentacles hanging from the mouth and the whiskers, as four moments of one slow writhe: top-left, tentacles hanging slack; top-right, tentacles curling upward and inward, bunching at the mouth; bottom-left, tentacles swung out toward the left with the whiskers pushed forward; bottom-right, tentacles drooping and splayed apart with one lifted. Nothing else changes between the four. Clean gaps of screen colour between the figures, no labels, no text.",
       "size": "1536x1024",
       "ship": false
+    },
+    {
+      "id": "enemy-possum-mutant",
+      "$comment": "Direction sample (2026-09-17): an EDIT of enemy-possum toward the mutant look, the rat's wording plus the owner's belly-to-eye tentacle. Not a content id.",
+      "style": "thicket",
+      "subject": "enemy-possum",
+      "prompt": "Mutate this opossum: large patches of its skin have been torn or sloughed away, showing raw wet muscle and pale ribs beneath; its belly has split open, and out of that wound a thick, glistening, pink-grey fleshy tentacle pushes, arcs up along its flank and neck and plunges into its eye socket, the eye bulging beside it and glowing bright amber; several thinner tentacles push out of the same belly wound and droop toward the ground, like the flesh of a Fallout 3 centaur (the mutant, not the horse-man) - smooth tube-like tentacles with no suckers, a couple ending in small toothed openings. Its eye glows bright amber. Keep the same opossum, the same pose, size, fur, rictus grin of needle teeth, tail and lighting; only the wounds and the tentacles are new.",
+      "size": "1024x1024",
+      "ship": false
+    },
+    {
+      "id": "enemy-possum-mutant-poses",
+      "$comment": "Keyframe pose sheet (2026-09-17) of enemy-possum-mutant in ONE image so the creature stays consistent; sliced by art:poses. Not a content id.",
+      "style": "thicket",
+      "subject": "enemy-possum-mutant",
+      "prompt": "A keyframe pose sheet on the flat green chroma-key screen: this exact mutant opossum drawn FOUR times in a 2 by 2 grid, all four figures floating on the one continuous green screen (no black, no panel borders, no backdrop), every figure the same creature at the same size, same strict side profile facing the viewer's left, same fur, same torn-open wounds, same split belly with the thick tentacle rising into the eye socket and the thinner tentacles hanging from the wound, same glowing amber eye, same lighting, with a clean gap of screen colour between the panels. Top-left, REST: standing exactly as in the subject image, tentacles hanging slack. Top-right, WIND-UP: crouched back onto its haunches, weight loaded on the rear legs, head lowered and pulled back, jaws parted in a hiss showing the needle teeth, the belly tentacles drawn up tight, about to spring. Bottom-left, ATTACK: mid-lunge, body stretched long and low, front claws reaching forward, jaws wide, the belly tentacles whipping forward toward the left edge of the panel. Bottom-right, HIT: recoiling from a blow, head thrown back, body twisted away, tentacles flung outward, blood spraying from the wounds. Four separate figures, none overlapping, no labels, no text.",
+      "size": "1536x1024",
+      "ship": false
+    },
+    {
+      "id": "enemy-possum-mutant-dead",
+      "$comment": "The playing-dead pose with the same mutations (2026-09-17): an EDIT of enemy-possum-dead (no raw exists, so the keyed PNG is sent) with the mutant standing possum as the second image to copy the wounds from. Its frame is enemy-possum-mutant-playdead (art:poses --like enemy-possum-mutant-rest); the master never ships.",
+      "style": "thicket",
+      "subject": "enemy-possum-dead",
+      "reference": "enemy-possum-mutant",
+      "referenceRole": "The SECOND image is the same opossum standing, already mutated: copy its wounds and tentacles exactly onto the first.",
+      "prompt": "This opossum is lying on its back playing dead. Give it exactly the mutations of the second image: the same patches of skin torn away over raw wet muscle and pale ribs, the same split belly with the thick, glistening pink-grey tentacle rising out of it and plunging into the eye socket beside the bulging, bright amber glowing eye, the same thinner tentacles pushing out of the belly wound, now drooping limply across its body and onto the ground. Keep this exact pose - on its back, all four legs drawn up against the belly and clearly attached, the tail curled beside it, the eye open and watching - and the same size, fur, grin and lighting; only the wounds and the tentacles are new.",
+      "size": "1024x1024",
+      "ship": false
     }
   ]
 }

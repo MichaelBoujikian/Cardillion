@@ -79,8 +79,10 @@ function buildPrompt(asset) {
   // With a reference image the edits endpoint tends to redraw the reference's subject, so the
   // prompt says what the reference is for.
   // `subject` is an existing asset to keep and alter (an edit); `reference` is a style anchor.
+  // `referenceRole` says what the further images are for when they are not style anchors
+  // (e.g. the same creature already mutated, whose wounds a second pose must copy).
   const refHint = asset.subject
-    ? 'The FIRST image is the subject: keep this exact creature - its pose, size, proportions, colours and every detail not mentioned below - and change only what is described. Any further images are for painting technique only.'
+    ? `The FIRST image is the subject: keep this exact creature - its pose, size, proportions, colours and every detail not mentioned below - and change only what is described. ${asset.referenceRole ?? 'Any further images are for painting technique only.'}`
     : asset.reference
       ? 'Use the reference image only for its painting technique; the subject is described below.'
       : '';

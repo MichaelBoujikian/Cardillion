@@ -167,7 +167,7 @@ export async function animateEvents(
         const pose = nextEnemy(ev.uid);
         if (pose) {
           const dead = enemyDef(pose.def).deadArt;
-          if (dead) scene.setPose(ev.uid, dead);
+          if (dead) scene.setRestPose(ev.uid, dead, 140);
         }
         scene.reviveEnemy(ev.uid);
         ui.showEnemy(ev.uid);
@@ -196,7 +196,7 @@ export async function animateEvents(
         // The wind-up: a creature that was playing dead springs up first; the body motion
         // resolves at the moment the move lands, so the hit's own feedback follows it.
         const actor = nextEnemy(ev.uid);
-        if (actor) scene.setPose(ev.uid, enemyDef(actor.def).art);
+        if (actor) scene.setRestPose(ev.uid, enemyDef(actor.def).art, 140);
         ui.flashIntent(ev.uid, true);
         await scene.act(ev.uid, actionFor(ev.uid, ev.move, next));
         break;

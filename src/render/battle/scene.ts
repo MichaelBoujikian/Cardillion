@@ -79,8 +79,10 @@ interface EnemySprite {
   def: string;
   /** Art id currently on the plane (the def's art, or a pose such as Play Dead). */
   pose: string;
-  /** The pose it returns to after a strike or a hit. */
+  /** The pose it returns to after a strike or a hit: its art, or its dead pose while it plays dead. */
   restPose: string;
+  /** The art the clip frames belong to; the clip plays only while that is the pose. */
+  clipArt: string;
   /** Keyframe poses from content, if the creature has them. */
   poses: EnemyDef['poses'];
   /** The previous picture, lingering under the new one during a cross-fade. */
@@ -558,11 +560,13 @@ export class BattleScene {
     const img = this.art.get(poseArt);
     const unseen = def.traits.includes('unseen');
     const seq = this.makeSequence(def);
-    const texture = seq
-      ? (seq.loop[0] as THREE.Texture)
-      : img
-        ? imageTexture(img)
-        : makeVerminPlaceholder(enemy.def);
+    // The clip's first frame is the art; a creature already playing dead shows its dead pose.
+    const texture =
+      seq && poseArt === def.art
+        ? (seq.loop[0] as THREE.Texture)
+        : img
+          ? imageTexture(img)
+          : makeVerminPlaceholder(enemy.def);
     const aspect = img ? img.height / img.width : 1;
     const height =
       (def.tier === 'boss' ? 4.2 : def.tier === 'elite' ? 3.3 : 2.6) * (img ? 1 : 0.85);
@@ -616,6 +620,7 @@ export class BattleScene {
       def: enemy.def,
       pose: poseArt,
       restPose: poseArt,
+      clipArt: def.art,
       poses: def.poses,
       ghost: null,
       fade: null,
@@ -697,7 +702,7 @@ export class BattleScene {
    */
   private stepSequence(s: EnemySprite, t: number): void {
     const q = s.seq;
-    if (!q || s.pose !== s.restPose || (s.fade && !s.fade.seq)) return;
+    if (!q || s.pose !== s.clipArt || (s.fade && !s.fade.seq)) return;
     if (t < q.start) q.start = t; // a clock that went backwards (dev tools) must not index off the end
     const shown = s.plane.material.map;
     if (!shown || !s.seqMaps.has(shown)) {
@@ -875,6 +880,19 @@ export class BattleScene {
     s.ghost = ghost;
     s.fade = { start: this.now, duration: fadeMs / 1000, seq };
     return true;
+  }
+
+  /**
+   * Make a pose the one the creature rests in - its dead pose when it plays dead, its art
+   * when it gets up - and show it. Strikes and hits return to it; a hit hold in progress is
+   * dropped so it cannot snap the creature back to the old rest pose a beat later.
+   */
+  setRestPose(uid: string, artId: string, fadeMs = 0): void {
+    const s = this.sprites.get(uid);
+    if (!s) return;
+    s.restPose = artId;
+    s.hitUntil = 0;
+    this.setPose(uid, artId, fadeMs);
   }
 
   /** Drop a cross-fade's ghost at once (the fade finished, or a new pose pre-empted it). */
