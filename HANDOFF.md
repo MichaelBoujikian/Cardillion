@@ -65,42 +65,60 @@ has one, its special pose.
   `docs/local-video.md` and `docs/runway-api.md`): three cuts of a Wan head-turn clip, a
   tentacle-lash re-roll, four Runway/Veo renders — every model drifts off the pose within a
   second of a big movement; only Sora's small startle returned home.
-- **Possum — in progress, uncommitted.** What is on disk under sample ids
-  (`enemy-possum-mutant-*`, row in `enemies.ts`): the still (a gpt edit of the v1 possum with
-  a belly-to-eye tentacle, then a **local klein edit, seed 4**, to put skin back over the ribs
-  — his call: the gpt one was "a bit much"; the gpt version is kept as
-  `art/out/enemy-possum-mutant-v1-gpt*.png`); a gpt pose sheet and a gpt playing-dead pose
-  re-rendered from that still (`-rest/-windup/-attack/-hit`; the sheet `-poses.png` and the
-  1024² dead master `-dead.png` — an edit of the v1 `enemy-possum-dead` with the mutant still as
-  `referenceRole` — stay as `"ship": false` records; `-playdead` is the dead master sliced onto
-  the frames' canvas with `--like`); a local Wan loop (`-loop-01..33`, tentacles sway, clip
-  `possum2-loop-11` 0.3–3.0 s) and one fidget, a **retch** (`-fidget-01..28`: clip
-  `possum2-retch-201` 0.75–1.92 s forward then back, so the guts come out and are sucked back
-  in — his idea, after he rejected a hiss whose mouth spilled random shapes; the prompts and
-  seeds are in `docs/local-video.md`). Both were cut in one `art:video` run. Not yet seen by
-  him in the game: the retch. On his yes: rename to `enemy-possum-loop-NN`, `-fidget-NN`,
-  `-windup/-attack/-hit`, and `-playdead` → `enemy-possum-dead` (replacing the v1 dead sprite;
-  copy v1 to `art/out/` first), run `npm run art:optimize`, commit PNG + WebP + row together.
-  The refusals below were of the gorier **gpt** still; the klein one has not been tried on
-  Sora — one $2.40 attempt before 2026-09-24 might get a self-returning startle.
-- **Spider — direction sample made** (`enemy-spider-mutant.png`, uncommitted): his brief was a
-  thick furry tarantula like the wolf spider, eggs and spiderlings on its back, half a leg
-  missing. Next: his verdict, then the pose sheet (rest / forelegs raised / lunge toward the
-  camera / legs curling on a hit — it is front-facing), then clips. Say "no shadow under the
-  body" in every spider prompt: the v1 spiders carry a half-keyed shadow the pass must lose.
+- **Possum — done and committed (2026-09-18)**: `enemy-possum-loop-01..33`, `-retch-01..28`,
+  `-windup/-attack/-hit/-rest`, and `enemy-possum-dead` is now the mutant Play Dead frame. The
+  still is a gpt edit of the v1 possum with a belly-to-eye tentacle, then a **local klein edit,
+  seed 4**, to put skin back over the ribs — his call: the gpt one was "a bit much" (kept as
+  `art/out/enemy-possum-mutant-v1-gpt*.png`). The sheet `enemy-possum-mutant-poses.png`, the
+  1024² dead master `enemy-possum-mutant-dead.png` and the still `enemy-possum-mutant.png` stay
+  as `"ship": false` records; the v1 `enemy-possum` no longer ships but stays as the tone
+  reference; the v1 dead render is `art/out/enemy-possum-dead-v1.png`. Loop: local Wan,
+  tentacles sway (`possum2-loop-11` 0.3–3.0 s). Fidget: a **retch**, guts out and sucked back
+  in (`possum2-retch-201` 0.75–1.92 s forward then back — his idea, after a hiss whose mouth
+  spilled random shapes; prompts and seeds in `docs/local-video.md`). His two fixes before the
+  yes: the eye glow was too big (`EYE_GLOW_MAX` 0.26 → 0.16, the rat's size) and Play Dead
+  hopped sideways — the loop was cut with the old crop-centred placement (body 35 px right of
+  the slot), the dead frame bbox-centred (12 px left); re-cut with the figure-anchored `--like`
+  and the dead frame re-sliced with `--shift 24`, the hop is 11 px. Every frame went through
+  `tools/art-redden.py` (one amber cluster). Sora refused this still's gorier gpt version
+  twice; the klein one was never tried there.
+- **Spider — sample set built, awaiting his verdict** (all `enemy-spider-mutant-*`, uncommitted;
+  in the dev fight beside the possum). His brief: a thick furry tarantula like the wolf spider,
+  eggs and spiderlings on its back, half a leg missing — and, new on 2026-09-18, **no gore on
+  it: "gory doesn't have to be in everything, just dark/morbid/evil"**. The still is the gpt
+  sample with every red wound taken off by a local klein edit (seed 2, his pick; the gpt one is
+  `art/out/enemy-spider-mutant-v1-gpt-raw.png`). The pose sheet is gpt in the new
+  **`thicket-morbid` style** (the thicket look with the gore sentences removed — the first sheet
+  in plain `thicket` put the wounds straight back), the wind-up modelled on his photo of a
+  rearing funnel-web (`art/refs/spider-threat-pose.png`, gitignored): rest / reared up with the
+  forelegs high / the slam down / the recoil. Clips: Sora **jaws** (4 s, fangs spread and close,
+  returns home — fidget 1, `-fidget-01..32`), Sora **leg wave** (8 s, legs lift one at a time
+  but the body drifts wider and never returns — its first 3 s ping-pong as the loop,
+  `-loop-01..37`), and a local Wan **rear-up** (seed 301: onto its back legs, four forelegs
+  high, holds, lands home — fidget 2, `-rear-fidget-01..42`; Sora failed it twice, see the
+  table). The rear-up needs headroom, so the whole set sits on an **848 × 848 canvas** (slicer
+  `--width/--height`) with the row's new **`height: 3.8`** putting the rest pose back at a
+  common creature's size — that `height` seam on `EnemyDef` (types.ts, scene.ts, spec §11.4)
+  is new and uncommitted with the rest. Frames from the second cutter run land on the loop's
+  placement because `--like` now stands the first frame on the reference figure's
+  bottom-centre; `--eyes 2` relights both eyes; `tools/art-unred.py` took Wan's pink leg tips
+  off. On his yes: rename to `enemy-spider-loop-NN`, `-fidget-NN`, `-rear-NN`,
+  `-windup/-attack/-hit`, `art:optimize`, commit art + row + the tool changes together. Say
+  "no shadow under the body" in every spider prompt: the v1 spiders carry a half-keyed shadow
+  the pass must lose.
 - **Still to do:** `enemy-scorpion`, `enemy-greeble` (Unseen: alphaTest 0, so its edges must
   be clean), `enemy-rat-king`, `enemy-wolf-spider` (the elite; same family as the spider,
   escalated), `boss-bear` (sample entries need `"size": "1024x1536"`). `boss-moose` is act 2.
 
 ### Where each clip comes from now
 
-| Route                   | Command                | Cost                          | Takes                                                                                                                                                                |
-| ----------------------- | ---------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local Wan 2.2 5B        | `npm run video:local`  | free, ~2.5 min per 3 s        | anything (no policy). Drifts within a second of a big movement; fine for tentacles-only loops. Prompts must lead with the action (`docs/local-video.md`).            |
-| OpenAI Sora 2 Pro       | `npm run video:sora`   | ~$2.40 per 8 s                | the rat's still, not the possum's (its input filter refused the eye-socket tentacle and open ribs). **Shuts down 2026-09-24.** The only model that returned to pose. |
-| Runway (gen4, Veo 3.1…) | `npm run video:runway` | 25–100 credits per clip       | the rat's still, not the possum's (`SAFETY.INPUT.MULTIMODAL`, charged). Draws movement better than Wan, drifts like everyone. **230 free credits left.**             |
-| Local FLUX.2 klein      | `npm run image:local`  | free, ~5 s                    | still edits with no policy (the possum's less-gore pass). Keeps the character, not the colours — say "near-black, dim light" or it bleaches.                         |
-| gpt-image-2.5           | `npm run art`          | ~$0.21 a still, $0.17 a sheet | the stills and sheets; `moderation: low`; passed everything asked of it so far.                                                                                      |
+| Route                   | Command                | Cost                          | Takes                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------- | ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Local Wan 2.2 5B        | `npm run video:local`  | free, ~2.5 min per 3 s        | anything (no policy). Drifts within a second of a big movement; fine for tentacles-only loops. Prompts must lead with the action (`docs/local-video.md`).                                                                                                                                                                                                                                                                                              |
+| OpenAI Sora 2 Pro       | `npm run video:sora`   | ~$2.40 per 8 s                | the rat's and the spider's stills, not the possum's (its input filter refused the eye-socket tentacle and open ribs). **Shuts down 2026-09-24.** The only model that returned to pose — for small moves (a startle, a jaw). Keep the figure at the default 85 % of the frame: at `--height 0.6` it re-framed the shot into a close-up of a redrawn spider and drifted the green to blue; at 85 % a rearing creature's legs leave the top of the frame. |
+| Runway (gen4, Veo 3.1…) | `npm run video:runway` | 25–100 credits per clip       | the rat's still, not the possum's (`SAFETY.INPUT.MULTIMODAL`, charged). Draws movement better than Wan, drifts like everyone. **230 free credits left.**                                                                                                                                                                                                                                                                                               |
+| Local FLUX.2 klein      | `npm run image:local`  | free, ~5 s                    | still edits with no policy (the possum's less-gore pass). Keeps the character, not the colours — say "near-black, dim light" or it bleaches.                                                                                                                                                                                                                                                                                                           |
+| gpt-image-2.5           | `npm run art`          | ~$0.21 a still, $0.17 a sheet | the stills and sheets; `moderation: low`; passed everything asked of it so far.                                                                                                                                                                                                                                                                                                                                                                        |
 
 Records: every Runway/Sora job writes `art/out/video/<out>.json`; the local prompts live in
 `art/out/video/*-prompts.txt`. **All of `art/out/` is gitignored** — copy the prompt and seed of
@@ -237,8 +255,10 @@ overrides: `?deck=worm-swarm,wormillion,drill-worm,scavenge,molt,stink-cloud,bur
 `tools/lib/env.mjs` reads it. `COMFYUI_DIR` and `FFMPEG` are process-environment overrides
 with working defaults (`C:\Users\smite\ComfyUI_windows_portable`, `art/out/bin/ffmpeg.exe`).
 The Cat cards portray **his real cat** from `art/refs/owner-cat.png` (gitignored). Spend so
-far: roughly $15–17 on OpenAI images (check the usage page), one paid Sora clip ($2.40; the
-three blocked ones were probably not billed), 270 of the 500 free Runway credits.
+far: roughly $16–18 on OpenAI images (check the usage page), Sora ≈ $10.80 (the rat's clip and
+the spider's four: jaws, wave, two failed rear-ups; the two blocked possum jobs and the rat's
+blocked "vicious bite" job were probably
+not billed), 270 of the 500 free Runway credits.
 
 ## Architecture in one screen
 

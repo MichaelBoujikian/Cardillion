@@ -16,7 +16,10 @@
  *   --fps <n>          frames per second to keep (default 12)
  *   --key <name>       green | blue | magenta (default green)
  *   --like <id>        an existing frame: its canvas, and the first loop frame is scaled to its
- *                      figure height, so the clip lands at the same size as the pose frames
+ *                      figure height and stood on its figure's bottom-centre, so the clip lands
+ *                      at the same size and place as the pose frames (and as a fidget cut in
+ *                      another run from the same --like)
+ *   --eyes <n>         glowing eyes to relight, 1 (default, a side profile) or 2 (front-facing)
  *   --tone <id>        match brightness and chroma to this asset (see art-poses)
  *   --ffmpeg <exe>     ffmpeg to use (default: $FFMPEG, then art/out/bin/ffmpeg.exe, then PATH)
  *
@@ -68,6 +71,8 @@ if (!video || !outPrefix || !loopRange) {
 const key = KEYS[opt('key') ?? 'green'];
 if (!key) throw new Error(`unknown chroma key "${opt('key')}"`);
 const likeId = opt('like');
+const nEyes = Number(opt('eyes') ?? 1);
+if (![1, 2].includes(nEyes)) throw new Error('--eyes must be 1 or 2');
 const toneId = opt('tone');
 const PAD = 8;
 /** Blobs smaller than this are compression noise on the screen, not the creature. */
@@ -167,12 +172,14 @@ const ch = crop[3] - crop[1];
 let scale = 1;
 let W = Math.ceil(cw / 16) * 16;
 let H = Math.ceil(ch / 16) * 16;
+let likeBox = null;
 if (likeId) {
   const like = await readRaw(likeId);
   const m = measure(like);
   scale = (m.box[3] - m.box[1]) / first.figureH;
   W = like.w;
   H = like.h;
+  likeBox = m.box;
   if (cw * scale > W || ch * scale > H)
     console.warn(
       `  warning: the crop (${Math.ceil(cw * scale)}x${Math.ceil(ch * scale)}) overflows the ${W}x${H} canvas of ${likeId} and will be clipped`,
@@ -180,36 +187,95 @@ if (likeId) {
 }
 const sw = Math.round(cw * scale);
 const sh = Math.round(ch * scale);
-const left = Math.round((W - sw) / 2);
-const top = H - sh;
+// The crop is centred with its bottom on the canvas edge - or, with --like, the first frame's
+// figure is stood exactly where the reference figure stands, so every run from the same
+// reference (a loop, a fidget cut later from another clip) meets it without a jump.
+let left = Math.round((W - sw) / 2);
+let top = H - sh;
+if (likeBox) {
+  const cx = ((first.box[0] + first.box[2]) / 2 - crop[0]) * scale;
+  const bottom = (first.box[3] - crop[1]) * scale;
+  left = Math.round((likeBox[0] + likeBox[2]) / 2 - cx);
+  top = Math.round(likeBox[3] - bottom);
+  // Warn only when creature pixels leave the canvas (the crop's padding always may).
+  const fig = [
+    left + (union[0] - crop[0]) * scale,
+    top + (union[1] - crop[1]) * scale,
+    left + (union[2] - crop[0]) * scale,
+    top + (union[3] - crop[1]) * scale,
+  ].map(Math.round);
+  if (fig[0] < 0 || fig[1] < 0 || fig[2] > W || fig[3] > H)
+    console.warn(
+      `  warning: placed on ${likeId}, the figure spans ${fig[0]},${fig[1]}-${fig[2]},${fig[3]} and leaves the ${W}x${H} canvas; give art:poses --width ${Math.ceil((fig[2] - Math.min(0, fig[0])) / 16) * 16} --height ${Math.ceil((fig[3] - Math.min(0, fig[1])) / 16) * 16} or trim the clip`,
+    );
+}
 
 // 4. Relight the eye. Video compression dulls the amber glow below what the renderer's eye
 // finder (and the tone pass's eye protection) accept, so find it with a looser warm test -
 // the largest warm blob, tracked from frame to frame - and push it back to amber.
 const isWarm = (r, g, b, a) => a > 200 && r > 120 && g > 60 && b < 120 && r - b > 60 && r - g > 15;
-let eyeAt = null;
+let eyesAt = [];
 let faded = 0;
-for (const seg of segments) {
-  for (const f of seg.files) {
+// Each frame once, in the order the segments first use it: a frame shared by two segments (a
+// ping-pong's turnaround, a throwaway loop that overlaps the fidget) must not be relit twice,
+// since every pass paints a ring of fur amber and the eye grows.
+const relitOrder = [...new Set(segments.flatMap((seg) => seg.files))];
+{
+  for (const f of relitOrder) {
     const k = keyed.get(f);
     const warm = Buffer.alloc(k.w * k.h * 4);
     for (let i = 0; i < k.data.length; i += 4)
       warm[i + 3] = isWarm(k.data[i], k.data[i + 1], k.data[i + 2], k.data[i + 3]) ? 255 : 0;
     const { label, found } = blobs({ data: warm, w: k.w, h: k.h });
-    const near = (b) =>
-      !eyeAt || Math.hypot((b.x0 + b.x1) / 2 - eyeAt[0], (b.y0 + b.y1) / 2 - eyeAt[1]) < 80;
-    const eye = found.filter((b) => b.n >= 20 && near(b))[0];
+    const centre = (b) => [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
+    const dist = (b, at) => Math.hypot(centre(b)[0] - at[0], centre(b)[1] - at[1]);
+    const candidates = found.filter((b) => b.n >= 20).sort((p, q) => q.n - p.n);
+    // The first frame's largest warm blobs are the eyes. After that each eye keeps its slot:
+    // the closest pairs of (eye, candidate) within 80 px are matched first, a candidate serves
+    // one eye only, and an eye whose blob is too faint this frame keeps its place for the next
+    // frame - so a wound highlight never takes over, and one dull frame never loses an eye.
+    let eyes;
+    if (eyesAt.length) {
+      const pairs = [];
+      eyesAt.forEach((at, i) =>
+        candidates.forEach((b) => {
+          const d = dist(b, at);
+          if (d < 80) pairs.push({ i, b, d });
+        }),
+      );
+      pairs.sort((p, q) => p.d - q.d);
+      const bySlot = new Array(eyesAt.length).fill(null);
+      const taken = new Set();
+      for (const { i, b } of pairs) {
+        if (bySlot[i] || taken.has(b)) continue;
+        bySlot[i] = b;
+        taken.add(b);
+      }
+      eyes = bySlot.filter(Boolean);
+      eyesAt = eyesAt.map((at, i) => (bySlot[i] ? centre(bySlot[i]) : at));
+    } else {
+      eyes = candidates.slice(0, nEyes);
+      eyesAt = eyes.map(centre);
+    }
     let box;
     let mine;
-    if (eye) {
-      eyeAt = [(eye.x0 + eye.x1) / 2, (eye.y0 + eye.y1) / 2];
-      box = [eye.x0, eye.y0, eye.x1, eye.y1];
+    if (eyes.length) {
+      box = eyes.reduce(
+        (u, b) => [
+          Math.min(u[0], b.x0),
+          Math.min(u[1], b.y0),
+          Math.max(u[2], b.x1),
+          Math.max(u[3], b.y1),
+        ],
+        [k.w, k.h, 0, 0],
+      );
+      const ids = new Set(eyes.map((b) => b.id));
       mine = (x, y) => {
         for (let dy = -2; dy <= 2; dy++)
           for (let dx = -2; dx <= 2; dx++) {
             const yy = y + dy;
             const xx = x + dx;
-            if (yy >= 0 && yy < k.h && xx >= 0 && xx < k.w && label[yy * k.w + xx] === eye.id)
+            if (yy >= 0 && yy < k.h && xx >= 0 && xx < k.w && ids.has(label[yy * k.w + xx]))
               return true;
           }
         return false;

@@ -45,8 +45,12 @@ real ids and commit art + content together.
 - The game loads `public/art/<id>.webp` (written from the `assets/art/<id>.png` master by
   `npm run art:optimize`); a missing id falls back to a placeholder drawn in code, so the game
   never depends on generated art.
-- Prompts live in `art/manifest.json`: two style blocks (`garden`, `thicket`, plus `scene` for
-  backgrounds) and one entry per asset. Change a prompt there, never in code.
+- Prompts live in `art/manifest.json`: style blocks (`garden`; `thicket` for the gory vermin;
+  `thicket-morbid`, the same look with the gore sentences removed, for a creature that is only
+  dark and wrong — the spider; `thicket-object` for props; `scene` for backgrounds) and one
+  entry per asset. Change a
+  prompt there, never in code. The style prefix wins over the entry: a `thicket` sheet of a
+  clean still gets its wounds back, so pick the style first.
 - `assets/art/` is committed only once a batch is approved by the owner.
 
 ## One-time setup (owner does this — about five minutes)
@@ -118,7 +122,16 @@ npm run art:poses -- --sheet enemy-rat-mutant-idle --names idle1,idle2,idle3,idl
 The slicer finds the figures as blobs of alpha (folding blood specks into the nearest one),
 names them in reading order, and writes `assets/art/<out>-<name>.png`, all on **one canvas at
 one scale** so the sprite keeps its size across frames. `--like <frame>` matches a second
-sheet to the first one's canvas and figure height. `--tone <id>` matches mean brightness and
+sheet to the first one's canvas and figure height. `--width`/`--height <px>` ask for a bigger
+canvas than the figures need — for a creature whose clip will rear above or spread beyond its
+rest pose (the spider's rear-up wanted 848 × 848 where its poses fit 832 × 576; the cutter
+reports the crop a clip needs). A bigger canvas shrinks the sprite on screen (the renderer
+draws every common enemy 2.6 units tall), so give the row a `height` (spec §11.4) that puts
+the rest pose back at the tier's size: `2.6 × 0.83 × canvas height / rest figure height`
+(0.83 is the slicer's default fill — how much of a plain canvas the rest figure takes; the
+spider: 2.6 × 0.83 × 848 / 471 ≈ 3.9, and its row says 3.8, the size it had before the
+taller canvas).
+`--tone <id>` matches mean brightness and
 chroma to an existing asset — the 2.5 models paint about twice as bright and more colourful
 than the v1 thicket art, and the owner wants the darker look — while leaving the amber eyes as
 painted, so the renderer's eye-glow finder still finds them (it looks for exactly that colour).
@@ -152,16 +165,21 @@ so fidget → loop is seamless); `--fidget` the movement, played once now and th
 then back; the reversed run drops both end frames, so the fidget ends one frame before where it
 began — the renderer's handover cross-fade (spec §11.2) covers the hair that is left. It needs
 `ffmpeg` (`--ffmpeg <exe>`, `$FFMPEG`, `art/out/bin/ffmpeg.exe`, or on PATH — the owner's
-machine has the gitignored copy). Every frame gets one shared crop and placement, the pose
-frames' scale and canvas (`--like`), the tone match, and the eye relit to amber (video
-compression dulls it below what the eye-glow finder accepts). Then the content row:
-`art` = `<out>-loop-01`, `poses.loop: { frames, fps }`, `poses.fidgets: [{ frames, fps }, …]`
-(`frames()` in `enemies.ts` builds the id lists), and `npm run art:optimize`. The renderer
-plays the fidgets in turn. A second fidget is not yet a solved cut, though: the cutter takes
-one `--fidget` per run and crops every frame to the union of that run's figures, so frames
-from two runs can sit a few pixels apart on the canvas — cut all of a creature's clips in
-one run (a `--fidget-name`/repeatable `--fidget` flag is the missing piece) before adding a
-second row.
+machine has the gitignored copy). Every frame gets one shared crop, the pose frames' scale and
+canvas (`--like`), the tone match, and the eyes relit to amber (video compression dulls them
+below what the eye-glow finder accepts; `--eyes 2` for a front-facing creature, else only the
+largest warm blob is relit and a two-eyed face comes out lopsided). With `--like` the first
+frame's figure is stood exactly where the reference frame's figure stands (bottom-centre), so
+a fidget cut in a **second run** from the same `--like` meets the loop without a jump: run
+`--out <id>-<name> --loop 0:0.05 --fidget t0:t1` and delete the throwaway two-frame loop
+(the spider's rear-up, `enemy-spider-mutant-rear-fidget-NN`). Whatever a placed crop leaves
+outside the canvas is clipped, with a warning naming the crop — that is the size to give the
+slicer's `--width`/`--height` if it matters. Then the content row: `art` = `<out>-loop-01`,
+`poses.loop: { frames, fps }`, `poses.fidgets: [{ frames, fps }, …]` (`frames()` in
+`enemies.ts` builds the id lists), and `npm run art:optimize`. The renderer plays the fidgets
+in turn. For a creature that is not gory, `python3 tools/art-unred.py <frames>` afterwards
+pulls the raw pink a video model paints into leg tips and motion smears down to the fur's
+dark brown, leaving the amber eyes.
 
 ## Chroma-key mode (the default for both styles)
 
@@ -185,8 +203,11 @@ npm run art                          generate every missing asset
 npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
-npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id]
-npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--ffmpeg exe]
+npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id] [--width px] [--height px]
+npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--eyes 1|2] [--ffmpeg exe]
+npm run video:sora -- --image <png> --out <name> --prompt <text> [--seconds 4|8|12] [--height 0.85]   # keep 0.85: smaller reframes the shot
+python3 tools/art-redden.py <frames>    one amber cluster per frame, the rest pushed to red (gory creatures)
+python3 tools/art-unred.py <frames>     red and pink pulled to dark brown, eyes kept (clean creatures)
 npm run art -- --model <id>          gpt-image-2.5-sunburst (default) | gpt-image-2.5-flare | gpt-image-1
 npm run art -- --dry-run             print prompts, call nothing
 npm run art -- --rekey --only a      re-run the chroma key on art/out/a-raw.png (free)

@@ -550,8 +550,10 @@ enemy; the Thicket's fog creeps a little onto the table.
   (strike, hit) still come from the pose sheet, so the picture changes at the strike;
   accepted. The eye glow follows the clip: each frame's eyes are found the first time it
   shows and the glow moves with the head (a frame with no findable eye keeps the last
-  position). The glow is a glint on the painted eye — its diameter × 3, clamped — at a lower
-  intensity than the thicket's far eyes, so it never covers the face. `npm run art:video`
+  position). The glow is a glint on the painted eye — its diameter × 3, clamped to the rat's
+  size (0.16 units, 2026-09-18: the possum's bigger painted eye had earned a glow that hid its
+  face) — at a lower intensity than the thicket's far eyes, so it never covers the face.
+  `npm run art:video`
   cuts a clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
   (2026-09-17): the outgoing frame stays solid under the incoming clip while the clip keeps
   playing — 150 ms into the fidget, whose first frame is the stance cut from a separate
@@ -584,7 +586,7 @@ always fully playable without any generated art.
 | ------------- | ------------------------------------ | --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | Card art      | `card-<card>`                        | 1024 × 1024 PNG       | contain-fit in the art window                                                                                              | transparent |
 | Upgraded card | `card-<card>-plus`                   | 1024 × 1024 PNG       | as above, only where the "+" form has its own look (Cat, Wormillion)                                                       | transparent |
-| Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height 2.6 units (elite 3.3)                                                                                    | transparent |
+| Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height 2.6 units (elite 3.3), or the row's `height` when its canvas carries headroom for a rearing clip         | transparent |
 | Enemy pose    | `enemy-<name>-<pose>`                | see below             | swapped onto the billboard while the pose holds (the rat's wind-up, strike and hit); the Possum's Play Dead uses `deadArt` | transparent |
 | Pose sheet    | `enemy-<name>-poses`, `-idle`        | 1536 × 1024 PNG       | never shown: sliced into pose frames by `npm run art:poses`                                                                | transparent |
 | Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidgets`)                                                       | transparent |

@@ -66,7 +66,8 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
 - Record the prompt and seed of every clip you keep, in a tracked file — the one behind the
   loop clip B3 (`rat-B3-bob`) was never written down (`art/out/` is gitignored, so a note
   there does not count). The cut that made the current rat row:
-  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.83 --fidget-video art/out/video/rat-bark-103.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`
+  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.83 --fidget-video art/out/video/rat-bark-103.mp4 --fidget-pingpong --fps 12 --like enemy-rat-rest --tone enemy-rat` (the reference frame was
+  `enemy-rat-mutant-rest` at the time, renamed with the rest)
   (the fidget is the tentacle lash from re-roll `rat-bark-103`, cut to its peak at 0.83 s
   and played forward then back — 20 frames. Clip B's head turn was rejected in three cuts:
   the whole ping-pong drifted, a forward cut landed on the drift, the turn-away hid the
@@ -94,8 +95,12 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
   the Sora fidget frames sat 73 px left and 30 px up of the B3 loop's rat at the same scale
   (`--like` matches figure height, not position). They were translated onto the loop's
   placement with PIL (align the alpha bbox's top-right corner — the back, which the tentacles
-  never touch) and written as `enemy-rat-local-startle-NN` (now `enemy-rat-startle-NN`). A repeatable `--fidget` in one
-  cutter run is the proper fix.
+  never touch) and written as `enemy-rat-local-startle-NN` (now `enemy-rat-startle-NN`). Since
+  2026-09-18 the cutter stands a run's first frame on the `--like` figure's bottom-centre, so
+  separate runs meet — but the **rat's committed frames predate that**: re-cutting its loop
+  today lands 83 px left and 8 px down of the committed loop, off the hand-translated
+  startle. Re-cut the rat's loop only together with its startle (as a `--like enemy-rat-rest`
+  run of `sora-rat-attack.mp4`), never alone.
 - The possum's kept clips (2026-09-18; still = the klein seed-4 raw fitted to 1280×704, negative
   prompt as for the rat plus "static, motionless"): **loop** seed 11, 5 s — _The mutant opossum
   holds completely still, its body, legs, head and tail frozen in place, while only the bundle of
@@ -107,10 +112,18 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
   glistening rope, then hangs there swinging. The belly tentacles stay attached and hanging as
   before. Its body, legs, head position and tail stay planted where they are. Locked-off
   camera, no zoom, flat bright green background unchanged._ Cut together: `npm run art:video --
---video art/out/video/possum2-loop-11.mp4 --out enemy-possum-mutant --loop 0.3:3.0 --fidget
+--video art/out/video/possum2-loop-11.mp4 --out enemy-possum --loop 0.3:3.0 --fidget
 0.75:1.92 --fidget-video art/out/video/possum2-retch-201.mp4 --fidget-pingpong --fps 12 --like
-enemy-possum-mutant-rest --tone enemy-possum` (33 + 28 frames). A hiss (seed 101) was cut
+enemy-possum-rest --tone enemy-possum` (33 + 28 frames; the fidget frames were then renamed
+  `enemy-possum-retch-NN`, and `python3 tools/art-redden.py` run on all of them). A hiss (seed 101) was cut
   first and rejected: past its first second the mouth spilled random shapes.
+- The spider's rear-up (2026-09-18; still = the keyed sprite at 60% of a 1280×704 pure-green
+  canvas, `art/out/video/wan-spider-rear-still.png`, prompt in `spider-prompts.txt`): **seed
+  301**, 4 s — rears onto its back legs with all four forelegs high, holds 1.5 s, lands within a
+  few pixels of where it started (d 3 against 12 for the others); cut 0–3.4 s forward. 302
+  raised two legs and landed flat and wide; 303 backed away into the distance. Wan painted the
+  raised leg tips pink (`tools/art-unred.py` took it off). Sora failed this move twice: at 85%
+  the legs left the frame, at 60% it reframed the shot.
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 

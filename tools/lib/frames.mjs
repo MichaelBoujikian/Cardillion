@@ -157,9 +157,18 @@ export async function applyTone(cut, w, h, { brightness, saturation }) {
 
 /** Write a raw RGBA figure onto a transparent canvas as a PNG, at the given top-left. */
 export async function writeFrame(raw, w, h, canvasW, canvasH, left, top, file) {
-  const png = await sharp(raw, { raw: { width: w, height: h, channels: 4 } })
-    .png()
-    .toBuffer();
+  // Whatever falls outside the canvas is clipped (a placed crop may overhang an edge).
+  const x0 = Math.max(0, -left);
+  const y0 = Math.max(0, -top);
+  const vw = Math.min(w - x0, canvasW - Math.max(0, left));
+  const vh = Math.min(h - y0, canvasH - Math.max(0, top));
+  if (vw <= 0 || vh <= 0) throw new Error(`${file}: the frame lies entirely off the canvas`);
+  let img = sharp(raw, { raw: { width: w, height: h, channels: 4 } });
+  if (x0 || y0 || vw !== w || vh !== h)
+    img = img.extract({ left: x0, top: y0, width: vw, height: vh });
+  const png = await img.png().toBuffer();
+  left = Math.max(0, left);
+  top = Math.max(0, top);
   await sharp({
     create: {
       width: canvasW,

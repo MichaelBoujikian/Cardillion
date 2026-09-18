@@ -17,6 +17,12 @@
       "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
       "key": "green"
     },
+    "thicket-morbid": {
+      "$comment": "The thicket look WITHOUT the gore (2026-09-18, the owner: gory does not have to be in everything - just dark, morbid and evil). Same lighting, grain and palette as thicket; the horror is in the anatomy, the fur, the eyes and what the creature carries, never in wounds. The spider uses it.",
+      "prefix": "Grim, photorealistic painted illustration for a folk-horror card game, like a diseased taxidermy specimen: photobashed painterly texture, low-key lighting, heavy film grain, desaturated palette of near-black greens, umber and bruised purple, a single cold rim light and a faint warm spill from the front. The creature is sick and wrong and unsettling: mangy fur wet and clumped, greasy skin, crusted eyes that glow amber, an unsettling hunched posture. The whole creature is ONE connected silhouette: every leg joins the body, every paw joins a leg. No floating or detached parts. NO GORE: no wounds, no sores, no blood, no exposed muscle, bone or ribs, no red anywhere on the body - the skin and fur are unbroken; the horror is in the anatomy, the eyes and what the creature carries. Very dark overall: near-black fur, crushed blacks, muted desaturated colour, like a photograph taken by one dim lamp; the only bright things are the amber eyes. Centered, full body, no text, no border.",
+      "suffix": "Isolated on a fully transparent background: no backdrop, no halo, no ground, no vignette.",
+      "key": "green"
+    },
     "scene": {
       "prefix": "Wide painterly environment for a card game table scene. Foreground is a bright, sunlit storybook garden of flowers, moss and pebbles; with depth it turns into grim painted realism: wet black soil, tangled roots, thorns, cobwebs and shadow where faint amber eyes watch. Heavy film grain on the far half only, vignette, no characters, no text.",
       "suffix": ""
@@ -115,13 +121,16 @@
       "id": "enemy-possum",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A Virginia opossum in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body, long pointed pale face, coarse grizzled grey fur falling out in patches showing greasy skin, a rictus grin of too many needle teeth with drool, black eyes with an amber glint, its long naked tail attached at the rump and trailing along the ground behind it."
+      "prompt": "A Virginia opossum in strict side profile facing the viewer's left, standing on all four legs with each leg clearly attached to its body, long pointed pale face, coarse grizzled grey fur falling out in patches showing greasy skin, a rictus grin of too many needle teeth with drool, black eyes with an amber glint, its long naked tail attached at the rump and trailing along the ground behind it.",
+      "$comment": "v1 sprite, replaced in the game by enemy-possum-loop-01 (2026-09-18); kept as a master and as every creature's tone reference (--tone enemy-possum), not shipped.",
+      "ship": false
     },
     {
       "id": "enemy-possum-dead",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A Virginia opossum with a long pointed pale face, coarse grizzled grey fur falling out in patches, a rictus grin of too many needle teeth, black eyes with an amber glint, lying on its back playing dead with all four legs drawn up against its belly and clearly attached, its long naked tail attached at the rump and curled beside it, watching."
+      "prompt": "A Virginia opossum with a long pointed pale face, coarse grizzled grey fur falling out in patches, a rictus grin of too many needle teeth, black eyes with an amber glint, lying on its back playing dead with all four legs drawn up against its belly and clearly attached, its long naked tail attached at the rump and curled beside it, watching.",
+      "$comment": "The v1 playing-dead sprite's prompt. Since 2026-09-18 assets/art/enemy-possum-dead.png is the mutant Play Dead frame (enemy-possum-mutant-dead sliced onto the possum's canvas with art:poses --like enemy-possum-rest --shift 24); the v1 render is art/out/enemy-possum-dead-v1.png and in git history. Do not regenerate."
     },
     {
       "id": "enemy-spider",
@@ -329,7 +338,7 @@
     },
     {
       "id": "enemy-possum-mutant",
-      "$comment": "Direction sample (2026-09-17): an EDIT of enemy-possum toward the mutant look, the rat's wording plus the owner's belly-to-eye tentacle. Not a content id.",
+      "$comment": "Direction sample (2026-09-17): an EDIT of enemy-possum toward the mutant look, the rat's wording plus the owner's belly-to-eye tentacle. Approved 2026-09-18: the game's frames are enemy-possum-loop/-retch/-windup/-attack/-hit/-rest/-dead, cut from this still's klein edit (seed 4, the installed raw). Not a content id.",
       "style": "thicket",
       "subject": "enemy-possum",
       "prompt": "Mutate this opossum: large patches of its skin have been torn or sloughed away, showing raw wet muscle and pale ribs beneath; its belly has split open, and out of that wound a thick, glistening, pink-grey fleshy tentacle pushes, arcs up along its flank and neck and plunges into its eye socket, the eye bulging beside it and glowing bright amber; several thinner tentacles push out of the same belly wound and droop toward the ground, like the flesh of a Fallout 3 centaur (the mutant, not the horse-man) - smooth tube-like tentacles with no suckers, a couple ending in small toothed openings. Its eye glows bright amber. Keep the same opossum, the same pose, size, fur, rictus grin of needle teeth, tail and lighting; only the wounds and the tentacles are new.",
@@ -347,7 +356,7 @@
     },
     {
       "id": "enemy-possum-mutant-dead",
-      "$comment": "The playing-dead pose with the same mutations (2026-09-17): an EDIT of enemy-possum-dead (no raw exists, so the keyed PNG is sent) with the mutant standing possum as the second image to copy the wounds from. Its frame is enemy-possum-mutant-playdead (art:poses --like enemy-possum-mutant-rest); the master never ships.",
+      "$comment": "The playing-dead pose with the same mutations (2026-09-17): an EDIT of enemy-possum-dead (no raw exists, so the keyed PNG is sent) with the mutant standing possum as the second image to copy the wounds from. Its frame is enemy-possum-dead (art:poses --like enemy-possum-rest --shift 24, the shift standing the lying body under the standing one); the master never ships.",
       "style": "thicket",
       "subject": "enemy-possum-dead",
       "reference": "enemy-possum-mutant",
@@ -358,11 +367,22 @@
     },
     {
       "id": "enemy-spider-mutant",
-      "$comment": "Direction sample (2026-09-18): an EDIT of enemy-spider toward a thick furry tarantula carrying eggs and spiderlings, the owner's brief. Not a content id.",
+      "$comment": "Direction sample (2026-09-18): an EDIT of enemy-spider toward a thick furry tarantula carrying eggs and spiderlings, the owner's brief. The installed raw is a local klein edit of that gpt render (seed 2, docs/local-image.md) that took every red wound off - dark and morbid, not gory - keeping the torn-off front leg; the gpt version is art/out/enemy-spider-mutant-v1-gpt-raw.png. Not a content id.",
       "style": "thicket",
       "subject": "enemy-spider",
       "prompt": "Rebuild this spider as a huge tarantula: the same front view, the same amber eyes and the same stance, but the body and every leg much thicker and heavier, densely furred with coarse wet bristles like the hairy wolf spider, a bloated round abdomen. Its back and abdomen are crusted with a clutch of pale, translucent, glistening eggs, some split open, and dozens of tiny spiderlings crawling over the eggs and down its legs. One of its front legs is missing from the knee down, the stump torn and wet with a splinter of bone showing. Mangy, diseased and disgusting, fur falling out in patches over greasy skin. Keep its size and position in the frame; keep the eyes glowing amber; the eggs and spiderlings are pale and greenish-grey, never amber or orange. No shadow under the body, no web strands, nothing translucent around it.",
       "size": "1024x1024",
+      "ship": false
+    },
+    {
+      "id": "enemy-spider-mutant-poses",
+      "$comment": "Keyframe pose sheet (2026-09-18) of enemy-spider-mutant in ONE image so the creature stays consistent; sliced by art:poses. The second image, art/refs/spider-threat-pose.png (gitignored), is the owner's photo of a real spider's threat posture, the model for the wind-up. Not a content id.",
+      "style": "thicket-morbid",
+      "subject": "enemy-spider-mutant",
+      "reference": "spider-threat-pose",
+      "referenceRole": "The SECOND image is a photograph of a real spider rearing up in its threat posture: use it ONLY as the model for the WIND-UP stance (body tipped back, the two front pairs of legs raised high, fangs spread), and draw OUR creature from the first image in that stance - never the photographed spider, its colours or its background.",
+      "prompt": "A keyframe pose sheet on the flat green chroma-key screen: this exact mutant tarantula drawn FOUR times in a 2 by 2 grid, all four figures floating on the one continuous green screen (no black, no panel borders, no backdrop, no ground, no shadow under any figure), every figure the same creature at the same size, seen from the same front view facing the viewer, same shaggy near-black fur, same heap of pale translucent eggs and tiny spiderlings on its back, same front leg on the viewer's left torn off short at the joint with a dry blackened stump, same cluster of glowing amber eyes, same lighting, no wounds or blood on any figure (the fur is unbroken, the fangs dry), with a clean gap of screen colour between the panels. Top-left, REST: standing exactly as in the subject image, legs spread, body low. Top-right, WIND-UP: reared up into a threat posture exactly like the photographed spider - the body tipped back and lifted high on the rear legs, the two front pairs of legs raised straight up above the head, the fangs spread wide apart and bared, the eggs still on its back. Bottom-left, ATTACK: the slam down - the whole body driven down and forward toward the viewer, flat and low, the raised legs crashed down and splayed wide with the tips dug in, the fangs driven forward and down, spiderlings shaken loose and scattering. Bottom-right, HIT: recoiling from a blow, the body jerked up and back, tipped away to one side, legs pulled in and curling under it, a few eggs and spiderlings knocked off. Four separate figures, none overlapping, no labels, no text.",
+      "size": "1536x1024",
       "ship": false
     }
   ]

@@ -8,7 +8,8 @@
  *   npm run video:sora -- --job <video_id> --out <name>      # poll + download an existing job
  *
  *   --image <png>    a keyed frame (alpha) or a finished still; a keyed frame is composed onto a
- *                    pure green 1280x720 screen at 85% of its height, like the rat's first frame
+ *                    pure green 1280x720 screen at --height of its height (default 0.85, like the
+ *                    rat's first frame; 0.6 leaves headroom for a creature that rears up)
  *   --out <name>     writes art/out/video/<name>.mp4, <name>-still.png (what was sent) and
  *                    <name>.json (the request, the job id, the status, any error)
  *   --prompt <text>  what moves; the rat's prompt is the model: three seconds at rest with the
@@ -58,6 +59,8 @@ if (!SECONDS.includes(seconds)) throw new Error(`--seconds must be one of ${SECO
 const size = opt('size') ?? '1280x720';
 if (!SIZES.includes(size)) throw new Error(`--size must be one of ${SIZES.join(', ')}`);
 const prompt = opt('prompt');
+const height = Number(opt('height') ?? 0.85);
+if (!(height > 0.2 && height <= 0.95)) throw new Error('--height must be between 0.2 and 0.95');
 if (!job && !prompt) throw new Error('--prompt is required');
 
 loadDotEnv(ROOT);
@@ -97,7 +100,7 @@ if (!videoId) {
   const meta = await src.metadata();
   let still;
   if (meta.hasAlpha) {
-    const figureH = Math.round(h * 0.85);
+    const figureH = Math.round(h * height);
     const figure = await src.resize({ height: figureH, kernel: 'lanczos3' }).png().toBuffer();
     const fm = await sharp(figure).metadata();
     still = await sharp({ create: { width: w, height: h, channels: 3, background: GREEN } })
@@ -105,7 +108,7 @@ if (!videoId) {
         {
           input: figure,
           left: Math.round((w - fm.width) / 2),
-          top: h - figureH - Math.round(h * 0.05),
+          top: h - figureH - Math.round(h * Math.min(0.05, (1 - height) / 2)),
         },
       ])
       .png()
@@ -131,6 +134,7 @@ if (!videoId) {
     seconds,
     size,
     image,
+    height,
     still: path.relative(ROOT, stillPath),
     estimatedUsd: +(PRICE[model] * seconds).toFixed(2),
     requestedAt: new Date().toISOString(),

@@ -147,6 +147,12 @@ export interface EnemyDef {
   /** HP the creature gets back up with when Play Dead triggers. */
   reviveHp?: number;
   art: string;
+  /**
+   * Billboard height in world units (spec §11.4): the tier's default (2.6 / 3.3 / 4.2) unless
+   * the creature's frames sit on a canvas with headroom for a clip that rears up, in which
+   * case this puts its rest pose back at the tier's size. Presentation, not a stat.
+   */
+  height?: number;
   /** Art shown from the moment Play Dead triggers until the creature next acts. */
   deadArt?: string;
   /**

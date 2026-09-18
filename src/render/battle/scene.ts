@@ -72,7 +72,7 @@ const FIDGET_OUT_FADE_MS = 300;
 const EYE_GLOW_INTENSITY = 4;
 const EYE_GLOW_SCALE = 3;
 const EYE_GLOW_MIN = 0.08;
-const EYE_GLOW_MAX = 0.26;
+const EYE_GLOW_MAX = 0.16; // the rat's; a bigger painted eye (the possum's) got a glow that hid the face
 
 interface EnemySprite {
   uid: string;
@@ -571,7 +571,8 @@ export class BattleScene {
           : makeVerminPlaceholder(enemy.def);
     const aspect = img ? img.height / img.width : 1;
     const height =
-      (def.tier === 'boss' ? 4.2 : def.tier === 'elite' ? 3.3 : 2.6) * (img ? 1 : 0.85);
+      (def.height ?? (def.tier === 'boss' ? 4.2 : def.tier === 'elite' ? 3.3 : 2.6)) *
+      (img ? 1 : 0.85);
     const width = height / aspect;
     const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(width, height),

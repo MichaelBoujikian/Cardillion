@@ -28,8 +28,9 @@ const ENEMY_LIST: EnemyDef[] = [
     // The mutant rat, approved 2026-09-17 (docs/art-pipeline.md "The recipe"): the loop is a
     // local Wan 2.2 clip of the still (only the tentacles sway), the one fidget is the Sora clip's
     // startle - the only movement from any model that came back to its own first frame - and
-    // the strike and hit are stills from the gpt-image-2.5 pose sheet. `enemy-rat` itself is the
-    // v1 sprite, kept as the tone reference for the cutter (`--tone enemy-rat`).
+    // the strike and hit are stills from the gpt-image-2.5 pose sheet. All frames are tone-matched
+    // to the v1 possum (`--tone enemy-possum`, the brightness every creature now shares); the v1
+    // `enemy-rat` sprite stays on disk as a master and no longer ships.
     art: 'enemy-rat-loop-01',
     poses: {
       windup: 'enemy-rat-windup',
@@ -62,8 +63,22 @@ const ENEMY_LIST: EnemyDef[] = [
         effects: [{ kind: 'attack', amount: 9 }],
       },
     ],
-    art: 'enemy-possum',
+    // The mutant possum, approved 2026-09-18: a gpt edit of the v1 sprite (belly-to-eye tentacle,
+    // wounds), then a local klein edit (seed 4) that put skin back over the ribs; strike and hit
+    // from a gpt pose sheet; Play Dead is the same mutations on the v1 dead pose (`deadArt`, now
+    // the real dead sprite). The loop is a local Wan clip (only the tentacles sway,
+    // possum2-loop-11 0.3-3.0 s); the one fidget is a retch - guts out and sucked back in
+    // (possum2-retch-201 0.75-1.92 s forward then back). Tone-matched to the v1 possum, which
+    // stays on disk as a master and no longer ships.
+    art: 'enemy-possum-loop-01',
     deadArt: 'enemy-possum-dead',
+    poses: {
+      windup: 'enemy-possum-windup',
+      attack: 'enemy-possum-attack',
+      hit: 'enemy-possum-hit',
+      loop: { frames: frames('enemy-possum-loop', 33), fps: 12 },
+      fidgets: [{ frames: frames('enemy-possum-retch', 28), fps: 12 }],
+    },
   },
   {
     id: 'spider',
@@ -82,6 +97,7 @@ const ENEMY_LIST: EnemyDef[] = [
       },
     ],
     art: 'enemy-spider',
+  },
   },
   {
     id: 'scorpion',

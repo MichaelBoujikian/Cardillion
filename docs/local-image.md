@@ -54,6 +54,12 @@ not change.
   green screen) but more illustrative than the gpt-image-2.5 look, and a floaty pose. Use
   gpt-image-2.5-sunburst first for stills; come here for gore, or for free iteration.
 
+- **klein edit of the mutant spider (2026-09-18), the de-gore pass**: with the possum's "KEEP
+  THE COLOURS AND LIGHTING … near-black" wording it took every red sore and wound off the gpt
+  render in one pass (three seeds in 15 s), kept the eggs, spiderlings, amber eyes and the
+  torn-off leg as a dry blackened stump, and did not bleach. Seed 2 was installed. One seed
+  turned a sore into a glossy black scab instead of removing it — check every leg.
+
 ## Gotchas
 
 - Both graphs are API-format JSON built from the official templates (node ids kept); the

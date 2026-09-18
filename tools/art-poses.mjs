@@ -18,6 +18,12 @@
  *                    the first figure fills FILL of it, like the v1 enemies.
  *   --tone <id>      match the frames' mean brightness and chroma to this asset's figure
  *                    (the 2.5 models paint brighter and more colourful than the v1 thicket art)
+ *   --width <px>     a bigger canvas than the figures need (each rounded up to 16), for a
+ *   --height <px>    creature whose clip will rear above or spread beyond its rest pose (the
+ *                    spider: art-video reports the crop a clip needs); size the sprite back up
+ *                    with `height` on its EnemyDef. Ignored with --like.
+ *   --shift <px>     move every frame sideways (+ right) after placing: for a lying pose whose
+ *                    bounding box is centred but whose body is not (the possum's Play Dead)
  *
  * Figures are found as connected blobs of alpha; specks (blood, whisker tips) are folded into
  * the nearest figure. Every frame is bottom-aligned (feet on the canvas edge, so the sprite
@@ -61,6 +67,9 @@ if (!sheetId || !names?.length) {
 const outPrefix = opt('out') ?? sheetId.replace(/-poses$/, '');
 const likeId = opt('like');
 const toneId = opt('tone');
+const minWidth = Number(opt('width') ?? 0);
+const minHeight = Number(opt('height') ?? 0);
+const shift = Math.round(Number(opt('shift') ?? 0));
 
 const sheet = await readRaw(sheetId);
 const { label, found } = blobs(sheet);
@@ -119,8 +128,8 @@ if (likeId) {
       `  warning: a figure (${Math.ceil(widest)}x${Math.ceil(tallest)}) overflows the ${W}x${H} canvas of ${likeId} and will be clipped`,
     );
 } else {
-  W = Math.ceil((widest + 2 * PAD_X) / 16) * 16;
-  H = Math.ceil(Math.max(H, tallest + PAD_TOP) / 16) * 16;
+  W = Math.ceil(Math.max(widest + 2 * PAD_X, minWidth) / 16) * 16;
+  H = Math.ceil(Math.max(H, tallest + PAD_TOP, minHeight) / 16) * 16;
 }
 
 // Tone: gains that take the sheet's figure pixels to the reference's means.
@@ -160,7 +169,7 @@ for (const [i, f] of figures.entries()) {
       .raw()
       .toBuffer();
   const out = path.join(ART, `${outPrefix}-${name}.png`);
-  await writeFrame(raw, sw, sh, W, H, Math.round((W - sw) / 2), H - sh, out);
+  await writeFrame(raw, sw, sh, W, H, Math.round((W - sw) / 2) + shift, H - sh, out);
   console.log(
     `  ${name}: sheet ${f.x0},${f.y0}-${f.x1},${f.y1} -> ${path.relative(ROOT, out)} (${sw}x${sh})`,
   );
