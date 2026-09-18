@@ -261,7 +261,9 @@ export class BattleScene {
     moon.position.set(4, 9, -18);
     moon.target.position.set(0, 0, -6);
     scene.add(moon, moon.target);
-    const spill = new THREE.SpotLight(0xffb070, 240, 26, 0.34, 0.6, 1.4);
+    // The warm spill over the enemy row. Its cone must reach the side slots (x = ±3.6 at the
+    // row): 0.34 rad left them in the penumbra as silhouettes (owner, 2026-09-18).
+    const spill = new THREE.SpotLight(0xffb070, 260, 26, 0.55, 0.45, 1.4);
     spill.position.set(0.3, 6.5, 0.5);
     spill.target.position.set(0, 1, -6.5);
     scene.add(spill, spill.target);
