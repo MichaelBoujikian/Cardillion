@@ -12,7 +12,7 @@
  *   --loop t0:t1       the still stretch to play back and forth, in seconds
  *   --fidget t0:t1     a movement to play once now and then; it should end where the loop starts
  *   --fidget-video <f> take the fidget from this clip instead (its own t0:t1)
- *   --fidget-pingpong  play the fidget forward then backward, so it ends where it began
+ *   --fidget-pingpong  play the fidget forward then backward, so it ends a frame from where it began
  *   --fps <n>          frames per second to keep (default 12)
  *   --key <name>       green | blue | magenta (default green)
  *   --like <id>        an existing frame: its canvas, and the first loop frame is scaled to its
@@ -116,7 +116,8 @@ const pickFidget = fidgetRange
 const segments = [{ name: 'loop', files: pickLoop(loopRange) }];
 if (fidgetRange && pickFidget) {
   let files = pickFidget(fidgetRange);
-  // Forward then back, so the movement ends exactly where it began (a dip becomes a bob).
+  // Forward then back (the ends not repeated), so the movement ends a frame from where it began
+  // and the loop's first frame follows (a dip becomes a bob).
   if (flag('fidget-pingpong')) files = [...files, ...files.slice(1, -1).reverse()];
   segments.push({ name: 'fidget', files });
 }

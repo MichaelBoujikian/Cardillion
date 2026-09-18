@@ -129,9 +129,8 @@ export interface FrameSequence {
 /** Every art id a creature's poses name, whatever their shape. */
 export function poseArtIds(poses: EnemyDef['poses']): string[] {
   if (!poses) return [];
-  return Object.values(poses).flatMap((v) =>
-    typeof v === 'string' ? [v] : Array.isArray(v) ? v : v.frames,
-  );
+  const ids = (v: string | FrameSequence): string[] => (typeof v === 'string' ? [v] : v.frames);
+  return Object.values(poses).flatMap((v) => (Array.isArray(v) ? v.flatMap(ids) : ids(v)));
 }
 
 export interface EnemyDef {
@@ -163,8 +162,11 @@ export interface EnemyDef {
     idle?: string[];
     /** Frames played back and forth while the creature waits (cut from a clip). */
     loop?: FrameSequence;
-    /** A short movement played once now and then; it should end where the loop starts. */
-    fidget?: FrameSequence;
+    /**
+     * Short movements, one played now and then in turn; each should end where the loop
+     * starts. One or more, cut from clips onto the loop's canvas.
+     */
+    fidgets?: FrameSequence[];
   };
 }
 

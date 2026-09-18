@@ -86,10 +86,14 @@ interface EnemySprite {
   /** Where the idle loop is (an index into rest + idle frames) and when it next moves on. */
   idleIndex: number;
   nextIdleAt: number;
-  /** Frames cut from a clip: a loop played back and forth, and a fidget played now and then. */
+  /**
+   * Frames cut from clips: a loop played back and forth, and fidgets played now and then, in
+   * turn. `current` indexes the fidget playing, or the next to play.
+   */
   seq: {
     loop: THREE.Texture[];
-    fidget: THREE.Texture[];
+    fidgets: { frames: THREE.Texture[]; fps: number }[];
+    current: number;
     fps: number;
     mode: 'loop' | 'fidget';
     start: number;
@@ -598,7 +602,7 @@ export class BattleScene {
       idleIndex: 0,
       nextIdleAt: this.now + 0.5,
       seq,
-      seqMaps: new Set(seq ? [...seq.loop, ...seq.fidget] : []),
+      seqMaps: new Set(seq ? [...seq.loop, ...seq.fidgets.flatMap((f) => f.frames)] : []),
       root,
       body,
       plane,
@@ -630,7 +634,7 @@ export class BattleScene {
     for (const t of s.seqMaps) t.dispose();
   }
 
-  /** The loop and fidget textures of a creature cut from a clip, if it has them (spec §11.2). */
+  /** The loop and fidget textures of a creature cut from clips, if it has them (spec §11.2). */
   private makeSequence(def: EnemyDef): EnemySprite['seq'] {
     const loop = def.poses?.loop;
     if (!loop) return null;
@@ -644,9 +648,15 @@ export class BattleScene {
       for (const t of frames) t.dispose();
       return null;
     }
+    // Fidgets with no frames on disk are dropped, so what remains always plays.
+    const fidgets = (def.poses?.fidgets ?? [])
+      .map((f) => ({ frames: textures(f.frames), fps: f.fps }))
+      .filter((f) => f.frames.length);
     return {
       loop: frames,
-      fidget: def.poses?.fidget ? textures(def.poses.fidget.frames) : [],
+      fidgets,
+      // Creatures start at different points of the cycle, so two of a kind do not fidget alike.
+      current: fidgets.length ? this.sprites.size % fidgets.length : 0,
       fps: loop.fps,
       mode: 'loop',
       start: this.now,
@@ -657,8 +667,8 @@ export class BattleScene {
   /**
    * Advance a creature's clip: the loop plays back and forth (so it never seams); when a
    * fidget is due (no sooner than 2.5–6 s after the last one, and only as the loop turns at
-   * its first frame, so a long loop sets the cadence) the fidget plays once and hands back to
-   * the loop's first frame, which is where it ends. Each handover is a cross-fade: the
+   * its first frame, so a long loop sets the cadence) the next fidget in turn plays once and
+   * hands back to the loop's first frame, which is where it ends. Each handover is a cross-fade: the
    * outgoing frame stays under the incoming clip for a beat (spec §11.2). Paused while a
    * keyframe shows or fades.
    */
@@ -666,26 +676,34 @@ export class BattleScene {
     const q = s.seq;
     if (!q || s.pose !== s.restPose || (s.fade && !s.fade.seq)) return;
     if (t < q.start) q.start = t; // a clock that went backwards (dev tools) must not index off the end
+    const shown = s.plane.material.map;
+    if (!shown || !s.seqMaps.has(shown)) {
+      // A keyframe (strike, hit) interrupted the clip and the rest still is back on the plane.
+      // That still is the loop's first frame, so the loop restarts there and nothing shows; a
+      // fidget cut short is over rather than resumed mid-movement, and the next one waits.
+      if (q.mode === 'fidget') this.endFidget(s, q, t);
+      q.mode = 'loop';
+      q.start = t;
+    }
     let tex: THREE.Texture | undefined;
     let boundary = false;
-    if (q.mode === 'fidget') {
-      const i = Math.floor((t - q.start) * q.fps);
-      if (i >= q.fidget.length) {
-        q.mode = 'loop';
-        q.start = t;
-        q.nextFidgetAt = t + 2.5 + ((s.seed * 3.1 + 1) % 3.5);
+    const fidget = q.fidgets[q.current];
+    if (q.mode === 'fidget' && fidget) {
+      const i = Math.floor((t - q.start) * fidget.fps);
+      if (i >= fidget.frames.length) {
+        this.endFidget(s, q, t);
         tex = q.loop[0];
         boundary = true;
-      } else tex = q.fidget[i];
+      } else tex = fidget.frames[i];
     } else {
       const n = q.loop.length;
       const period = 2 * n - 2;
       const i = Math.floor((t - q.start) * q.fps) % period;
       const idx = i < n ? i : period - i;
-      if (idx === 0 && q.fidget.length && this.motion.idle && t >= q.nextFidgetAt) {
+      if (idx === 0 && fidget && this.motion.idle && t >= q.nextFidgetAt) {
         q.mode = 'fidget';
         q.start = t;
-        tex = q.fidget[0];
+        tex = fidget.frames[0];
         boundary = true;
       } else tex = q.loop[idx];
     }
@@ -696,6 +714,14 @@ export class BattleScene {
     s.plane.material.map = tex;
     if (ghosted) s.plane.material.opacity = 0;
     else if (old && !s.seqMaps.has(old)) old.dispose(); // otherwise the ghost holds it until endFade
+  }
+
+  /** Back to the loop after a fidget: the next fidget in turn is due in a few seconds. */
+  private endFidget(s: EnemySprite, q: NonNullable<EnemySprite['seq']>, t: number): void {
+    q.mode = 'loop';
+    q.start = t;
+    q.nextFidgetAt = t + 2.5 + ((s.seed * 3.1 + 1) % 3.5);
+    if (q.fidgets.length) q.current = (q.current + 1) % q.fidgets.length;
   }
 
   /**
@@ -1123,7 +1149,7 @@ export class BattleScene {
     // At rest a creature only breathes (and leans in when it means to bite). The sway, the
     // slow drift and the periodic twitch were removed 2026-09-17 at the owner's request: on
     // a sprite standing on its shadow they read as a rattle and a slide, not as life. Life
-    // now comes from the clip frames (poses.loop / poses.fidget).
+    // now comes from the clip frames (poses.loop / poses.fidgets).
     if (s.action) {
       const { kind, start } = s.action;
       const { duration } = ACTION_TIMING[kind];

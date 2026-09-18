@@ -542,10 +542,11 @@ enemy; the Thicket's fog creeps a little onto the table.
 - **Clips** (2026-09-16, the owner's call after seeing both): for the waiting state a creature
   may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
   (played back and forth at its `fps`, so it never seams: the rat holds still, only its
-  tentacles slither) and `poses.fidget` (a short movement played once now and then: no sooner
-  than 2.5–6 s after the last, and only as the loop turns at its first frame, so a long loop
-  sets the rhythm — the rat's 45-frame loop turns every 7.3 s; each creature on its own clock;
-  it ends where the loop starts). The first loop frame is the creature's `art`. Keyframes
+  tentacles slither) and `poses.fidgets` (one or more short movements, played in turn, one
+  now and then: no sooner than 2.5–6 s after the last, and only as the loop turns at its
+  first frame, so a long loop sets the rhythm — the rat's 45-frame loop turns every 7.3 s;
+  each creature on its own clock and starting at a different fidget; each ends where the
+  loop starts). The first loop frame is the creature's `art`. Keyframes
   (strike, hit) still come from the pose sheet, so the picture changes at the strike;
   accepted. The eyes are placed once, from `art`, not per frame. `npm run art:video` cuts a
   clip (§11.4). Each handover between loop and fidget is a cross-fade of its own kind
@@ -583,7 +584,7 @@ always fully playable without any generated art.
 | Enemy sprite  | `enemy-<name>`                       | 1024 × 1024 PNG       | billboard, height 2.6 units (elite 3.3)                                                                                    | transparent |
 | Enemy pose    | `enemy-<name>-<pose>`                | see below             | swapped onto the billboard while the pose holds (the rat's wind-up, strike and hit); the Possum's Play Dead uses `deadArt` | transparent |
 | Pose sheet    | `enemy-<name>-poses`, `-idle`        | 1536 × 1024 PNG       | never shown: sliced into pose frames by `npm run art:poses`                                                                | transparent |
-| Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidget`)                                                        | transparent |
+| Clip frames   | `enemy-<name>-loop-NN`, `-fidget-NN` | the creature's canvas | played in sequence by the billboard (`poses.loop` / `poses.fidgets`)                                                       | transparent |
 | Boss sprite   | `boss-<name>`                        | 1024 × 1536 PNG       | billboard, height 4.2 units                                                                                                | transparent |
 | NPC           | `npc-<name>`                         | 1024 × 1024 PNG       | map marker / shop portrait                                                                                                 | transparent |
 | Backgrounds   | `bg-<scene>`                         | 1536 × 1024 PNG       | table texture / map backdrop                                                                                               | opaque      |
@@ -603,8 +604,10 @@ side for the same reason. The first frame of a sheet (rest) is the creature's `a
 **Clip frames** are cut from a green-screen video by `npm run art:video`: keyed with the same
 chroma key as the renders, one shared crop and placement for every frame (so nothing drifts),
 scaled to the pose frames' figure height on their canvas, tone-matched, and the eye — dulled
-by video compression — relit to amber so the finder sees it. A clip holds one loop stretch
-and one fidget; ~60 frames at 12 fps is about 2 MB of WebP.
+by video compression — relit to amber so the finder sees it. A clip holds a loop stretch
+and/or one fidget; a creature's fidgets may come from several clips, each under its own name
+(`-fidget-NN`, `-lash-NN`, …), cut in one run so they share a crop; ~60 frames at 12 fps is
+about 2 MB of WebP.
 Prompts live in `art/manifest.json`; `npm run art` renders them (see `docs/art-pipeline.md`).
 All v1 assets are generated and approved; new content gets a manifest entry and plays with a
 placeholder until its art is.

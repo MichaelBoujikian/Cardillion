@@ -51,23 +51,29 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
 
 **What the owner decided, in his words, at the end of this session:**
 
-- Of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), **B (`rat-B-bob`) is his
-  favourite for the passive movement every now and then — "the new twitch"** — and it is to be
+- **The fidget is the tentacle lash from re-roll `rat-bark-103`** (0–0.83 s, forward then
+  back), chosen late on 2026-09-17 after the clip he first picked did not survive. History of
+  that pick: of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), B (`rat-B-bob`)
+  was his favourite for the passive movement every now and then — "the new twitch" — to be
   played back in reverse to return to where it started (that was `art:video --fidget-pingpong`;
   on 2026-09-17 evening, watching it, he had the tentacles "get weird at a couple parts" — Wan
   drifts from ~0.6 s on and grows a second bundle of tentacles — so it became **only the
   turn-away, 0–0.58 s of B, played forward then back**: a glance that never shows the drift
   and lands on the stance by construction. A forward-only cut to 3.33 s was tried between
   the two and rejected: it landed with more tentacles than the loop has, and fading between
-  the two counts showed). **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
+  the two counts showed. The turn-away hid the tentacles, which he was trying to avoid, so B
+  went too: eleven 3 s re-rolls on the local rig followed — prompts and seeds in
+  `art/out/video/rat-bark-whip-prompts.txt` — and he picked **`rat-bark-103`, a sideways
+  tentacle lash**, cut 0–0.83 s forward then back, and asked for room for "a couple" of
+  fidgets: the row now takes a list, `poses.fidgets`, played in turn. Everything else went
+  to `art/out/video/rejected/`.) **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
   sway. **Combine them with cross-fading**, and **keep the three attack frames from the pose
   sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
 - **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
-  `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidget` = B
-  (0–0.58 s forward then back, 14 frames, a 1.2 s glance away and back), plus the sheet
-  stills. A fidget may start no sooner
+  `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidgets` = [the
+  bark-103 lash (0–0.83 s forward then back, 20 frames, 1.7 s)], plus the sheet stills. A fidget may start no sooner
   than 2.5–6 s after the last, but only as the loop turns at its first frame, which for the
-  45-frame loop is every 7.3 s — so the real rhythm is ~1.2 s of fidget, ~7.3 s of loop, repeat
+  45-frame loop is every 7.3 s — so the real rhythm is ~1.7 s of fidget, ~7.3 s of loop, repeat
   (`scene.ts` `stepSequence`). The 2.5–6 s is a per-sprite constant, not a roll.
   The Sora frame set (`enemy-rat-mutant-loop/fidget-*`) is still on disk; the row's comment
   lists both, flip by editing the ids.
@@ -92,7 +98,8 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
     before where it began; the boundary pop it left was ~2–3× an adjacent-frame difference and
     the cross-fade above covers it.
   - (b) GPU memory: `makeSequence` makes one `THREE.Texture` per frame PER SPRITE (992×560 ×
-    129 frames ≈ 380 MB per rat, two rats ≈ 750 MB, not shared between sprites) — decide frame
+    65 frames ≈ 190 MB per rat with the 20-frame lash — it was 380 MB with the 84-frame
+    ping-pong — two rats ≈ 380 MB, not shared between sprites) — decide frame
     counts for the next creatures with this in mind (shorter loop, lower fps, or a per-def
     texture cache).
   - (c) The v1 `enemy-possum.png` has NO amber cluster the eye finder can see (its prompt asked
@@ -103,13 +110,13 @@ the rat's content row are **uncommitted working-tree changes** — do not `git a
     fight resumed while playing dead loops the standing clip on a lying plane), `hitEnemy` on a
     playing-dead possum snaps back to the standing art after 0.35 s, and `animate.ts` calls
     `setPose` for Play Dead down/up with fadeMs 0 (cuts).
-  - (e) The prompts and seeds that produced clips B and B3 were not recorded anywhere; the cut
-    that made the current row is `npm run art:video -- --video art/out/video/rat-B3-bob.mp4
---out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.58 --fidget-video
-art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone
+  - (e) The prompt and seed behind the loop clip B3 were never recorded; the fidget clip's
+    (`rat-bark-103`) are in docs/local-video.md and, with all eleven re-rolls, in the
+    gitignored `art/out/video/rat-bark-whip-prompts.txt`. The cut that made the current row is `npm run art:video -- --video art/out/video/rat-B3-bob.mp4
+--out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.83 --fidget-video
+art/out/video/rat-bark-103.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone
 enemy-rat` (delete
     the old `enemy-rat-local-fidget-*` PNG + WebP first — the cutter never removes stale frames).
-    Record prompt + seed next time.
   - (f) Metamorphosis: the only Cocoon every run guarantees is the one before the Boss, and a
     boss win skips `emerge` — Pupate there is a trap; question one for the grilling.
 
@@ -236,7 +243,7 @@ clearly looks like a different image being switched out" — and asked for the *
 as the passive state** (the rat is still, only the tentacles slither; the clip's startle
 becomes an occasional fidget, like the twitch was) with the **pose-sheet stills for the
 lunge and hit**, "okay if it's slightly different". That is what is in: `poses.loop` /
-`poses.fidget` frame sequences (spec §11.2), `tools/art-video.mjs` to cut them, and the rat
+`poses.fidget` frame sequences (spec §11.2; now `poses.fidgets`, a list), `tools/art-video.mjs` to cut them, and the rat
 row pointing at `enemy-rat-mutant-loop-01..47` / `-fidget-01..17` plus `-windup/-attack/-hit`.
 The idle sheet (`-idle1..4`) is superseded and unreferenced. **The content row and every
 mutant PNG/WebP are uncommitted** pending his yes. He also flagged the sprite floating a
@@ -269,7 +276,7 @@ idle sheet in steps 2–3 is optional and superseded by the clip.)
 <id>-mutant-rest --tone <id>`. Check every frame finds exactly one amber cluster (the eye);
    the slicer protects the eye from the tone pass.
 4. Content row: `art` = `<id>-loop-01` (the cutter's first loop frame; `content.test.ts`
-   requires `loop.frames[0] === art`), `poses.windup/attack/hit`, `poses.loop` / `poses.fidget`
+   requires `loop.frames[0] === art`), `poses.windup/attack/hit`, `poses.loop` / `poses.fidgets`
    via `frames()`. `npm run art:optimize` (it converts every PNG in `assets/art`, so delete the
    stray sheet WebPs). Look at it in a fight — `END TURN` for the lunge, a card on it for the
    hit.

@@ -27,7 +27,7 @@ real ids and commit art + content together.
    find the still stretch and the movement by frame difference, get `-loop-NN` and `-fidget-NN`
    frames on the pose frames' canvas.
 5. **Content row** in `src/content/enemies.ts`: `art` = `-loop-01`, `poses.windup/attack/hit`,
-   `poses.loop` / `poses.fidget` via `frames()`; `npm run art:optimize`; delete the stray sheet
+   `poses.loop` / `poses.fidgets` via `frames()`; `npm run art:optimize`; delete the stray sheet
    WebPs. Check every frame finds exactly one amber cluster (the eye).
 6. **Look at it in the game** (`?seed=garden1&hp=999` puts two rats in the first fight): the
    loop and fidget run on their own, `END TURN` shows the strike, a card on it shows the hit.
@@ -151,8 +151,13 @@ began — the renderer's handover cross-fade (spec §11.2) covers the hair that 
 machine has the gitignored copy). Every frame gets one shared crop and placement, the pose
 frames' scale and canvas (`--like`), the tone match, and the eye relit to amber (video
 compression dulls it below what the eye-glow finder accepts). Then the content row:
-`art` = `<out>-loop-01`, `poses.loop: { frames, fps }`, `poses.fidget: { frames, fps }`
-(`frames()` in `enemies.ts` builds the id lists), and `npm run art:optimize`.
+`art` = `<out>-loop-01`, `poses.loop: { frames, fps }`, `poses.fidgets: [{ frames, fps }, …]`
+(`frames()` in `enemies.ts` builds the id lists), and `npm run art:optimize`. The renderer
+plays the fidgets in turn. A second fidget is not yet a solved cut, though: the cutter takes
+one `--fidget` per run and crops every frame to the union of that run's figures, so frames
+from two runs can sit a few pixels apart on the canvas — cut all of a creature's clips in
+one run (a `--fidget-name`/repeatable `--fidget` flag is the missing piece) before adding a
+second row.
 
 ## Chroma-key mode (the default for both styles)
 

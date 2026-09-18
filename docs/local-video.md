@@ -63,12 +63,33 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
 - The eye fades over a clip. The cutter relights it only where it can still find it; the game
   places the glow from the first frame, which is enough for a still loop. Never paint a guessed
   box — it lands on fur as soon as the head moves.
-- Record the prompt and seed of every clip you keep — the ones behind B (`rat-B-bob`) and B3
-  (`rat-B3-bob`), the clips the owner chose, were not written down. The cut that made the
-  current rat row:
-  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.58 --fidget-video art/out/video/rat-B-bob.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`
-  (the fidget is B's turn-away, forward then back — 14 frames; the ping-pong of all 3.5 s
-  and a forward-only cut to 3.33 s were both rejected by the owner, see above).
+- Record the prompt and seed of every clip you keep, in a tracked file — the one behind the
+  loop clip B3 (`rat-B3-bob`) was never written down (`art/out/` is gitignored, so a note
+  there does not count). The cut that made the current rat row:
+  `npm run art:video -- --video art/out/video/rat-B3-bob.mp4 --out enemy-rat-local --loop 0.3:4.0 --fidget 0:0.83 --fidget-video art/out/video/rat-bark-103.mp4 --fidget-pingpong --fps 12 --like enemy-rat-mutant-rest --tone enemy-rat`
+  (the fidget is the tentacle lash from re-roll `rat-bark-103`, cut to its peak at 0.83 s
+  and played forward then back — 20 frames. Clip B's head turn was rejected in three cuts:
+  the whole ping-pong drifted, a forward cut landed on the drift, the turn-away hid the
+  tentacles).
+- The fidget clip, so it can be re-rendered (Wan 2.2 5B, 3 s = 73 frames, 20 steps, cfg 5,
+  still `rat-first-frame-1280x720.png`, **seed 103**, `--out rat-bark-103`). Prompt: _The
+  mutant rat sits still on the flat green screen. One sudden snap of its jaws like a bark:
+  the mouth flies open for an instant and the bundle of fleshy tentacles hanging from its
+  mouth flings outward and whips around, then the mouth closes and the tentacles settle back
+  to hanging exactly as before. The same tentacles stay attached and visible the whole time,
+  the same number, never vanishing or multiplying. Body, legs and tail frozen in place.
+  Locked-off camera, no camera movement, no zoom, flat bright green background unchanged._
+  Negative: _bright colors, overexposed, blurry, low quality, JPEG artifacts, ugly, deformed,
+  extra limbs, malformed, cluttered background, camera movement, zoom, text, watermark,
+  tentacles disappearing, tentacles vanishing, extra tentacles, tentacles multiplying,
+  morphing, head turning away, face hidden, walking, jumping._ (Seed 103 did not bark — it
+  lashed the tentacles sideways — and that is what was kept.)
+- Re-rolling for short movements (2026-09-17, eleven 3 s clips; all prompts and seeds in the
+  gitignored `art/out/video/rat-bark-whip-prompts.txt`): Wan 5B moves this rat's jaw and
+  tentacles readily and its head rarely — the three "bark" seeds all moved, the three "head
+  whip" seeds all sat still, and a rewrite that led with the jerk instead of "sits still …
+  holds still" got one whip in three. 3 s is enough for one movement and renders in
+  ~2.5 min; ask for one movement per clip.
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 

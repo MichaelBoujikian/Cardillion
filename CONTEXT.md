@@ -163,6 +163,7 @@ A wind-up, strike or hit still sliced from a pose sheet and shown on the creatur
 strikes or is hit.
 
 **Clip frames**:
-A creature's waiting state cut from a green-screen video: the loop plays back and forth; the
-fidget is a short movement played now and then, cross-faded at the handover.
+A creature's waiting state cut from green-screen video: the loop plays back and forth; a
+fidget is a short movement played now and then, cross-faded at the handover — a creature
+may carry several, played in turn.
 _Avoid_: animation, idle cycle, gif
