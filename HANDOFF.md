@@ -1,7 +1,7 @@
 # Handoff — Cardillion
 
-For an agent picking this project up cold. Read this, then `CLAUDE.md` (the standing rules),
-then the `spec.md` section for whatever you build next. Written 2026-09-15; rewritten
+For an agent picking this project up cold. Read **START HERE** below, then `CLAUDE.md` (the
+standing rules), then the `spec.md` section for whatever you build next. Written 2026-09-15; rewritten
 2026-09-16 (`22a9c08`) after the overnight run, and again that evening after the rat session.
 
 ## What this is
@@ -42,6 +42,87 @@ reading — greedy wins 0.3%, the Bear kills 43% of runs, then the late `scorpio
 `spider + scorpion`, the Wolf Spider. **The owner's decision: balance gets its own dedicated
 test sessions. Do not propose or make number changes in passing.**
 
+## START HERE (written 2026-09-17, end of a long session; the owner is switching agents)
+
+**Read `docs/art-pipeline.md` "The recipe" first**, then this section, then the rest of this
+file. The owner reviews by eye, wants one recommendation per question, and approves art in
+batches (see "How to work here"). Nothing below is committed art: every mutant PNG/WebP and
+the rat's content row are **uncommitted working-tree changes** — do not `git add -A`.
+
+**What the owner decided, in his words, at the end of this session:**
+
+- Of the local rat clips (`art/out/video/rat-*.mp4`, gitignored), **B (`rat-B-bob`) is his
+  favourite for the passive movement every now and then — "the new twitch"** — and it is to be
+  played back in reverse to return to where it started (that is `art:video --fidget-pingpong`,
+  already done). **B3 (`rat-B3-bob`) is a good passive stance** because only the tentacles
+  sway. **Combine them with cross-fading**, and **keep the three attack frames from the pose
+  sheet** (`enemy-rat-mutant-windup` / `-attack` / `-hit`).
+- **That is what the game shows now:** `enemies.ts` rat row → `art: enemy-rat-local-loop-01`,
+  `poses.loop` = B3 (0.3–4.0 s, 45 frames, played back and forth), `poses.fidget` = B
+  (0–3.5 s forward then back, 84 frames), plus the sheet stills; fidgets fire every 2.5–6 s.
+  The Sora frame set (`enemy-rat-mutant-loop/fidget-*`) is still on disk; the row's comment
+  lists both, flip by editing the ids.
+- **"Cross-fading" between the loop and the fidget is NOT built yet** — that is the first
+  thing to do. Today the sequence player (`stepSequence` in `scene.ts`) hard-swaps
+  `material.map`; the ping-pong makes the fidget end on its own first frame, which is the same
+  still as the loop's first frame but from a different clip, so the handoff can pop by a hair.
+  Reuse the ghost cross-fade that `setPose` already has (`endFade`/`stepFade`, 100–150 ms) at
+  the loop→fidget and fidget→loop boundaries, and possibly a fade across the ping-pong turn.
+- Per-frame **eye tracking during fidgets** is a possible refinement: the glow sprite is placed
+  once from `art`, so it hangs above the head while the head dips. The cutter already finds
+  the eye per frame where it can (`art-video.mjs` relight step); storing an `(u, v)` per frame
+  and moving the glow would fix it. Not asked for; mention it if he notices.
+
+**How the local rig works (both halves tested today, all free, no content policy):**
+
+- `npm run video:local -- --image <png> --out <name> --prompt "..." [--seconds 5] [--seed n]`
+  → Wan 2.2 5B in ComfyUI on his RTX 5070 Ti, ~5 min per 5 s clip, `art/out/video/<name>.mp4`.
+  **5 s is the sweet spot; a 10 s clip smeared the tentacles and never held still.** One
+  movement per clip, then combine: `npm run art:video -- --video <loop clip> --loop t0:t1
+--fidget t0:t1 --fidget-video <movement clip> --fidget-pingpong --fps 12 --like
+enemy-rat-mutant-rest --tone enemy-rat`. Details and what the rat taught: `docs/local-video.md`.
+- `npm run image:local -- --out <name> --prompt "..." [--edit <png>] [--model zimage|klein]`
+  → FLUX.2 klein 4B (edits + text-to-image) or Z-Image, ~25 s, `art/out/local/<name>.png`.
+  Both Apache-2.0. **gpt-image-2.5-sunburst via `npm run art` stays the first choice for
+  stills**; local is for gore the API refuses (klein tore the rat open with ribs and blood on
+  request) and for free iteration. Details: `docs/local-image.md`.
+- The rig lives outside the repo at `C:\Users\smite\ComfyUI_windows_portable` (ComfyUI v0.36.0,
+  own Python + torch cu130). The tools start it headless themselves and stop it after, unless
+  `--keep-server`. It holds ~2 GB VRAM idle; the game shares the GPU.
+- `ffmpeg` is not on PATH; the tools use `art/out/bin/ffmpeg.exe` (gitignored copy).
+
+**Tool gotchas learned the hard way this session:**
+
+- The desktop app's Browser pane often stops painting when hidden: `requestAnimationFrame`
+  never fires, the scene clock freezes, and sampling the game over time reads nothing. Drive
+  the scene by hand instead: `const sc = window.__cardillion.controller['scene']; let t =
+sc['now']; for (...) { t += 1/30; sc.update(1/30, t); sc.render(); }` then read sprite
+  state or grab `sc['renderer'].domElement.toDataURL()` crops. Never let a test clock run
+  ahead of the app's clock on a _visible_ pane (the sequence player now guards `t < start`).
+- `javascript_tool` results over ~250 KB are written to a file under `tool-results/`; decode
+  base64 crops from there with Python. The result JSON is sometimes double-encoded.
+- The owner can only see files you send with `SendUserFile`; he reads on his phone, so send
+  a PNG frame strip next to any mp4 (`ffmpeg -vf "fps=2,crop=...,tile=5x2"`).
+- Python edit scripts: write them with the Write tool (Bash truncates ~8 KB); use raw strings
+  for anything containing `C:\Users` (a `\U` escape error bit twice); prettier reformats
+  markdown tables, so match the padded row or insert by regex.
+- `art:optimize` converts every PNG in `assets/art` — delete the stray sheet WebPs
+  (`enemy-rat-mutant.webp`, `-poses.webp`, `-idle.webp`) after running it.
+- Every frame the game will place a glow on needs exactly one amber cluster at 512 px
+  (`findGlowPoints`); the slicer and cutter protect/relight the eye; check with a quick
+  Python replica when in doubt (`docs/local-video.md`).
+
+**Renderer facts a new agent needs (all in spec §11.2 and `scene.ts`):** sprites stand on
+their picture's **ground line** (`findGroundLine`, the lowest wide alpha row) via `baseY`;
+hit box and labels follow `baseY`; the shadow ellipse sits back `height * 0.1`; at rest a
+creature only breathes and leans in (sway, drift, twitch removed 2026-09-17 at the owner's
+request); keyframes cross-fade via `setPose`; clip frames play via `stepSequence`. Rows below
+the ground line (claw tips, a tail swishing low) sink into the moss by design.
+
+**Open with the owner:** approve the rat (then rename `enemy-rat-mutant-*`/`enemy-rat-local-*`
+to the real `enemy-rat*` ids and commit art + content together); the possum next; Runway
+(`docs/runway-api.md`) is optional now that local video works — he has not bought credits.
+
 ## NEXT: the enemy art pass (in progress — the rat is the worked example)
 
 The owner wants the vermin redone as **mutants — Fallout 3 centaur** (the mutant, not the
@@ -71,21 +152,6 @@ to its v1 sprite by the slicer (below). Edits of the existing sprites, not fresh
   and an idle drift through rest + idle frames every 1–2 s (off under Reduce motion). The eye
   glow is sized from the eye it finds (`findGlowPoints` now returns `size`, analysed at 512 px
   — at 256 the smaller 2.5 eye vanished). `tools/art-poses.mjs` slices sheets.
-
-**2026-09-17 (evening) — local clips for the rat, for the owner to review.** He asked for a
-passive clip from the gpt-image rat where the tentacles writhe and, now and then, a head bob
-like the Sora startle he liked; and for separate-vs-combined clips to compare. Made on the
-local rig (`art/out/video/`, gitignored): `rat-A2-tentacles` (best loop: body still, tentacles
-clearly moving), `rat-B-bob` (big head turn, never returns to pose), `rat-B2-bob` / `rat-B3-bob`
-(a slow head dip, subtler; neither returns exactly), `rat-C-both` (10 s, both in one — the 5B
-model lost the tentacles into a red smear and never held still; **10 s clips are out**). The
-cutter grew `--fidget-video` (fidget from a second clip) and `--fidget-pingpong` (forward then
-back, so a dip ends where it began), and only relights the eye where it actually finds it (a
-guessed box painted amber squares on fur once the head moved — removed). **In the game now:**
-`enemy-rat-local-*` = A2 loop (0.5–5 s) + B2's dip (0–2.6 s, ping-ponged), on the same canvas as
-the Sora set; the rat row in `enemies.ts` has both sets in a comment — flip by editing the
-three ids. During the dip the glow sprite stays at the rest eye (placed once); per-frame eye
-tracking for fidgets is a possible refinement. Uncommitted: the rat row and all frames.
 
 **2026-09-17 — the local rig, both halves, is in and tested.** `docs/art-pipeline.md` opens with
 "The recipe" — the ordered steps from a still to a living creature in the game; read that first.
