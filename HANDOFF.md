@@ -2,7 +2,8 @@
 
 For an agent picking this project up cold. Read **START HERE**, then `CLAUDE.md` (the standing
 rules), then the `spec.md` section for whatever you build next. First written 2026-09-15;
-rewritten 2026-09-18 after the rat shipped and the possum's art was made.
+rewritten 2026-09-18 (morning) after the rat shipped; refreshed 2026-09-18 (night) after the
+possum and the spider shipped and a possum fidget trial was left on the table.
 
 ## What this is
 
@@ -33,156 +34,216 @@ Beyond the milestones (2026-09-15/16, all approved): painted Shop and Cocoon sce
 offer Rest / Forage / Pupate (Caterpillar → Chrysalis → Butterfly, spec §8.8); habitats under
 half the fights (§8.9, ADR 0007); six more cards (§5.4); the Snail's pheromone trail (§8.6);
 enemies breathe, lean and act with body motions (§11.2). Then the animation system (2026-09-16
-→ 18): keyframe poses, clip-driven waiting states, cross-fades, eye tracking — all in §11.2.
+→ 18): keyframe poses, clip-driven waiting states, cross-fades, eye tracking, the settle — all
+in §11.2.
 
-126 tests pass; `npm run check` is green; CI and the Pages deploy are green.
+126 tests pass; `npm run check` is green; CI and the Pages deploy are green at `54dcf3e`.
 
 **Balance:** nothing is balanced; every number is a first guess marked _(tuning)_.
 `src/engine/fuzz.test.ts` plays 240 seeded runs and gives a first reading (greedy wins under
 1%, the Bear kills ~40% of runs). **The owner's decision: balance gets its own dedicated test
 sessions. Do not propose or make number changes in passing.**
 
-## START HERE (2026-09-18)
+## START HERE (2026-09-18, night)
 
 **Read `docs/art-pipeline.md` "The recipe"** (the first section), then this. The owner reviews
 by eye, wants one recommendation per question, approves art in batches, and is walked through
 any account or API step (see "How to work here").
 
+### The working tree is not clean — on purpose
+
+Uncommitted, all of it one decision of his away from a commit (or a revert):
+
+- **The possum's fidget trial.** The row's fidgets are `enemy-possum-bark-01..22` and
+  `enemy-possum-tug-01..30` (both new, untracked PNG + WebP); the committed retch
+  (`enemy-possum-retch-01..28`) is on disk but out of the list. He has seen the bark on a reel
+  and liked it; he had not yet seen either in the game when the session ended (see "Things that
+  bite": a hidden Browser pane freezes the clock). **Ask which to keep** — bark + tug, or the
+  retch back in as well — then commit art + row together.
+- **Three renderer seams** that came out of the trial, tested, documented in spec §11.2, and
+  used by nothing committed yet: `settleMs` on a fidget (`FrameSequence`), the **sink**
+  (`startSink`/`stepSink`/`applyLift` in `scene.ts`), and the shorter fidget gap (1–2.5 s, was
+  2.5–6 s). Details under "Renderer facts".
+- **Cutter additions** (`tools/art-video.mjs`, `tools/lib/frames.mjs`): `--hold-colour`
+  (per-frame channel gains that pin a frame set's colour to its first frame — Wan's magenta
+  drift). Documented in `docs/art-pipeline.md` and `docs/local-video.md`.
+- **The bug chapel** (`bg-chapel`, `assets/art/bg-chapel.png` + its WebP; its manifest entry
+  IS committed): his brief, a place to choose a blessing like the cocoon and the snail's stall —
+  a bright gothic nave of woven twigs, petal windows on the left, sunbeams on a white marble
+  praying mantis, floor open across the bottom. Not wired to any node, phase or screen; he has
+  seen it once and said nothing yet. Flagged to him: the statue came out small and far, and the
+  far end is as bright as the front (no Garden→Thicket gradient).
+- `spec.md`, `docs/*.md` and this file carry the matching text.
+
+Commit these in two pieces once he decides: (1) the possum art + row + the three seams + the
+cutter + docs, (2) the chapel render on its own yes.
+
 ### The enemy art pass, creature by creature
 
 Every vermin is being redone as a **mutant** — Fallout 3 centaur, the mutant not the horse-man:
-skin torn or sloughed away, wet muscle, bundles of fleshy tentacles, **gross and gory** (spec
-§11.1), as dark as the v1 art. Each is an edit of its v1 sprite, not a new creature, and gets
-a waiting-state clip (loop + fidget), pose-sheet stills (wind-up, strike, hit) and, where it
-has one, its special pose.
+skin torn or sloughed away, wet muscle, bundles of fleshy tentacles, as dark as the v1 art.
+Gore is not mandatory any more: on 2026-09-18 he said **"gory doesn't have to be in everything,
+just dark/morbid/evil"** and the spider has none (the `thicket-morbid` style block in
+`art/manifest.json` is the thicket look with the gore sentences removed). Each creature is an
+edit of its v1 sprite, not a new creature, and gets a waiting-state clip (loop + fidgets),
+pose-sheet stills (wind-up, strike, hit) and, where it has one, its special pose.
 
 - **Rat — done, committed** (`f53442a`, 2026-09-17). Loop = a local Wan 2.2 clip in which only
   the mouth-tentacles sway (`enemy-rat-loop-01..45`); one fidget = the Sora clip's startle
-  (`enemy-rat-startle-01..17`), the only movement from any model that came back to its own
-  first frame; strike/hit stills from a gpt-image-2.5 pose sheet; `enemy-rat-rest` is the cutter's
-  `--like` canvas. `enemy-rat.png` (v1) stays as a master, `"ship": false`, unreferenced.
-  Rejected on the way (all recorded in
-  `docs/local-video.md` and `docs/runway-api.md`): three cuts of a Wan head-turn clip, a
-  tentacle-lash re-roll, four Runway/Veo renders — every model drifts off the pose within a
-  second of a big movement; only Sora's small startle returned home.
-- **Possum — done and committed (2026-09-18)**: `enemy-possum-loop-01..33`, `-retch-01..28`,
-  `-windup/-attack/-hit/-rest`, and `enemy-possum-dead` is now the mutant Play Dead frame. The
-  still is a gpt edit of the v1 possum with a belly-to-eye tentacle, then a **local klein edit,
-  seed 4**, to put skin back over the ribs — his call: the gpt one was "a bit much" (kept as
-  `art/out/enemy-possum-mutant-v1-gpt*.png`). The sheet `enemy-possum-mutant-poses.png`, the
-  1024² dead master `enemy-possum-mutant-dead.png` and the still `enemy-possum-mutant.png` stay
-  as `"ship": false` records; the v1 `enemy-possum` no longer ships but stays as the tone
-  reference; the v1 dead render is `art/out/enemy-possum-dead-v1.png`. Loop: local Wan,
-  tentacles sway (`possum2-loop-11` 0.3–3.0 s). Fidget: a **retch**, guts out and sucked back
-  in (`possum2-retch-201` 0.75–1.92 s forward then back — his idea, after a hiss whose mouth
-  spilled random shapes; prompts and seeds in `docs/local-video.md`). His two fixes before the
-  yes: the eye glow was too big (`EYE_GLOW_MAX` 0.26 → 0.16, the rat's size) and Play Dead
-  hopped sideways — the loop was cut with the old crop-centred placement (body 35 px right of
-  the slot), the dead frame bbox-centred (12 px left); re-cut with the figure-anchored `--like`
-  and the dead frame re-sliced with `--shift 24`, the hop is 11 px. Every frame went through
-  `tools/art-redden.py` (one amber cluster). Sora refused this still's gorier gpt version
-  twice; the klein one was never tried there.
-- **Spider — done and committed (2026-09-18)**: `enemy-spider-loop-01..15`, `-jaws-01..30`,
-  `-rear-01..38`, `-windup/-attack/-hit/-rest`; the v1 `enemy-spider` no longer
-  ships. His brief: a thick furry tarantula like the wolf spider, eggs and spiderlings on its
-  back, half a leg missing — and **no gore on it: "gory doesn't have to be in everything, just
-  dark/morbid/evil"**. The still is the gpt sample with every red wound taken off by a local
-  klein edit (seed 2; the gpt one is `art/out/enemy-spider-mutant-v1-gpt-raw.png`); the pose
-  sheet is gpt in the **`thicket-morbid`** style (a plain `thicket` sheet put the wounds straight
-  back), the wind-up after his photo of a rearing funnel-web (`art/refs/spider-threat-pose.png`,
-  gitignored). Loop: the still tail of the Sora jaws clip. Fidgets, his call — **jaws** (Sora)
-  and the **rear-up** (Wan `spider-rear-305`, both front pairs spread and rise, a ping-pong of
-  its first 1.58 s so it lands home) — and nothing else. A **Spin Web clip** (Wan
-  `spider-web-501`, both back legs rise and settle) was cut in through the new `poses.moves`
-  seam and **taken out at his word** — the seam stays, unused, for whenever the web move gets
-  its animation (the clip is on disk). Rejected on the way: sections of the
-  Sora leg-wave clip (they land off the loop — "fading into a different spot afterwards");
-  two Wan single-leg lifts (`spider-leg-411`/`-412`, fine moves whose raised tip left the top
-  of the video; four portrait-frame re-rolls, `spider-leg-431..434` via `video:local --size
-704x1280`, kept the leg in frame but none landed home); a leg prompt that led with "holds
-  still" (nothing moved); Sora rear-ups at 85 % (legs out of frame) and 60 % (reframed).
-  The raised legs need headroom, so the set sits on an **848 × 848 canvas** (slicer
-  `--width/--height`) with `height: 3.8` on the row. The sheet `enemy-spider-mutant-poses.png`
-  and the still `enemy-spider-mutant.png` stay as `"ship": false` records.
-- **Bug chapel — first render made** (`bg-chapel`, uncommitted): his brief, a place to choose a
-  blessing like the cocoon and the snail's stall — inside a bright gothic cathedral of woven
-  twigs, sunlight from windows on the left onto a white marble praying mantis, floor open across
-  the bottom. Not wired to a node yet (no phase, no screen); the statue came out small and far,
-  and the far end is as bright as the front — both flagged to him.
-- **Still to do:** `enemy-scorpion`, `enemy-greeble` (Unseen: alphaTest 0, so its edges must
-  be clean), `enemy-rat-king`, `enemy-wolf-spider` (the elite; same family as the spider,
-  escalated), `boss-bear` (sample entries need `"size": "1024x1536"`). `boss-moose` is act 2.
+  (`enemy-rat-startle-01..17`); strike/hit stills from a gpt-image-2.5 pose sheet;
+  `enemy-rat-rest` is the cutter's `--like` canvas. `enemy-rat.png` (v1) stays as a master,
+  `"ship": false`. The startle frames were hand-translated onto the loop (the cutter of the
+  time centred each run's crop): **re-cut the rat's loop only together with its startle**, or
+  they part by 83 px. Rejected on the way (`docs/local-video.md`, `docs/runway-api.md`): three
+  cuts of a Wan head-turn, a tentacle-lash re-roll, four Runway/Veo renders.
+- **Possum — done, committed** (`e59f1e0`, 2026-09-18): `enemy-possum-loop-01..33` (local Wan,
+  only the tentacles sway), `-retch-01..28` (guts out and sucked back in — a ping-pong), stills
+  `-windup/-attack/-hit/-rest`, and `enemy-possum-dead` is the mutant Play Dead frame. The
+  still is a gpt edit of the v1 possum (belly-to-eye tentacle) then a **local klein edit, seed
+  4**, that put skin back over the ribs — his call; the gpt version is
+  `art/out/enemy-possum-mutant-v1-gpt*.png`. Records with `"ship": false`:
+  `enemy-possum-mutant.png`, `-poses.png`, `-dead.png`; the v1 `enemy-possum` no longer ships
+  but stays as **every creature's tone reference**. His two fixes before the yes: the eye glow
+  was too big (`EYE_GLOW_MAX` 0.26 → 0.16, the rat's) and Play Dead hopped sideways (the loop
+  re-cut with the figure-anchored `--like`, the dead frame re-sliced with `--shift 24`).
+  **Then the fidget trial** (uncommitted, above): he wanted a retch whose guts fall to the floor
+  and pile up, to fade out afterwards. Four Wan batches (`possum2-floor-211..236`, `possum3-*`,
+  prompts in `art/out/video/possum-prompts.txt`): the first bowed into the heap, the second
+  held the pose but bled magenta or green, the third pinned the fur in the prompt and negative
+  and gave `233` — poured, piled, planted — which he called close but not it ("it would be
+  perfect if it were just coming out of his mouth"); a last batch of subtle fidgets (a bark, a
+  hind-leg scratch, a paw tug on the tentacle, a mouth-first retch) gave the **bark** (`252`,
+  jaws snap open into a hiss; first 0.92 s forward-then-back) and the **tug** (`272`, the head
+  dips toward the tentacle and the jaw parts; first 1.25 s forward-then-back), both cut with
+  `--hold-colour`. Sora blocks both possum stills (gpt and klein) at its input step, so the
+  possum is Wan-only.
+- **Spider — done, committed** (`54dcf3e`, 2026-09-18): `enemy-spider-loop-01..15` (the still
+  tail of a Sora jaws clip), fidgets **jaws** (`-jaws-01..30`, Sora) and **rear-up**
+  (`-rear-01..38`, Wan `spider-rear-305`: both front pairs spread and rise like his photo of a
+  funnel-web, a ping-pong of its first 1.58 s), stills `-windup/-attack/-hit/-rest` from a gpt
+  sheet in `thicket-morbid` (a plain `thicket` sheet put the wounds straight back), the wind-up
+  after `art/refs/spider-threat-pose.png` (his photo, gitignored). The still is the gpt sample
+  with every wound taken off by a klein edit (seed 2; gpt one:
+  `art/out/enemy-spider-mutant-v1-gpt-raw.png`). The raised legs need headroom, so the set sits
+  on an **848 × 848 canvas** (slicer `--width/--height`) and the row's **`height: 3.8`** puts
+  the spider back at a common creature's size. A **Spin Web clip** (Wan `spider-web-501`, back
+  legs rise and settle) was cut in through `poses.moves` and taken out at his word; the seam
+  stays, unused; he said the cobweb move "might need some work". Rejected: sections of the Sora
+  leg-wave clip (land off the loop — "fading into a different spot afterwards"), two Wan
+  single-leg lifts (`spider-leg-411/-412`: good moves, raised tip left the top of the video;
+  portrait re-rolls `431..434` via `video:local --size 704x1280` kept the leg in frame but none
+  landed home), Sora rear-ups at 85 % (legs out of frame) and 60 % (it re-framed the shot).
+- **Still to do:** `enemy-scorpion` (next), `enemy-greeble` (Unseen: alphaTest 0, so its edges
+  must be clean), `enemy-rat-king`, `enemy-wolf-spider` (the elite; same family as the spider,
+  escalated; its v1 sprite carries a half-keyed shadow — say "no shadow under the body"),
+  `boss-bear` (sample entries need `"size": "1024x1536"`). `boss-moose` is act 2.
 
 ### Where each clip comes from now
 
-| Route                   | Command                | Cost                          | Takes                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------- | ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Local Wan 2.2 5B        | `npm run video:local`  | free, ~2.5 min per 3 s        | anything (no policy). Drifts within a second of a big movement; fine for tentacles-only loops. Prompts must lead with the action (`docs/local-video.md`).                                                                                                                                                                                                                                                                                              |
-| OpenAI Sora 2 Pro       | `npm run video:sora`   | ~$2.40 per 8 s                | the rat's and the spider's stills, not the possum's (its input filter refused the eye-socket tentacle and open ribs). **Shuts down 2026-09-24.** The only model that returned to pose — for small moves (a startle, a jaw). Keep the figure at the default 85 % of the frame: at `--height 0.6` it re-framed the shot into a close-up of a redrawn spider and drifted the green to blue; at 85 % a rearing creature's legs leave the top of the frame. |
-| Runway (gen4, Veo 3.1…) | `npm run video:runway` | 25–100 credits per clip       | the rat's still, not the possum's (`SAFETY.INPUT.MULTIMODAL`, charged). Draws movement better than Wan, drifts like everyone. **230 free credits left.**                                                                                                                                                                                                                                                                                               |
-| Local FLUX.2 klein      | `npm run image:local`  | free, ~5 s                    | still edits with no policy (the possum's less-gore pass). Keeps the character, not the colours — say "near-black, dim light" or it bleaches.                                                                                                                                                                                                                                                                                                           |
-| gpt-image-2.5           | `npm run art`          | ~$0.21 a still, $0.17 a sheet | the stills and sheets; `moderation: low`; passed everything asked of it so far.                                                                                                                                                                                                                                                                                                                                                                        |
+| Route                   | Command                | Cost                          | Takes                                                                                                                                                                                                                                                                                                                                                                            |
+| ----------------------- | ---------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local Wan 2.2 5B        | `npm run video:local`  | free, ~2.5 min per 3 s        | anything (no policy). Drifts within a second of a big movement; fine for tentacles-only loops and one small action. **Colour drift** after ~1.5 s (magenta or green into the fur): pin the fur in the prompt and negative, cut early, `art:video --hold-colour`. `--size 704x1280` for headroom; a smaller figure in the frame made it worse. Prompts must lead with the action. |
+| OpenAI Sora 2 Pro       | `npm run video:sora`   | ~$1.20 per 4 s, $2.40 per 8 s | the rat's and the spider's stills; **not the possum's** (both stills blocked at the input step). **Shuts down 2026-09-24.** The only model that returned to pose — for small moves (a startle, a jaw). Keep the figure at the default 85 % of the frame: at `--height 0.6` it re-framed the shot; at 85 % a rearing creature's legs leave the top.                               |
+| Runway (gen4, Veo 3.1…) | `npm run video:runway` | 25–100 credits per clip       | the rat's still, not the possum's (`SAFETY.INPUT.MULTIMODAL`, charged). Draws movement better than Wan, drifts like everyone. **230 free credits left.**                                                                                                                                                                                                                         |
+| Local FLUX.2 klein      | `npm run image:local`  | free, ~5 s                    | still edits with no policy (the possum's less-gore pass, the spider's no-gore pass). Keeps the character, not the colours — say "near-black, dim light" or it bleaches.                                                                                                                                                                                                          |
+| gpt-image-2.5           | `npm run art`          | ~$0.21 a still, $0.17 a sheet | the stills, sheets and scenes; `moderation: low`. The style prefix wins over the entry — a `thicket` sheet of a clean still gets its wounds back; use `thicket-morbid`.                                                                                                                                                                                                          |
 
 Records: every Runway/Sora job writes `art/out/video/<out>.json`; the local prompts live in
 `art/out/video/*-prompts.txt`. **All of `art/out/` is gitignored** — copy the prompt and seed of
-any clip you keep into a tracked doc (`docs/local-video.md` has the rat's).
+any clip you keep into `docs/local-video.md` (it has the rat's startle, the possum's and the
+spider's; the prompt behind the rat's loop clip `rat-B3-bob` was never written down).
 
 ### Renderer facts (spec §11.2, `src/render/battle/scene.ts`)
 
 - A creature's row: `art` (= `loop-01`), `deadArt`, `poses.windup/attack/hit`, `poses.loop`
-  (played back and forth), `poses.fidgets` (a **list**, played in turn; each creature starts
-  on a different one) and `poses.moves` (a clip per **move id**, played once instead of the
-  loop while that move's body motion runs — built for the spider's Spin Web, unused since he
-  dropped that clip; `act(uid, kind, move)` starts it, `endMove` hands back). `frames()` in `enemies.ts` builds the id lists;
-  `poseArtIds` feeds them to the loader. `content.test.ts` enforces `loop.frames[0] === art`,
-  fidgets and move clips only with a loop, no frame shared with it, a move clip's key is one of
-  the creature's moves, every id distinct. `poses.idle` (cross-faded stills) still
-  exists in the type but is superseded by clips — do not make idle sheets.
+  (played back and forth), `poses.fidgets` (a **list**, played in turn; each creature starts on
+  a different one; a fidget may carry `settleMs`) and `poses.moves` (a clip per **move id**,
+  played once instead of the loop while that move's body motion runs; `act(uid, kind, move)`
+  starts it, `endMove` hands back; nothing uses it yet). `frames()` in `enemies.ts` builds the
+  id lists; `poseArtIds` feeds them to the loader. `content.test.ts` enforces
+  `loop.frames[0] === art`, fidgets and move clips only with a loop, no frame shared with it, a
+  move clip's key is one of the creature's moves, every id distinct. `poses.idle` still exists
+  in the type but is superseded by clips — do not make idle sheets. `height` on a row overrides
+  the tier's billboard height (spec §11.4) for a canvas with headroom.
 - Sprites stand on their picture's ground line (`findGroundLine`) via `baseY`; the shadow
   ellipse sits back; at rest a creature only breathes and leans in. Rows below the ground line
-  (claw tips, a rope of guts) sink into the moss by design; the hit box's top and the head
-  label follow `baseY`, its bottom and the feet anchor stay at the table.
+  (claw tips, a rope of guts) sink into the moss by design.
 - Keyframes cross-fade (`setPose` + ghost). Clip handovers cross-fade differently: the outgoing
-  frame stays **solid** under the incoming clip (`FIDGET_IN_FADE_MS` 150, `FIDGET_OUT_FADE_MS` 300) because `alphaTest 0.35` turns a two-sided dissolve into old-only → both → new-only with
-  a see-through dip. A fidget interrupted by a strike or hit ends; the loop restarts at frame 0.
+  frame stays **solid** under the incoming clip (`FIDGET_IN_FADE_MS` 150, `FIDGET_OUT_FADE_MS` 300) because `alphaTest 0.35` turns a two-sided dissolve into old-only → both → new-only. A
+  fidget interrupted by a strike or hit ends; the loop restarts at frame 0.
+- **The settle** (uncommitted, 2026-09-18): with `settleMs`, the outgoing frame's ghost lingers
+  after the loop is fully in and fades over that time (a heap on the floor dissolving). And at
+  every hand-back the **sink** compares where the clip's last frame and the loop's first put
+  the eye: the loop frame arrives offset by that difference (0.065 units up for the possum's
+  floor retch), plane and glow together, and eases to rest on a cosine over dissolve + settle
+  (≥ 0.6 s) — the creature comes back down instead of morphing. Zero where the eyes line up.
 - The fidget only starts as the loop turns at its first frame: a 45-frame loop turns every
-  7.3 s, so that — not the 2.5–6 s offset, a per-sprite constant — sets the rhythm.
+  7.3 s, a 33-frame one every 5.3 s, so that — not the 1–2.5 s gap (was 2.5–6 s until
+  2026-09-18; uncommitted) — sets the rhythm; in practice one fidget every turn or two.
 - The eye glow follows the clip (`trackEyes`, each frame's eye found once and cached; a frame
-  with no findable eye keeps the last position) and glides across keyframe fades (`eyeGlide`). Creatures use their own glow material
-  (`EYE_GLOW_INTENSITY` 4, `EYE_GLOW_SCALE` 3, max 0.26); the far eyes keep the brighter one.
-- Play Dead: `setRestPose` makes the dead pose the rest pose until the creature acts (the hit
-  hold used to snap it back to standing); the clip plays only while the pose is its own art
-  (`clipArt`).
+  with no findable eye keeps the last position) and glides across keyframe fades (`eyeGlide`).
+  Creatures use their own glow material (`EYE_GLOW_INTENSITY` 4, `EYE_GLOW_SCALE` 3,
+  `EYE_GLOW_MAX` 0.16 — the rat's size; the possum's bigger painted eye used to earn 0.24).
+- Play Dead: `setRestPose` makes the dead pose the rest pose until the creature acts; the clip
+  plays only while the pose is its own art (`clipArt`).
 - Lights: the warm spill over the enemy row is a 0.55 rad cone so the side slots (x = ±3.6)
-  are lit; before 2026-09-18 they were silhouettes.
-- **Brightness policy:** frames are tone-matched to `enemy-possum` (v1, brightness 0.135), not
-  to each creature's own v1 sprite — the rat matched to its own (0.088) was "so dark you can't
-  see much" and was re-toned with `npm run art:tone`.
-- GPU memory: one `THREE.Texture` per frame **per sprite**, 992×560 ≈ 2.9 MB each — the rat's
-  62 frames ≈ 180 MB per rat on screen. Keep loops ~30–45 frames and fidgets short.
+  are lit.
+- **Brightness policy:** every creature's frames are tone-matched to `enemy-possum` (v1,
+  brightness 0.135) — `--tone enemy-possum` in every slicer and cutter run.
+- GPU memory: one `THREE.Texture` per frame **per sprite** — the spider's 87 frames at 848² ≈
+  250 MB per spider on screen. Keep loops ~15–45 frames and fidgets short.
+
+### The tools, as they are now
+
+- `npm run art:poses -- --sheet <id> --names a,b,c [--out p] [--like frame] [--tone id]
+[--width px] [--height px] [--shift px]` — slices a sheet onto one canvas; `--width/--height`
+  ask for headroom (the spider), `--shift` moves every frame sideways (the possum's lying dead
+  pose, whose bounding box is centred but whose body is not).
+- `npm run art:video -- --video <mp4> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget
+[name=]t0:t1 …] [--fidget-video mp4] [--fidget-pingpong] [--like frame] [--tone id] [--eyes
+1|2] [--hold-colour]` — `--fidget` repeats and names its sections (`<out>-<name>-NN`);
+  `--anchor t` cuts fidgets from a second video of the same creature with no loop, landing on
+  the same placement because `--like` stands each run's first frame on the reference figure's
+  bottom-centre; `--eyes 2` for a front-facing creature; a briefly-lost eye is painted where it
+  was last seen (up to 8 frames); frames shared by two segments are relit once; the overflow
+  warning names the canvas the slicer would need.
+- `python3 tools/art-redden.py <frames>` (one amber cluster per frame, the rest pushed to red —
+  gory creatures) and `python3 tools/art-unred.py <frames>` (red and pink to dark brown, eyes
+  kept — clean creatures; Wan paints pink into leg tips and smears).
+- `npm run video:local -- --image png --out name --prompt … [--size WxH] [--seconds n] [--seed
+n] [--keep-server]`; `npm run video:sora -- … [--height 0.85]`; `npm run image:local --
+--edit png …`; `npm run art:tone`, `art:optimize` (honours `"ship": false`), `art`.
+- Stop ComfyUI after a batch (it holds ~2 GB VRAM idle): PowerShell
+  `Get-Process python | Where-Object { $_.Path -like "*ComfyUI_windows_portable*" } | Stop-Process`.
 
 ### Things that bite
 
-- `art:video` cuts one loop and one fidget per run and crops every frame to that run's union;
-  frames from two runs sit a few pixels apart. Cut a creature's loop and fidget **together**;
-  a second fidget needs a repeatable `--fidget` (not built) or a PIL translation (the rat's
-  startle was aligned by its rump).
-- `--fidget-pingpong` ends one frame before where it began (the ends are not repeated).
-- The cutter never deletes stale frames: delete the old `<out>-fidget-*` PNG + WebP before a
-  re-cut with fewer frames.
-- Every frame the game places a glow on must have **one** amber cluster (the finder keeps up to
-  two): a wound that reads amber gets a glow. The slicer protects the eye from the tone pass;
-  `python3 tools/art-redden.py <frames>` keeps the leftmost cluster and pushes the rest to red
-  (run it on every new frame set; worth porting into `art-poses`).
+- **A hidden Browser pane freezes the game's clock** (`requestAnimationFrame` stops): no
+  fidget, no fade, nothing moves until the pane is showing. Check `document.hidden` before
+  concluding an animation is broken. To test while hidden, step the scene by hand — but that
+  runs the sprite's timers (`nextFidgetAt`, `q.start`) ahead of the app's clock, and on a
+  visible pane nothing will fire until the real clock catches up: **reset `nextFidgetAt = 0`
+  and `q.start = sc.now` after stepping, or stage a fresh fight.** This cost an hour on
+  2026-09-18.
+- Every frame the game places a glow on must have **one** amber cluster per eye (the finder
+  keeps up to two): a wound that reads amber gets a glow. The slicer protects the eye from the
+  tone pass; run `art-redden.py` on gory frame sets.
 - The v1 possum had **no** findable amber eye; every mutant prompt says "glowing amber eye".
 - Sheets and direction samples stay in `assets/art` as the record with `"ship": false` in the
   manifest: `art:optimize` gives them no WebP. `npm run art` skips them only because the PNG
   exists — `--force` would regenerate (and overwrite the raw), `ship` means nothing to it.
 - Regenerating an id with `subject` = itself overwrites `art/out/<id>-raw.png`: copy the raw to
-  `<id>-vN-<why>-raw.png` first (the possum's gpt raw is `enemy-possum-mutant-v1-gpt-raw.png`).
+  `<id>-vN-<why>-raw.png` first.
 - `"key": null` does not disable the chroma key; `"key": false` does.
-- Wan: 5 s max useful, one movement per clip; prompts that open with "sits still … holds
-  still" come out motionless; it moves jaws and tentacles readily, heads rarely.
+- The cutter never deletes stale frames: delete the old `<out>-<name>-*` PNG + WebP before a
+  re-cut with fewer frames. A content edit reloads the page before `art:optimize` has written
+  the new WebPs — reload once more or the loader drops the fidget silently.
+- `--fidget-pingpong` ends one frame before where it began (the ends are not repeated).
+- Wan: 5 s max useful, one movement per clip; prompts that open with "holds still … then
+  slowly" come out motionless — the action leads; it moves jaws and tentacles readily, heads
+  rarely, legs when told to swing them; it regrows a torn-off leg at a peak.
+- A frame's WebP is what the game loads: after any frame change run `npm run art:optimize`
+  before judging in the browser.
 
 ## Then: the metamorphosis grilling session
 
@@ -208,10 +269,12 @@ Record the outcome in §8.8 and the tuning log, then add rows.
 one clear recommendation per question. When he asks _what the next step is_, or floats an idea
 with "don't do this yet", **answer — don't build**. He likes a **sample** before a decision.
 He wants generated art shown to him before it is committed (`SendUserFile` — he reads on his
-phone, so send a PNG grid next to any mp4), and to be walked through account/API steps. His
-messages are speech-to-text; ask when a word doesn't parse ("cacoon", "our direction" = art
-direction, "bard seed 103" = bark seed 103). He reviews in batches; when working unattended
-keep a checkpoint list here, one commit per item.
+phone; send the mp4 and a grid or a **reel**: the scratch `reel.py` of 2026-09-18 played a
+creature's cut frames over a dark table exactly as the game does, and that is what got the
+spider approved), and to be walked through account/API steps. Show him **every** clip of a
+batch, not just the good ones — he asked. His messages are speech-to-text; ask when a word
+doesn't parse ("cacoon", "bard seed 103" = bark seed 103). He reviews in batches; when working
+unattended keep a checkpoint list here, one commit per item.
 
 **Pushing.** `gh` is authenticated but configured for SSH, and github.com's host key isn't
 trusted on this machine. Push with:
@@ -223,48 +286,51 @@ git -c credential.helper= -c "credential.helper=!gh auth git-credential" push or
 Commits go straight to `main` with the attribution line the session gives you. CI takes ~1
 minute; the fuzz tests have a 60 s budget because CI's runner is slower than this machine.
 **Never `git add -A`**: unapproved art sits uncommitted in `assets/art` and `public/art` — add
-paths by name.
+paths by name. To commit one creature's row while another's is still on trial, write the
+staged version of `enemies.ts` with the trial block reverted, `git add` it, then restore the
+working copy (done twice on 2026-09-18).
 
 **The Bash tool truncates long commands** (~8 KB); the failure looks like an unterminated
 quote and nothing runs. Write a Python edit script with the Write tool into the session
 scratchpad (exact `(old, new)` pairs with `assert s.count(old) == 1`), run it with `python3`
-(the one with PIL; `python` is a bare 3.13), then `npx prettier --write` the touched files —
-prettier reflows markdown tables, so match padded rows. Use raw strings for anything with
-`C:\Users`.
+(the one with PIL; `python` is a bare 3.13; numpy is not installed), then `npx prettier
+--write` the touched files — prettier reflows markdown, so patch **after** it has run, against
+the wrapped text. Use raw strings for anything with `C:\Users`.
 
 **Verifying visuals.** `preview_start` with the `dev` launch config (the desktop app stops the
-server between days — restart it); if another chat holds :5173 the tool says so, just
-`navigate`. `resize_window` to 1280×720 before screenshots. HMR reloads the page on any `.ts`
-edit, so re-stage after editing. URL overrides for a run: `?seed=` `?deck=cat,cat,roly-poly`
+server between days, and it died once mid-session — restart it; a tab on
+`chrome-error://chromewebdata/` means the server is gone). HMR reloads the page on any `.ts`
+edit, so re-stage after editing. URL overrides for a run: `?seed=` `?deck=cat,cat,pounce`
 `?hp=999` `?crumbs=500`. In dev, `window.__cardillion` exposes `controller`, `screens`,
 `autoFight()` and `autoRun(stopAt?)`. `controller.run` is a plain object you can edit from the
-console: to stage any fight, enter one and replace `c['run'].combat.enemies` with hand-built
-instances (`{uid, def, hp, maxHp, statuses:{}, intent, lastMove:null, uses:{},
-playedDead:false, playingDead:false, patternIndex:0, enraged:false}`), then
-`c['scene'].setEnemies(enemies)` and `c['battle'].render(combat)`. To stand on any map node
-without markers interfering: `c['run'] = {...c.current, position: node.prev[0], snailNode: null,
-snailReturnIn: 99, greebleNode: 'boss'}` then dispatch a travel. `autoRun('shop')` plays until
-the run's phase is `shop` (`cocoon`, `reward`, `map` work too). Private fields are reachable
-at runtime (`c['scene']['sprites']`, a sprite's `seq`, `fade`, `ghost`, `eyes`). **When the
-Browser pane is hidden, `requestAnimationFrame` stops**: drive the scene by hand — `let t =
-sc['now']; for (…) { t += 1/30; sc.update(1/30, t); } sc.render()` — and never let a hand
-clock run ahead of the app's on a visible pane. The JS tool times out at 45 s. On-screen
-brightness can be measured by drawing the renderer canvas to an offscreen one and averaging
-`enemyRect` (how the lighting change was checked). JS tool results over ~250 KB land in a file
-under `tool-results/`, sometimes double-encoded — return numbers, not pixels.
+console: to stage any fight, click NEW RUN, dispatch a travel to `t0-0`, replace
+`c['run'].combat.enemies` with hand-built instances in the engine's own shape (`{uid, def, hp,
+maxHp, statuses:{block:0,poison:0,weak:0}, intent, lastMove:null, uses:{}, playedDead:false,
+playingDead:false, patternIndex:0, enraged:false}` — `statuses:{}` turns to NaN on the first
+status, and `patternIndex` is what a boss's cycle reads), then
+`c['scene'].setEnemies(enemies)` and `c['battle'].render(combat)`. To shape a run for him
+(done 2026-09-18): on the map, set `run.map.nodes[id].type` for the trail he wants
+(`'shop'`, `'cocoon'`, `'fight'`), park the markers (`run.greebleNode = run.map.boss;
+run.snailNode = null; run.snailReturnIn = 99`), mutate the content modules through Vite —
+`(await import('/src/content/encounters.ts')).ENCOUNTERS.early.splice(0, 4, ['possum'])`,
+`(await import('/src/content/cards.ts')).CARDS['pounce'].base.effects[0].amount = 999` — push
+a card onto `run.deck`, and call `c['render']()`. Runtime only; nothing in the repo changes.
+`autoRun('shop')` plays until the run's phase is `shop`. Private fields are reachable at
+runtime (`c['scene']['sprites']`, a sprite's `seq`, `fade`, `ghost`, `eyes`, `sink`). The JS
+tool times out at 45 s; results over ~250 KB land in a file — return numbers, not pixels, and
+never a data URL. Screenshots lag the call by up to a second, so they miss short clips — prove
+motion with numbers (`seq.mode`, `fade`, `lift`) or a reel.
 
 Useful seeds: `garden1` two rats plus a Greeble in the first fight (`t0-0`), `s3` a possum on
-a Flower Patch, `s0` spider, `s5` scorpion + Greeble, `g52` a short winnable trail. Deck
-overrides: `?deck=worm-swarm,wormillion,drill-worm,scavenge,molt,stink-cloud,burrow,caterpillar`.
+a Flower Patch, `s0` spider, `s5` scorpion + Greeble, `g52` a short winnable trail.
 
 **Keys.** `.env` (gitignored, never printed) holds `OPENAI_API_KEY` and `RUNWAYML_API_SECRET`;
 `tools/lib/env.mjs` reads it. `COMFYUI_DIR` and `FFMPEG` are process-environment overrides
 with working defaults (`C:\Users\smite\ComfyUI_windows_portable`, `art/out/bin/ffmpeg.exe`).
 The Cat cards portray **his real cat** from `art/refs/owner-cat.png` (gitignored). Spend so
-far: roughly $16–18 on OpenAI images (check the usage page), Sora ≈ $10.80 (the rat's clip and
-the spider's four: jaws, wave, two failed rear-ups; the two blocked possum jobs and the rat's
-blocked "vicious bite" job were probably
-not billed), 270 of the 500 free Runway credits.
+far: roughly $17–19 on OpenAI images (check the usage page), Sora ≈ $10.80 (the rat's clip and
+the spider's four — jaws, wave, two failed rear-ups; the blocked possum jobs and the rat's
+blocked "vicious bite" job were probably not billed), 270 of the 500 free Runway credits.
 
 ## Architecture in one screen
 
@@ -275,10 +341,11 @@ src/engine/   pure rules. rng.ts (seeded, forkable) · types.ts (row shapes live
               habitats) · run.ts (run reducer: travel, rewards, shops, cocoon choices +
               metamorphosis, markers, the Snail's trail) · fuzz.test.ts
 src/content/  data tables: cards.ts (20 + Cobweb; PUPATION) · enemies.ts (art, deadArt,
-              poses) · encounters.ts · trails.ts · habitats.ts · upgrades.ts
+              height, poses) · encounters.ts · trails.ts · habitats.ts · upgrades.ts
 src/render/battle/  scene.ts (table, lights, sprites: body group, keyframe poses, clip
-              sequences, eye glow, act() per move) · post.ts (bloom, grain, vignette) ·
-              textures.ts (card faces, art loader, eye and ground-line finders, placeholders)
+              sequences, move clips, the settle, eye glow, act() per move) · post.ts (bloom,
+              grain, vignette) · textures.ts (card faces, art loader, eye and ground-line
+              finders, placeholders)
 src/ui/       battle-ui.ts (hand, HUD, intents, targeting) · run-screens.ts (title, map,
               reward, shop, cocoon, result, settings) · card-faces.ts
 src/app/      index.ts (boot, art ids, storage, settings, dev hooks) · run-controller.ts
@@ -287,9 +354,9 @@ src/save/     store.ts · save.ts (one slot, versioned + shape-checked) · setti
 tools/        gen-art.mjs (OpenAI Images: generate, edit with `subject`/`referenceRole`,
               chroma key) · art-poses.mjs (sheet slicer) · art-video.mjs (clip cutter) ·
               art-tone.mjs (re-tone frames) · art-optimize.mjs (PNG → WebP, honours
-              `ship: false`) · art-preview.mjs · gen-video-local.mjs / gen-image-local.mjs
-              (ComfyUI) · gen-video-runway.mjs · gen-video-sora.mjs · lib/{chroma,comfy,
-              env,frames}.mjs · workflows/*.json (ComfyUI graphs)
+              `ship: false`) · art-preview.mjs · art-redden.py · art-unred.py ·
+              gen-video-local.mjs / gen-image-local.mjs (ComfyUI) · gen-video-runway.mjs ·
+              gen-video-sora.mjs · lib/{chroma,comfy,env,frames}.mjs · workflows/*.json
 ```
 
 Rules that matter when you touch it: the engine emits **events** and the renderer only
@@ -306,7 +373,8 @@ new top-level `RunState` field invalidates every existing save (the player sees 
 notice) without any `SAVE_VERSION` bump — put per-card state on `CardInstance`, or bump the
 version knowingly; families are the identity (ADR 0007) — new mechanics act on a card's `bug`;
 the moves' amplitudes are literals in `poseBody` (`scene.ts`) — a per-creature nudge means a
-seam on `EnemyDef`, not a tweak. ESLint enforces the layering for `engine` and `content` only.
+seam on `EnemyDef`, not a tweak (`height` is the model). ESLint enforces the layering for
+`engine` and `content` only.
 
 ## Known issues and loose ends
 
@@ -315,8 +383,10 @@ seam on `EnemyDef`, not a tweak. ESLint enforces the layering for `engine` and `
   synchronously and the playback chain can no longer be poisoned by a throw. Watch for it.
 - Desktop-only layout; the title overflows on phones and touch is untested (roadmap).
 - GitHub Pages URLs are case-sensitive: `/Cardillion/` works, `/cardillion/` 404s.
-- Both v1 spider sprites keep a faint half-keyed shadow under the body — lose it in the spider
+- The v1 wolf-spider sprite keeps a faint half-keyed shadow under the body — lose it in its
   pass ("no shadow under the body").
+- The spider's `legr`-type single-leg clips and the wave sections are gone from the row; the
+  `spider-leg-*`, `spider-web-501`, `spider-rear-301/304` clips stay in `art/out/video/`.
 - After a mid-fight reload the reward screen's "emerged" note is lost and `?seed=` is not
   refreshed. Cosmetic.
 - Reduce motion removes the film grain; `Post.setGrain` takes any amount if a middle setting
@@ -325,6 +395,8 @@ seam on `EnemyDef`, not a tweak. ESLint enforces the layering for `engine` and `
   spec marks them.
 - `disposeSprite` leaks the shadow blob's geometry/material (minor).
 - Clip textures are per sprite, not per creature (see GPU memory above).
+- `enemy-possum-floor-*` and the wave-section frames were deleted, not kept; their clips are
+  in `art/out/video/` if ever wanted.
 
 ## How we got here (for context, not action)
 
@@ -335,5 +407,8 @@ a checkpoint kept here. The owner asked for enemies "more realistic and gross, l
 Inscryption", then, on 2026-09-16, for the mutant direction, and one edited rat sold it. The
 rat took 2026-09-16/17: pose sheets, a Sora clip, a local rig (ComfyUI, Wan 2.2, FLUX.2 klein,
 Z-Image — `docs/local-video.md`, `docs/local-image.md`), eleven Wan re-rolls, four Runway/Veo
-renders, and a cross-fade for the clip handovers. The lesson each time: ask before starting a
-milestone, keep commits small, write the checkpoint here, and show him a sample.
+renders, and a cross-fade for the clip handovers. 2026-09-18 was the possum and the spider in
+one long day: klein de-gore passes, the `thicket-morbid` style, a dozen Wan batches, the cutter
+growing named sections, anchors, two-eye relight and colour hold, and the settle. The lesson
+each time: ask before starting a milestone, keep commits small, write the checkpoint here, and
+show him a sample — as a reel, every clip of the batch.
