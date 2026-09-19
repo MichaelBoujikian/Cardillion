@@ -151,6 +151,89 @@ legl=0.08:1.83`, `--fidget legr=0.15:1.58`, `--fidget web=0.2:2.9`.
   raises both front pairs like his photo, stays in frame, and is half-landed at 4 s. He picked
   305: cut `--anchor 0 --fidget rear=0:1.58 --fidget-pingpong` (38 frames, rise to the held
   peak and back down the same way).
+- Wan's **colour drift**: on the possum still most clips longer than ~1.5 s bled magenta (or
+  green) into the fur — `possum2-floor-221/224/234/235`, `possum3-mouth-241`, `-bark-252`
+  from 1.5 s. Pinning the fur in the prompt and the negative ("pink fur, red fur, green fur,
+  colour shift, color cast, tinted") halved it; `art:video --hold-colour` removes what is left
+  (per-frame channel gains to the first frame's mean). Cut short and early where you can.
+- The possum's kept bark (2026-09-18): seed **252**, 3 s — _The mutant opossum gives one sharp
+  bark: its head jerks forward a little, its jaws snap open wide baring the needle teeth for an
+  instant, and then it snaps straight back to exactly the starting pose …_ — cut `--anchor 0
+--fidget bark=0:0.92 --fidget-pingpong --hold-colour` (22 frames). Its siblings failed:
+  the mouth-retch (241 magenta, 242 late and hanging), the hind-leg scratch (261 dissolved, 262
+  moved a front paw and settled elsewhere) and the tentacle tug (271 walked off) — except
+  **272, the kept tug**: the head dips toward the tentacle, then lifts with the jaws parting.
+  It was first cut as its opening 1.25 s (`--fidget tug=0:1.25`), which is only the dip, a
+  few pixels — the owner could see the tug in the clip and never in the game; on 2026-09-19
+  he asked for the **whole clip forward then reversed**: `--anchor 0 --fidget tug=0:3.0
+--fidget-pingpong --hold-colour`, 72 frames, `enemy-possum-tug-01..72` (the same day the
+  fidget gate turned out to depend on the frame rate — fixed, spec §11.2). The tug
+  prompt, seed 272: _The mutant opossum reaches up
+  with one front paw, grabs the thick fleshy tentacle that runs from its belly up into its eye
+  socket, and gives it a tug: the tentacle stretches and the head twitches with the pull, then
+  the paw lets go and comes back down to exactly where it was, the tentacle settling back into
+  place. Only that paw, the tentacle and a twitch of the head move; the body, other legs and
+  tail stay planted._ (plus the fur-pinning tail and negative of take 4).
+- **A tug made the other way round — the pose first (2026-09-18, late; made, shown, NOT
+  applied: the owner wanted 272 kept and the game looked at, not a new clip).** The recipe
+  is worth keeping.
+  Twelve more Wan clips from the rest still (four wordings, all in `possum-prompts.txt`: the
+  paw grabbing, seeds 281–283; the tentacle yanking, 291–293; a leg-lift-first wording,
+  284–286; the original tug prompt, 273–275 — fourteen tries with the two before) never
+  lifted a paw: Wan pushed the head about instead, sat still, or collapsed to green within a
+  second (five of the twelve — three with a negative that added "subtle, slight", two with
+  the plain one; the wording made no measurable difference). So **klein painted the end
+  pose** as a still — `npm run image:local -- --out possum-tugpose-2 --edit
+art/out/enemy-possum-mutant-raw.png --seed 2 --prompt …` with _The same mutant opossum, the
+  same painting, on the same flat pure neon green screen background, unchanged. KEEP THE
+  COLOURS AND LIGHTING: the fur stays dark - near-black, dirty greenish-grey, wet and clumped -
+  under the same dim low-key lighting with crushed blacks; do not make it pale, white or
+  bright. CHANGE ONLY THE POSE OF ONE FRONT LEG AND THE HEAD: the near front leg is lifted
+  off the ground and its paw is raised up to the chin, the claws gripping the thick fleshy
+  tentacle that runs from the belly up into the eye socket and pulling it taut downward; the
+  head is bent down toward the paw with the jaws open, as if yanked. Everything else - the
+  other three legs planted, the body, the tail, the belly tentacles, the wounds, the glowing
+  amber eye - exactly as before._ (all four seeds raised the paw; **seed 2** grips a
+  tentacle: `art/out/local/possum-tugpose-2.png`; the head did not bend and the main
+  tentacle stayed put) — and **Wan animated the release from it** —
+  _The mutant opossum lets go of the tentacle gripped in its raised front paw: the tentacle
+  slips out of the claws and drops to hang down from its belly with the others, and the raised
+  front leg swings down and plants its paw firmly on the ground beside the other front paw,
+  so the opossum stands on all four legs. The head stays where it is with the jaws open. The
+  body, the other legs and the tail stay planted. Its fur stays exactly the same dark
+  greenish-black colour throughout and the lighting does not change. The belly tentacles stay
+  attached. Locked-off camera, no zoom, flat bright green background unchanged._ Negative:
+  _bright colors, overexposed, blurry, low quality, JPEG artifacts, ugly, deformed, extra
+  limbs, malformed, cluttered background, camera movement, zoom, text, watermark, tentacles
+  disappearing, tentacles vanishing, extra tentacles, tentacles multiplying, morphing,
+  walking, jumping, turning around, lowering its head, bowing, crouching, lying down, eating,
+  pink fur, red fur, green fur, colour shift, color cast, tinted, static, motionless_. A limb
+  coming down is a motion it draws readily: seed **303** plants the paw inside 0.5 s (301 too,
+  but greener; 302 keeps hold and fiddles). Cut `npm run art:video -- --video
+art/out/video/possum5-release-303.mp4 --out enemy-possum --anchor 0 --fidget tug=0:0.67
+--fidget-reverse --fidget-pingpong --fps 12 --like enemy-possum-rest --tone enemy-possum
+--hold-colour` then `art-redden.py` gave 16 frames, rest → paw up at the tentacle → rest
+  (`--fidget-reverse` plays the section backwards first, so a clip that starts in the pose
+  becomes a fidget that starts at rest; `--anchor 0` is the pose, which sets the placement and
+  the colour hold). Two seams against the loop, both at the cross-fades: **Wan shut the jaws
+  as the paw landed** (the prompt asked for them open), so the fidget's first and last four
+  frames have the mouth closed and the muzzle pushed 16 px forward where the loop's rest has
+  the jaws wide — the 150 ms fade in and the 300 ms fade out each dissolve open to shut; and
+  the clip's last 0.2 s (frames 01–03) had started to go green, so the key thinned the fur
+  highlights there (mean alpha 232 against the loop's 244). The eye sits 0.02 units higher
+  than the loop's; the settle sinks it. Four more release seeds with the jaws pinned in the
+  prompt (_Its jaws stay gaping wide open the whole time, the needle teeth bared, the mouth
+  never closing_) and the negative (_closing its mouth, jaws closing, mouth shut_), seeds
+  304–307: **304** kept them open and lowered the paw over two seconds but went purple from
+  0.5 s (the colour hold turns that into green fur and magenta tentacles — a per-channel gain
+  cannot undo a hue split); 305 held colour and jaws and never let go; 306 and 307 went
+  green. The 303 cut is not on disk; the command above remakes it.
+- **Wan drifts toward the screen colour.** Re-keying the same pose still onto pure blue
+  (`art/out/local/possum-tugpose-2-blue.png`; the key strips the green, sharp lays the figure on
+  `#0000FF`) held the fur's colour for the whole 3 s on two seeds of three and the third
+  drifted _blue_ — but none of the three let go of the tentacle, so the green 303 was kept.
+  A blue screen is the move when a clip's motion is right and only the colour fails, since
+  the fur has no blue for the key to take; `art:video --key blue`.
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 

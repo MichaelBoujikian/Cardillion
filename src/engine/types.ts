@@ -124,6 +124,12 @@ export type EnemyTrait = 'unseen' | 'playDead';
 export interface FrameSequence {
   frames: string[];
   fps: number;
+  /**
+   * For a fidget: how long its last frame lingers under the loop as it hands back, in ms, so
+   * what the movement left behind (a heap on the floor) fades out slowly instead of over the
+   * standard 300 ms cross-fade. The loop is already fully shown before the linger starts.
+   */
+  settleMs?: number;
 }
 
 /** Every art id a creature's poses name, whatever their shape. */

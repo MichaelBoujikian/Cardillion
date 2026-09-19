@@ -19,6 +19,9 @@
  *                      played once while that move's body motion runs) is cut the same way
  *   --fidget-video <f> take the fidget from this clip instead (its own t0:t1)
  *   --fidget-pingpong  play the fidget forward then backward, so it ends a frame from where it began
+ *   --fidget-reverse   play the section backwards (with --fidget-pingpong: backwards, then forwards) -
+ *                      for a clip that starts in the pose and returns to rest, so the fidget goes
+ *                      rest -> pose -> rest and --anchor 0 (the pose) still sets the placement
  *   --fps <n>          frames per second to keep (default 12)
  *   --key <name>       green | blue | magenta (default green)
  *   --like <id>        an existing frame: its canvas, and the first loop frame is scaled to its
@@ -26,6 +29,8 @@
  *                      at the same size and place as the pose frames (and as a fidget cut in
  *                      another run from the same --like)
  *   --eyes <n>         glowing eyes to relight, 1 (default, a side profile) or 2 (front-facing)
+ *   --hold-colour      keep every frame's figure at the first frame's mean colour (per-frame
+ *                      channel gains): a video model drifting the fur magenta or green
  *   --tone <id>        match brightness and chroma to this asset (see art-poses)
  *   --ffmpeg <exe>     ffmpeg to use (default: $FFMPEG, then art/out/bin/ffmpeg.exe, then PATH)
  *
@@ -43,6 +48,8 @@ import {
   ROOT,
   applyTone,
   blobs,
+  holdColour,
+  meanColour,
   measure,
   readRaw,
   readRawFile,
@@ -83,7 +90,7 @@ const fidgetSpecs = args
   });
 if (!video || !outPrefix || (!loopRange && anchor === null)) {
   console.error(
-    'usage: art-video --video <file> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video f] [--fidget-pingpong] [--fps n] [--key name] [--like id] [--tone id] [--eyes 1|2] [--ffmpeg exe]',
+    'usage: art-video --video <file> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video f] [--fidget-pingpong] [--fidget-reverse] [--fps n] [--key name] [--like id] [--tone id] [--eyes 1|2] [--hold-colour] [--ffmpeg exe]',
   );
   process.exit(1);
 }
@@ -143,6 +150,9 @@ const segments = loopRange
   : [{ name: null, files: pickLoop([anchor, anchor]) }];
 for (const { name, range: r } of fidgetSpecs) {
   let files = pickFidget(r);
+  // A clip generated from the pose still (the paw up) and animating the return to rest is
+  // played backwards so the fidget starts at rest; ping-pong then brings it back.
+  if (flag('fidget-reverse')) files = [...files].reverse();
   // Forward then back (the ends not repeated), so the movement ends a frame from where it began
   // and the loop's first frame follows (a dip becomes a bob).
   if (flag('fidget-pingpong')) files = [...files, ...files.slice(1, -1).reverse()];
@@ -372,13 +382,21 @@ console.log(
   `crop ${cw}x${ch} at ${crop[0]},${crop[1]}; scale x${scale.toFixed(3)}; canvas ${W}x${H}`,
 );
 
+// The colour to hold, from the first frame, if asked.
+const holdAt = flag('hold-colour') ? meanColour({ data: cut(first), w: cw, h: ch }) : null;
+if (holdAt)
+  console.log(
+    `  colour held at the first frame's mean (${holdAt.map((v) => v.toFixed(0)).join(', ')})`,
+  );
+
 // 6. Write the frames.
 for (const seg of segments) {
   if (!seg.name) continue;
   let n = 0;
   for (const f of seg.files) {
     const k = keyed.get(f);
-    const toned = await applyTone(cut(k), cw, ch, gains);
+    const held = holdAt ? holdColour(cut(k), cw, ch, holdAt) : cut(k);
+    const toned = await applyTone(held, cw, ch, gains);
     let raw = toned;
     if (scale !== 1)
       raw = await sharp(toned, { raw: { width: cw, height: ch, channels: 4 } })

@@ -92,7 +92,8 @@ interface EnemySprite {
    * ghost as the new pose comes up; a clip-boundary fade (`seq` true) lets the clip play on
    * and keeps the ghost solid underneath until the incoming frames are fully up.
    */
-  fade: { start: number; duration: number; seq: boolean } | null;
+  /** `settle`: seconds the ghost lingers at full strength after the new frame is in, then fades. */
+  fade: { start: number; duration: number; seq: boolean; settle?: number } | null;
   /** Scene time until which the hit pose holds; 0 when it is not showing. */
   hitUntil: number;
   /** Where the idle loop is (an index into rest + idle frames) and when it next moves on. */
@@ -104,7 +105,7 @@ interface EnemySprite {
    */
   seq: {
     loop: THREE.Texture[];
-    fidgets: { frames: THREE.Texture[]; fps: number }[];
+    fidgets: { frames: THREE.Texture[]; fps: number; settleMs?: number }[];
     current: number;
     /** A clip per move id, played once while that move runs (poses.moves). */
     moves: Map<string, { frames: THREE.Texture[]; fps: number }>;
@@ -115,6 +116,8 @@ interface EnemySprite {
     fps: number;
     mode: 'loop' | 'fidget' | 'move';
     start: number;
+    /** Full turns of the loop since `start`; a fidget may begin as the count rises. */
+    turn: number;
     nextFidgetAt: number;
   } | null;
   /** Textures owned by the sequences, which pose swaps must not dispose. */
@@ -141,6 +144,14 @@ interface EnemySprite {
   height: number;
   /** The plane's centre height: set so the picture's ground line sits on the table. */
   baseY: number;
+  /**
+   * The settle after a fidget: the incoming loop frame starts raised (or lowered) by `lift` so
+   * its eye sits where the clip's eye was, and sinks to rest on the breathing curve over
+   * `duration` - the creature settles back down instead of morphing across the dissolve.
+   */
+  sink: { lift: number; start: number; duration: number } | null;
+  /** The sink's current offset, added to the plane and the glows. */
+  lift: number;
   unseen: boolean;
   /** 0 = hidden (Unseen), 1 = fully shown. */
   reveal: number;
@@ -656,6 +667,8 @@ export class BattleScene {
       width,
       height,
       baseY,
+      sink: null,
+      lift: 0,
       unseen,
       reveal: unseen ? 0 : 1,
       revealTarget: unseen ? 0 : 1,
@@ -693,7 +706,11 @@ export class BattleScene {
     }
     // Fidgets with no frames on disk are dropped, so what remains always plays.
     const fidgets = (def.poses?.fidgets ?? [])
-      .map((f) => ({ frames: textures(f.frames), fps: f.fps }))
+      .map((f) => ({
+        frames: textures(f.frames),
+        fps: f.fps,
+        ...(f.settleMs !== undefined ? { settleMs: f.settleMs } : {}),
+      }))
       .filter((f) => f.frames.length);
     const moves = new Map(
       Object.entries(def.poses?.moves ?? {})
@@ -711,13 +728,14 @@ export class BattleScene {
       fps: loop.fps,
       mode: 'loop',
       start: this.now,
-      nextFidgetAt: this.now + 2,
+      turn: 0,
+      nextFidgetAt: this.now + 1,
     };
   }
 
   /**
    * Advance a creature's clip: the loop plays back and forth (so it never seams); when a
-   * fidget is due (no sooner than 2.5–6 s after the last one, and only as the loop turns at
+   * fidget is due (no sooner than 1–2.5 s after the last one, and only as the loop turns at
    * its first frame, so a long loop sets the cadence) the next fidget in turn plays once and
    * hands back to the loop's first frame, which is where it ends. Each handover is a cross-fade: the
    * outgoing frame stays under the incoming clip for a beat (spec §11.2). Paused while a
@@ -726,7 +744,11 @@ export class BattleScene {
   private stepSequence(s: EnemySprite, t: number): void {
     const q = s.seq;
     if (!q || s.pose !== s.clipArt || (s.fade && !s.fade.seq)) return;
-    if (t < q.start) q.start = t; // a clock that went backwards (dev tools) must not index off the end
+    if (t < q.start) {
+      // A clock that went backwards (dev tools) must not index off the end.
+      q.start = t;
+      q.turn = 0;
+    }
     const shown = s.plane.material.map;
     if (!shown || !s.seqMaps.has(shown)) {
       // A keyframe (strike, hit) interrupted the clip and the rest still is back on the plane.
@@ -737,9 +759,11 @@ export class BattleScene {
       if (q.mode === 'fidget') this.endFidget(s, q, t);
       if (q.mode !== 'move') q.mode = 'loop';
       q.start = t;
+      q.turn = 0;
     }
     let tex: THREE.Texture | undefined;
     let boundary = false;
+    let settle: number | undefined;
     const fidget = q.fidgets[q.current];
     if (q.mode === 'move' && q.move) {
       const i = Math.floor((t - q.start) * q.move.fps);
@@ -751,6 +775,7 @@ export class BattleScene {
     } else if (q.mode === 'fidget' && fidget) {
       const i = Math.floor((t - q.start) * fidget.fps);
       if (i >= fidget.frames.length) {
+        settle = fidget.settleMs;
         this.endFidget(s, q, t);
         tex = q.loop[0];
         boundary = true;
@@ -758,11 +783,20 @@ export class BattleScene {
     } else {
       const n = q.loop.length;
       const period = 2 * n - 2;
-      const i = Math.floor((t - q.start) * q.fps) % period;
+      const steps = Math.floor((t - q.start) * q.fps);
+      const i = steps % period;
       const idx = i < n ? i : period - i;
-      if (idx === 0 && fidget && this.motion.idle && t >= q.nextFidgetAt) {
+      // The loop has turned at its first frame since the last update. Counting turns, rather than
+      // waiting for an update to land on frame 0, keeps the cadence whatever the frame rate: a
+      // throttled tab drawing 2 frames a second skips that 83 ms window almost every time and
+      // the fidgets all but stopped (2026-09-19).
+      const turn = Math.floor(steps / period);
+      const turned = turn > q.turn;
+      q.turn = turn;
+      if (turned && fidget && this.motion.idle && t >= q.nextFidgetAt) {
         q.mode = 'fidget';
         q.start = t;
+        q.turn = 0;
         tex = fidget.frames[0];
         boundary = true;
       } else tex = q.loop[idx];
@@ -770,11 +804,13 @@ export class BattleScene {
     const old = s.plane.material.map;
     if (!tex || old === tex) return;
     const fadeMs = q.mode === 'loop' ? FIDGET_OUT_FADE_MS : FIDGET_IN_FADE_MS;
-    const ghosted = boundary && this.startGhost(s, fadeMs, true);
+    const ghosted = boundary && this.startGhost(s, fadeMs, true, settle);
     s.plane.material.map = tex;
     if (ghosted) s.plane.material.opacity = 0;
     else if (old && !s.seqMaps.has(old)) old.dispose(); // otherwise the ghost holds it until endFade
     this.trackEyes(s, q, tex);
+    if (ghosted && q.mode === 'loop' && old)
+      this.startSink(s, q, old, tex, fadeMs / 1000 + (settle ?? 0) / 1000);
   }
 
   /**
@@ -793,7 +829,7 @@ export class BattleScene {
       const { u, v } = points[i] as GlowPoint;
       (s.eyes[i] as THREE.Sprite).position.set(
         (u - 0.5) * s.width,
-        (0.5 - v) * s.height + s.baseY,
+        (0.5 - v) * s.height + s.baseY + s.lift,
         0.03,
       );
     }
@@ -803,8 +839,53 @@ export class BattleScene {
   private endFidget(s: EnemySprite, q: NonNullable<EnemySprite['seq']>, t: number): void {
     q.mode = 'loop';
     q.start = t;
-    q.nextFidgetAt = t + 2.5 + ((s.seed * 3.1 + 1) % 3.5);
+    q.turn = 0;
+    // 1-2.5 s (2026-09-18, was 2.5-6 s: the owner wanted to see them more often); the loop's
+    // turn gates the start anyway, so in practice a fidget comes every turn or two.
+    q.nextFidgetAt = t + 1 + ((s.seed * 3.1 + 1) % 1.5);
     if (q.fidgets.length) q.current = (q.current + 1) % q.fidgets.length;
+  }
+
+  /**
+   * Start the settle at a hand-back from a fidget: where the clip's last frame and the loop's
+   * first frame put the eye decides how far the incoming frame starts raised; the creature
+   * then sinks to rest over the dissolve plus any settle (at least 0.6 s), on a cosine ease
+   * like the breathing. Frames whose eyes line up already (the rat, the spider) get nothing.
+   */
+  private startSink(
+    s: EnemySprite,
+    q: NonNullable<EnemySprite['seq']>,
+    from: THREE.Texture,
+    to: THREE.Texture,
+    seconds: number,
+  ): void {
+    const a = q.eyes.get(from)?.[0];
+    const b = q.eyes.get(to)?.[0];
+    if (!a || !b) return;
+    const lift = (b.v - a.v) * s.height;
+    if (Math.abs(lift) < 0.01) return;
+    s.sink = { lift, start: this.now, duration: Math.max(0.6, seconds) };
+    this.applyLift(s, lift);
+  }
+
+  private stepSink(s: EnemySprite, t: number): void {
+    if (!s.sink) return;
+    const p = Math.min(1, (t - s.sink.start) / s.sink.duration);
+    const ease = (1 - Math.cos(p * Math.PI)) / 2;
+    this.applyLift(s, s.sink.lift * (1 - ease));
+    if (p >= 1) {
+      s.sink = null;
+      this.applyLift(s, 0);
+    }
+  }
+
+  /** Move the plane and the glows by the change in lift, so they stay together. */
+  private applyLift(s: EnemySprite, lift: number): void {
+    const d = lift - s.lift;
+    if (d === 0) return;
+    s.plane.position.y += d;
+    for (const e of s.eyes) e.position.y += d;
+    s.lift = lift;
   }
 
   /** Back to the loop after a move clip; the fidgets keep their turn and wait a beat. */
@@ -812,6 +893,7 @@ export class BattleScene {
     q.mode = 'loop';
     q.move = null;
     q.start = t;
+    q.turn = 0;
     q.nextFidgetAt = Math.max(q.nextFidgetAt, t + 2.5);
   }
 
@@ -830,6 +912,7 @@ export class BattleScene {
       q.mode = 'move';
       q.move = clip;
       q.start = this.now;
+      q.turn = 0;
     }
     s.action = { kind, start: this.now, clip: !!clip };
     return sleep(ACTION_TIMING[kind].impact * 1000);
@@ -890,6 +973,8 @@ export class BattleScene {
     s.pose = artId;
     s.width = s.height / (img.height / img.width);
     // Each pose stands on its own ground line, so a frame with more padding does not float.
+    s.sink = null;
+    s.lift = 0;
     s.baseY = this.baseFor(img, s.height);
     s.plane.position.y = s.baseY;
     s.plane.geometry = new THREE.PlaneGeometry(s.width, s.height);
@@ -918,7 +1003,7 @@ export class BattleScene {
    * transparent (stepFade). Any fade already running ends first. Returns false — no ghost —
    * for a zero fade and for Unseen creatures, whose opacity belongs to the reveal.
    */
-  private startGhost(s: EnemySprite, fadeMs: number, seq: boolean): boolean {
+  private startGhost(s: EnemySprite, fadeMs: number, seq: boolean, settleMs?: number): boolean {
     this.endFade(s);
     if (fadeMs <= 0 || s.unseen) return false;
     // Its own copy of the geometry: at a clip boundary the plane keeps the original.
@@ -928,6 +1013,7 @@ export class BattleScene {
     s.body.add(ghost);
     s.ghost = ghost;
     s.fade = { start: this.now, duration: fadeMs / 1000, seq };
+    if (settleMs && settleMs > 0) s.fade.settle = settleMs / 1000;
     return true;
   }
 
@@ -990,9 +1076,15 @@ export class BattleScene {
     if (!s.fade) return;
     const k = Math.min(1, (t - s.fade.start) / s.fade.duration);
     s.plane.material.opacity = k;
-    if (s.ghost) s.ghost.material.opacity = s.fade.seq ? 1 : 1 - k;
+    // A clip handover keeps the outgoing frame solid under the incoming one; with a settle it
+    // then lingers, and whatever the new frame does not cover (a heap the fidget left on the
+    // floor) fades out slowly behind it.
+    const settled = s.fade.settle
+      ? Math.min(1, (t - s.fade.start - s.fade.duration) / s.fade.settle)
+      : 1;
+    if (s.ghost) s.ghost.material.opacity = s.fade.seq ? (k < 1 ? 1 : 1 - settled) : 1 - k;
     if (s.eyeGlide) s.eyeGlide.forEach((g, i) => s.eyes[i]?.position.lerpVectors(g.from, g.to, k));
-    if (k >= 1) this.endFade(s);
+    if (k >= 1 && settled >= 1) this.endFade(s);
   }
 
   private applyReveal(sprite: EnemySprite): void {
@@ -1234,6 +1326,7 @@ export class BattleScene {
       }
       this.stepIdle(s, t);
       this.stepSequence(s, t);
+      this.stepSink(s, t);
       if (s.recoil > 0) {
         s.recoil = Math.max(0, s.recoil - dt * 4);
         s.plane.position.x = Math.sin(s.recoil * 30) * 0.08 * s.recoil;

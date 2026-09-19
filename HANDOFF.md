@@ -3,7 +3,7 @@
 For an agent picking this project up cold. Read **START HERE**, then `CLAUDE.md` (the standing
 rules), then the `spec.md` section for whatever you build next. First written 2026-09-15;
 rewritten 2026-09-18 (morning) after the rat shipped; refreshed 2026-09-18 (night) after the
-possum and the spider shipped and a possum fidget trial was left on the table.
+possum and the spider shipped, and 2026-09-19 after the possum's fidgets were settled.
 
 ## What this is
 
@@ -50,33 +50,31 @@ sessions. Do not propose or make number changes in passing.**
 by eye, wants one recommendation per question, approves art in batches, and is walked through
 any account or API step (see "How to work here").
 
-### The working tree is not clean — on purpose
+### What is committed, what is not
 
-Uncommitted, all of it one decision of his away from a commit (or a revert):
+The possum's fidgets are settled and committed (2026-09-19): **bark** (`enemy-possum-bark-01..22`)
+and **tug** (`enemy-possum-tug-01..72`, Wan 272 — the whole 3 s clip forward then reversed);
+the retch frames (`enemy-possum-retch-01..28`) stay committed on disk but out of the row. With
+them went the renderer seams (`settleMs`, the sink, the 1–2.5 s gap, and the **fidget gate
+fix** — see "Renderer facts"), the cutter's `--hold-colour` and `--fidget-reverse`, and the
+docs. The lesson of that tug, written down so it is not repeated: he could see the tug in the
+clip and not in the game because the first cut used only the clip's opening 1.25 s (a
+few-pixel dip) — **when he says "play it forwards and in reverse" he means the whole clip.**
+A different tug was made along the way (klein pose + Wan release, `docs/local-video.md`) and
+not applied; he had not asked for a new clip.
 
-- **The possum's fidget trial.** The row's fidgets are `enemy-possum-bark-01..22` and
-  `enemy-possum-tug-01..30` (both new, untracked PNG + WebP); the committed retch
-  (`enemy-possum-retch-01..28`) is on disk but out of the list. He has seen the bark on a reel
-  and liked it; he had not yet seen either in the game when the session ended (see "Things that
-  bite": a hidden Browser pane freezes the clock). **Ask which to keep** — bark + tug, or the
-  retch back in as well — then commit art + row together.
-- **Three renderer seams** that came out of the trial, tested, documented in spec §11.2, and
-  used by nothing committed yet: `settleMs` on a fidget (`FrameSequence`), the **sink**
-  (`startSink`/`stepSink`/`applyLift` in `scene.ts`), and the shorter fidget gap (1–2.5 s, was
-  2.5–6 s). Details under "Renderer facts".
-- **Cutter additions** (`tools/art-video.mjs`, `tools/lib/frames.mjs`): `--hold-colour`
-  (per-frame channel gains that pin a frame set's colour to its first frame — Wan's magenta
-  drift). Documented in `docs/art-pipeline.md` and `docs/local-video.md`.
+Still uncommitted, waiting on him:
+
 - **The bug chapel** (`bg-chapel`, `assets/art/bg-chapel.png` + its WebP; its manifest entry
   IS committed): his brief, a place to choose a blessing like the cocoon and the snail's stall —
   a bright gothic nave of woven twigs, petal windows on the left, sunbeams on a white marble
   praying mantis, floor open across the bottom. Not wired to any node, phase or screen; he has
   seen it once and said nothing yet. Flagged to him: the statue came out small and far, and the
   far end is as bright as the front (no Garden→Thicket gradient).
-- `spec.md`, `docs/*.md` and this file carry the matching text.
 
-Commit these in two pieces once he decides: (1) the possum art + row + the three seams + the
-cutter + docs, (2) the chapel render on its own yes.
+Commit the chapel render on its own yes. **Next up: the scorpion** (his brief, 2026-09-19:
+"a dark, sadistic scorpion, similar to what we used for the spider, a broken pincer would be
+good, maybe a split back with larvae coming out").
 
 ### The enemy art pass, creature by creature
 
@@ -106,7 +104,7 @@ pose-sheet stills (wind-up, strike, hit) and, where it has one, its special pose
   but stays as **every creature's tone reference**. His two fixes before the yes: the eye glow
   was too big (`EYE_GLOW_MAX` 0.26 → 0.16, the rat's) and Play Dead hopped sideways (the loop
   re-cut with the figure-anchored `--like`, the dead frame re-sliced with `--shift 24`).
-  **Then the fidget trial** (uncommitted, above): he wanted a retch whose guts fall to the floor
+  **Then the fidget trial** (committed 2026-09-19, above): he wanted a retch whose guts fall to the floor
   and pile up, to fade out afterwards. Four Wan batches (`possum2-floor-211..236`, `possum3-*`,
   prompts in `art/out/video/possum-prompts.txt`): the first bowed into the heap, the second
   held the pose but bled magenta or green, the third pinned the fur in the prompt and negative
@@ -114,9 +112,9 @@ pose-sheet stills (wind-up, strike, hit) and, where it has one, its special pose
   perfect if it were just coming out of his mouth"); a last batch of subtle fidgets (a bark, a
   hind-leg scratch, a paw tug on the tentacle, a mouth-first retch) gave the **bark** (`252`,
   jaws snap open into a hiss; first 0.92 s forward-then-back) and the **tug** (`272`, the head
-  dips toward the tentacle and the jaw parts; first 1.25 s forward-then-back), both cut with
-  `--hold-colour`. Sora blocks both possum stills (gpt and klein) at its input step, so the
-  possum is Wan-only.
+  dips toward the tentacle, then lifts with the jaws parting; the whole 3 s forward-then-back,
+  72 frames — committed 2026-09-19 with the bark), both cut with `--hold-colour`. Sora blocks
+  both possum stills (gpt and klein) at its input step, so the possum is Wan-only.
 - **Spider — done, committed** (`54dcf3e`, 2026-09-18): `enemy-spider-loop-01..15` (the still
   tail of a Sora jaws clip), fidgets **jaws** (`-jaws-01..30`, Sora) and **rear-up**
   (`-rear-01..38`, Wan `spider-rear-305`: both front pairs spread and rise like his photo of a
@@ -171,7 +169,7 @@ spider's; the prompt behind the rat's loop clip `rat-B3-bob` was never written d
 - Keyframes cross-fade (`setPose` + ghost). Clip handovers cross-fade differently: the outgoing
   frame stays **solid** under the incoming clip (`FIDGET_IN_FADE_MS` 150, `FIDGET_OUT_FADE_MS` 300) because `alphaTest 0.35` turns a two-sided dissolve into old-only → both → new-only. A
   fidget interrupted by a strike or hit ends; the loop restarts at frame 0.
-- **The settle** (uncommitted, 2026-09-18): with `settleMs`, the outgoing frame's ghost lingers
+- **The settle** (2026-09-18): with `settleMs`, the outgoing frame's ghost lingers
   after the loop is fully in and fades over that time (a heap on the floor dissolving). And at
   every hand-back the **sink** compares where the clip's last frame and the loop's first put
   the eye: the loop frame arrives offset by that difference (0.065 units up for the possum's
@@ -179,7 +177,10 @@ spider's; the prompt behind the rat's loop clip `rat-B3-bob` was never written d
   (≥ 0.6 s) — the creature comes back down instead of morphing. Zero where the eyes line up.
 - The fidget only starts as the loop turns at its first frame: a 45-frame loop turns every
   7.3 s, a 33-frame one every 5.3 s, so that — not the 1–2.5 s gap (was 2.5–6 s until
-  2026-09-18; uncommitted) — sets the rhythm; in practice one fidget every turn or two.
+  2026-09-18) — sets the rhythm; in practice one fidget every turn or two. The turn is
+  **counted** (`seq.turn`, 2026-09-19): a fidget used to start only when an update landed on
+  the loop's first frame, an 83 ms window, and at 2 fps (the Browser pane while it is not the
+  focused pane) it fired 3 times in 4 minutes; counting turns gives 30, the same as at 60 fps.
 - The eye glow follows the clip (`trackEyes`, each frame's eye found once and cached; a frame
   with no findable eye keeps the last position) and glides across keyframe fades (`eyeGlide`).
   Creatures use their own glow material (`EYE_GLOW_INTENSITY` 4, `EYE_GLOW_SCALE` 3,
@@ -200,8 +201,10 @@ spider's; the prompt behind the rat's loop clip `rat-B3-bob` was never written d
   ask for headroom (the spider), `--shift` moves every frame sideways (the possum's lying dead
   pose, whose bounding box is centred but whose body is not).
 - `npm run art:video -- --video <mp4> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget
-[name=]t0:t1 …] [--fidget-video mp4] [--fidget-pingpong] [--like frame] [--tone id] [--eyes
-1|2] [--hold-colour]` — `--fidget` repeats and names its sections (`<out>-<name>-NN`);
+[name=]t0:t1 …] [--fidget-video mp4] [--fidget-pingpong] [--fidget-reverse] [--like frame]
+[--tone id] [--eyes 1|2] [--hold-colour]` — `--fidget` repeats and names its sections
+  (`<out>-<name>-NN`); `--fidget-reverse` plays a section backwards first (a clip that starts
+  in the pose becomes a fidget that starts at rest; unused so far);
   `--anchor t` cuts fidgets from a second video of the same creature with no loop, landing on
   the same placement because `--like` stands each run's first frame on the reference figure's
   bottom-centre; `--eyes 2` for a front-facing creature; a briefly-lost eye is painted where it
@@ -218,9 +221,11 @@ n] [--keep-server]`; `npm run video:sora -- … [--height 0.85]`; `npm run image
 
 ### Things that bite
 
-- **A hidden Browser pane freezes the game's clock** (`requestAnimationFrame` stops): no
-  fidget, no fade, nothing moves until the pane is showing. Check `document.hidden` before
-  concluding an animation is broken. To test while hidden, step the scene by hand — but that
+- **A hidden Browser pane freezes the game's clock** (`requestAnimationFrame` stops), and a
+  showing pane that is not the app's focused pane draws **~2 frames a second** (measured
+  2026-09-19 with `document.hidden === false`): no fidget, no fade, nothing moves until the
+  pane is showing, and everything crawls until it is looked at. Check `document.hidden` and
+  count `requestAnimationFrame` ticks before concluding an animation is broken. To test while hidden, step the scene by hand — but that
   runs the sprite's timers (`nextFidgetAt`, `q.start`) ahead of the app's clock, and on a
   visible pane nothing will fire until the real clock catches up: **reset `nextFidgetAt = 0`
   and `q.start = sc.now` after stepping, or stage a fresh fight.** This cost an hour on
@@ -241,7 +246,11 @@ n] [--keep-server]`; `npm run video:sora -- … [--height 0.85]`; `npm run image
 - `--fidget-pingpong` ends one frame before where it began (the ends are not repeated).
 - Wan: 5 s max useful, one movement per clip; prompts that open with "holds still … then
   slowly" come out motionless — the action leads; it moves jaws and tentacles readily, heads
-  rarely, legs when told to swing them; it regrows a torn-off leg at a peak.
+  rarely, legs when told to swing them; it regrows a torn-off leg at a peak. **It will not
+  lift a paw from a rest still** (14 tries on the possum) but it brings a raised one down: have
+  klein paint the pose and animate the return (`docs/local-video.md`). Its colour drift goes
+  toward the screen colour, and five of twelve possum clips collapsed to green within a
+  second whatever the negative said.
 - A frame's WebP is what the game loads: after any frame change run `npm run art:optimize`
   before judging in the browser.
 

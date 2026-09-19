@@ -163,7 +163,10 @@ npm run art:video -- --video art/out/video/sora-rat-attack.mp4 --out enemy-rat-m
 so fidget → loop is seamless); `--fidget` the movement, played once now and then.
 `--fidget-video` takes the fidget from a second clip and `--fidget-pingpong` plays it forward
 then back; the reversed run drops both end frames, so the fidget ends one frame before where it
-began — the renderer's handover cross-fade (spec §11.2) covers the hair that is left. It needs
+began — the renderer's handover cross-fade (spec §11.2) covers the hair that is left.
+`--fidget-reverse` plays the section backwards first: for a clip generated _from the pose_ (a
+klein still of the paw up, Wan animating the paw coming down — the possum's tug), the fidget
+then starts at rest, and `--anchor 0` is the pose frame. It needs
 `ffmpeg` (`--ffmpeg <exe>`, `$FFMPEG`, `art/out/bin/ffmpeg.exe`, or on PATH — the owner's
 machine has the gitignored copy). Every frame gets one shared crop, the pose frames' scale and
 canvas (`--like`), the tone match, and the eyes relit to amber (video compression dulls them
@@ -180,7 +183,9 @@ in turn. `--fidget` repeats, each `[name=]t0:t1` written as `<out>-<name>-NN`, s
 cuts every section of a clip; a second video of the same creature is cut in its own run with
 `--anchor t` (its rest frame) in place of `--loop`, and lands on the same placement. A section
 meant for one move goes in the row as `poses.moves: { '<move id>': { frames, fps } }` (built
-for the spider's Spin Web; the clip was dropped, the seam stays) and plays once while that move runs. For a creature
+for the spider's Spin Web; the clip was dropped, the seam stays) and plays once while that move runs. `--hold-colour` pins every frame's figure to the first
+frame's mean colour with per-frame channel gains (Wan drifts a clip magenta or green after a
+second or two; the amber eyes are left alone). For a creature
 that is not gory, `python3 tools/art-unred.py <frames>` afterwards
 pulls the raw pink a video model paints into leg tips and motion smears down to the fur's
 dark brown, leaving the amber eyes.
@@ -208,7 +213,7 @@ npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
 npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id] [--width px] [--height px]
-npm run art:video -- --video <mp4> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--eyes 1|2] [--ffmpeg exe]
+npm run art:video -- --video <mp4> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video <mp4>] [--fidget-pingpong] [--fidget-reverse] [--fps n] [--key name] [--like frame] [--tone id] [--eyes 1|2] [--hold-colour] [--ffmpeg exe]
 npm run video:sora -- --image <png> --out <name> --prompt <text> [--seconds 4|8|12] [--height 0.85]   # keep 0.85: smaller reframes the shot
 python3 tools/art-redden.py <frames>    one amber cluster per frame, the rest pushed to red (gory creatures)
 python3 tools/art-unred.py <frames>     red and pink pulled to dark brown, eyes kept (clean creatures)

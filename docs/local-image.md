@@ -60,6 +60,12 @@ not change.
   torn-off leg as a dry blackened stump, and did not bleach. Seed 2 was installed. One seed
   turned a sore into a glossy black scab instead of removing it — check every leg.
 
+- **klein will lift a limb where Wan will not (2026-09-18, the possum's tug)**: asked for the
+  near front leg raised to the chin gripping the tentacle, all four seeds raised the paw (seed
+  2 grips a tentacle end; the head did not bend and the main tentacle stayed put). Wan then
+  animated the release from that still — the pose-first recipe in `docs/local-video.md`.
+  Colours held with the KEEP-THE-COLOURS wording.
+
 ## Gotchas
 
 - Both graphs are API-format JSON built from the official templates (node ids kept); the

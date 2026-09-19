@@ -123,6 +123,39 @@ export async function toneGains(cur, ref) {
  * and the renderer's eye-glow finder looks for exactly that colour. Only eye-sized amber blobs
  * count — a fleck of orange flesh is amber too, but small.
  */
+/** Mean R, G, B of the figure (opaque, not amber) - what a colour cast moves. */
+export function meanColour({ data, w, h }) {
+  const sum = [0, 0, 0];
+  let n = 0;
+  for (let i = 0; i < w * h * 4; i += 4) {
+    if (data[i + 3] <= 200 || isAmber(data[i], data[i + 1], data[i + 2], data[i + 3])) continue;
+    sum[0] += data[i];
+    sum[1] += data[i + 1];
+    sum[2] += data[i + 2];
+    n++;
+  }
+  return n ? sum.map((v) => v / n) : [1, 1, 1];
+}
+
+/**
+ * Hold a frame's colour: scale each channel so the figure's mean R, G, B match the reference
+ * frame's (a video model drifting the fur magenta or green over a clip), the amber eyes left as
+ * painted. Returns a new buffer.
+ */
+export function holdColour(cut, w, h, ref) {
+  const cur = meanColour({ data: cut, w, h });
+  const gain = ref.map((v, i) => Math.min(2, Math.max(0.5, v / Math.max(1, cur[i]))));
+  if (gain.every((g) => Math.abs(g - 1) < 0.01)) return cut;
+  const out = Buffer.from(cut);
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] <= 200 || isAmber(out[i], out[i + 1], out[i + 2], out[i + 3])) continue;
+    out[i] = Math.min(255, Math.round(out[i] * gain[0]));
+    out[i + 1] = Math.min(255, Math.round(out[i + 1] * gain[1]));
+    out[i + 2] = Math.min(255, Math.round(out[i + 2] * gain[2]));
+  }
+  return out;
+}
+
 export async function applyTone(cut, w, h, { brightness, saturation }) {
   if (brightness === 1 && saturation === 1) return cut;
   const raw = await sharp(cut, { raw: { width: w, height: h, channels: 4 } })

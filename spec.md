@@ -543,8 +543,11 @@ enemy; the Thicket's fog creeps a little onto the table.
   may carry frames cut from a green-screen video instead of idle stills — `poses.loop`
   (played back and forth at its `fps`, so it never seams: the rat holds still, only its
   tentacles slither) and `poses.fidgets` (one or more short movements, played in turn, one
-  now and then: no sooner than 2.5–6 s after the last, and only as the loop turns at its
-  first frame, so a long loop sets the rhythm — the rat's 45-frame loop turns every 7.3 s;
+  now and then: no sooner than 1–2.5 s after the last (2026-09-18, was 2.5–6 s), and only as
+  the loop turns at its first frame, so a long loop sets the rhythm — the rat's 45-frame loop
+  turns every 7.3 s. The turn is counted, not waited for: a fidget may start on any frame
+  after the loop has completed a period, so the cadence holds at any frame rate (2026-09-19;
+  a tab drawing two frames a second used to miss the first frame's 83 ms almost every time);
   each creature on its own clock and starting at a different fidget; each ends where the
   loop starts). The first loop frame is the creature's `art`. Keyframes
   (strike, hit) still come from the pose sheet, so the picture changes at the strike;
@@ -559,7 +562,15 @@ enemy; the Thicket's fog creeps a little onto the table.
   playing — 150 ms into the fidget, whose first frame is the stance cut from a separate
   render of the same still, and 300 ms back to the loop, where the movement lands a few
   pixels off the stance and the longer fade reads as a settle; a keyframe swap dissolves
-  instead. Reduce motion stops the
+  instead. A fidget may ask for a **settle** (`settleMs`, 2026-09-18): its last frame lingers
+  under the loop after the hand-back and fades out over that time, so what the movement left
+  behind — the possum's heap of guts on the floor — dissolves slowly instead of in 300 ms.
+  And the hand-back **settles** rather than morphs: the incoming loop frame starts raised (or
+  lowered) by however far the clip's last frame moved the eye, and sinks to rest on a cosine
+  curve over the dissolve plus the settle (at least 0.6 s), the glow riding with it — the
+  possum comes back down from its retch instead of its head dropping through a cross-fade.
+  Frames whose eyes already line up (the rat, the spider) get no sink.
+  Reduce motion stops the
   fidgets; the loop keeps playing. A move may carry a clip of its own, `poses.moves[<move
 id>]` (2026-09-18, built for the spider's Spin Web — a clip of its back legs rising was cut and
   then dropped by the owner; no creature uses it yet): it plays once in place of the

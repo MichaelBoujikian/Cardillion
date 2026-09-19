@@ -77,7 +77,15 @@ const ENEMY_LIST: EnemyDef[] = [
       attack: 'enemy-possum-attack',
       hit: 'enemy-possum-hit',
       loop: { frames: frames('enemy-possum-loop', 33), fps: 12 },
-      fidgets: [{ frames: frames('enemy-possum-retch', 28), fps: 12 }],
+      // The fidgets (2026-09-19): a bark - the jaws snap open into a hiss and close again
+      // (Wan possum3-bark-252, its first 0.92 s forward then back, colour held) and a tug at the
+      // tentacle (possum3-tug-272, the whole 3 s clip forward then back - the head dips, then
+      // lifts with the jaws parting, and comes back down) in place of the retch; the retch
+      // frames stay on disk.
+      fidgets: [
+        { frames: frames('enemy-possum-bark', 22), fps: 12 },
+        { frames: frames('enemy-possum-tug', 72), fps: 12 },
+      ],
     },
   },
   {
