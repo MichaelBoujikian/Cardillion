@@ -61,7 +61,7 @@ tool gotchas, and what to build next.
 M1–M6 are done (M5 systems and M6 v1 art on 2026-09-16). Current work is the **enemy art
 pass** — every vermin redone as a mutant with a clip-driven waiting state (spec §11.2,
 `docs/art-pipeline.md` "The recipe"); the rat is done and committed (2026-09-17: `enemy-rat-loop-NN`,
-`-startle-NN`, `-windup/-attack/-hit`); the possum (2026-09-18: `enemy-possum-loop-NN`, `-retch-NN`, `-windup/-attack/-hit`,
+`-startle-NN`, `-windup/-attack/-hit`); the possum (2026-09-18/19: `enemy-possum-loop-NN`, `-bark-NN`, `-tug-NN`, `-windup/-attack/-hit`,
 `enemy-possum-dead`) and the spider (2026-09-18: `enemy-spider-loop-NN`, `-jaws-NN`, `-rear-NN`,
 `-windup/-attack/-hit`) are done and committed; the scorpion is next. Engine: `combat.ts` (fight reducer, `CombatMods`
 for upgrade effects), `map.ts`, `run.ts` (run reducer: shops, upgrades, the two map markers).
