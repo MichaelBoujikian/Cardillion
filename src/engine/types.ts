@@ -130,7 +130,11 @@ export interface FrameSequence {
 export function poseArtIds(poses: EnemyDef['poses']): string[] {
   if (!poses) return [];
   const ids = (v: string | FrameSequence): string[] => (typeof v === 'string' ? [v] : v.frames);
-  return Object.values(poses).flatMap((v) => (Array.isArray(v) ? v.flatMap(ids) : ids(v)));
+  const { moves, ...rest } = poses;
+  return [
+    ...Object.values(rest).flatMap((v) => (Array.isArray(v) ? v.flatMap(ids) : ids(v))),
+    ...Object.values(moves ?? {}).flatMap(ids),
+  ];
 }
 
 export interface EnemyDef {
@@ -173,6 +177,12 @@ export interface EnemyDef {
      * starts. One or more, cut from clips onto the loop's canvas.
      */
     fidgets?: FrameSequence[];
+    /**
+     * A clip per move id, played once in place of the loop while that move's body motion
+     * runs (the spider raising its back legs to spin a web). A move without one keeps the
+     * body motion alone; a lunge keeps its keyframes.
+     */
+    moves?: Record<string, FrameSequence>;
   };
 }
 

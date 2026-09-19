@@ -94,7 +94,8 @@ describe('enemies', () => {
     for (const enemy of Object.values(ENEMIES)) {
       if (!enemy.poses) continue;
       const ids = poseArtIds(enemy.poses);
-      for (const seq of [enemy.poses.loop, ...(enemy.poses.fidgets ?? [])]) {
+      const moveClips = Object.values(enemy.poses.moves ?? {});
+      for (const seq of [enemy.poses.loop, ...(enemy.poses.fidgets ?? []), ...moveClips]) {
         if (!seq) continue;
         expect(seq.frames.length).toBeGreaterThan(1);
         expect(seq.fps).toBeGreaterThan(0);
@@ -102,16 +103,19 @@ describe('enemies', () => {
       expect(ids.length).toBeGreaterThan(0);
       for (const id of ids) expect(id).toMatch(/^(enemy|boss)-/);
       // Keyframes are other pictures than `art`; a loop's first frame is the rest, so it may be art.
-      const { loop, fidgets, ...keyframes } = enemy.poses;
+      const { loop, fidgets, moves, ...keyframes } = enemy.poses;
       for (const id of poseArtIds(keyframes)) expect(id).not.toBe(enemy.art);
       if (loop) expect(loop.frames[0]).toBe(enemy.art);
       // The loader takes its ids from poseArtIds, so every clip frame must come out of it.
-      for (const seq of [loop, ...(fidgets ?? [])])
+      for (const seq of [loop, ...(fidgets ?? []), ...moveClips])
         for (const id of seq?.frames ?? []) expect(ids).toContain(id);
-      // Fidgets need a loop to return to, and never share a frame with it.
-      if (fidgets?.length) expect(loop).toBeDefined();
-      for (const fidget of fidgets ?? [])
-        expect(fidget.frames.some((id) => loop?.frames.includes(id))).toBe(false);
+      // Fidgets and move clips need a loop to return to, and never share a frame with it.
+      if (fidgets?.length || moveClips.length) expect(loop).toBeDefined();
+      for (const clip of [...(fidgets ?? []), ...moveClips])
+        expect(clip.frames.some((id) => loop?.frames.includes(id))).toBe(false);
+      // A move clip belongs to one of the creature's own moves.
+      for (const move of Object.keys(moves ?? {}))
+        expect(enemy.moves.map((m) => m.id)).toContain(move);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });

@@ -82,30 +82,33 @@ has one, its special pose.
   and the dead frame re-sliced with `--shift 24`, the hop is 11 px. Every frame went through
   `tools/art-redden.py` (one amber cluster). Sora refused this still's gorier gpt version
   twice; the klein one was never tried there.
-- **Spider — sample set built, awaiting his verdict** (all `enemy-spider-mutant-*`, uncommitted;
-  in the dev fight beside the possum). His brief: a thick furry tarantula like the wolf spider,
-  eggs and spiderlings on its back, half a leg missing — and, new on 2026-09-18, **no gore on
-  it: "gory doesn't have to be in everything, just dark/morbid/evil"**. The still is the gpt
-  sample with every red wound taken off by a local klein edit (seed 2, his pick; the gpt one is
-  `art/out/enemy-spider-mutant-v1-gpt-raw.png`). The pose sheet is gpt in the new
-  **`thicket-morbid` style** (the thicket look with the gore sentences removed — the first sheet
-  in plain `thicket` put the wounds straight back), the wind-up modelled on his photo of a
-  rearing funnel-web (`art/refs/spider-threat-pose.png`, gitignored): rest / reared up with the
-  forelegs high / the slam down / the recoil. Clips: Sora **jaws** (4 s, fangs spread and close,
-  returns home — fidget 1, `-fidget-01..32`), Sora **leg wave** (8 s, legs lift one at a time
-  but the body drifts wider and never returns — its first 3 s ping-pong as the loop,
-  `-loop-01..37`), and a local Wan **rear-up** (seed 301: onto its back legs, four forelegs
-  high, holds, lands home — fidget 2, `-rear-fidget-01..42`; Sora failed it twice, see the
-  table). The rear-up needs headroom, so the whole set sits on an **848 × 848 canvas** (slicer
-  `--width/--height`) with the row's new **`height: 3.8`** putting the rest pose back at a
-  common creature's size — that `height` seam on `EnemyDef` (types.ts, scene.ts, spec §11.4)
-  is new and uncommitted with the rest. Frames from the second cutter run land on the loop's
-  placement because `--like` now stands the first frame on the reference figure's
-  bottom-centre; `--eyes 2` relights both eyes; `tools/art-unred.py` took Wan's pink leg tips
-  off. On his yes: rename to `enemy-spider-loop-NN`, `-fidget-NN`, `-rear-NN`,
-  `-windup/-attack/-hit`, `art:optimize`, commit art + row + the tool changes together. Say
-  "no shadow under the body" in every spider prompt: the v1 spiders carry a half-keyed shadow
-  the pass must lose.
+- **Spider — done and committed (2026-09-18)**: `enemy-spider-loop-01..15`, `-jaws-01..30`,
+  `-rear-01..38`, `-windup/-attack/-hit/-rest`; the v1 `enemy-spider` no longer
+  ships. His brief: a thick furry tarantula like the wolf spider, eggs and spiderlings on its
+  back, half a leg missing — and **no gore on it: "gory doesn't have to be in everything, just
+  dark/morbid/evil"**. The still is the gpt sample with every red wound taken off by a local
+  klein edit (seed 2; the gpt one is `art/out/enemy-spider-mutant-v1-gpt-raw.png`); the pose
+  sheet is gpt in the **`thicket-morbid`** style (a plain `thicket` sheet put the wounds straight
+  back), the wind-up after his photo of a rearing funnel-web (`art/refs/spider-threat-pose.png`,
+  gitignored). Loop: the still tail of the Sora jaws clip. Fidgets, his call — **jaws** (Sora)
+  and the **rear-up** (Wan `spider-rear-305`, both front pairs spread and rise, a ping-pong of
+  its first 1.58 s so it lands home) — and nothing else. A **Spin Web clip** (Wan
+  `spider-web-501`, both back legs rise and settle) was cut in through the new `poses.moves`
+  seam and **taken out at his word** — the seam stays, unused, for whenever the web move gets
+  its animation (the clip is on disk). Rejected on the way: sections of the
+  Sora leg-wave clip (they land off the loop — "fading into a different spot afterwards");
+  two Wan single-leg lifts (`spider-leg-411`/`-412`, fine moves whose raised tip left the top
+  of the video; four portrait-frame re-rolls, `spider-leg-431..434` via `video:local --size
+704x1280`, kept the leg in frame but none landed home); a leg prompt that led with "holds
+  still" (nothing moved); Sora rear-ups at 85 % (legs out of frame) and 60 % (reframed).
+  The raised legs need headroom, so the set sits on an **848 × 848 canvas** (slicer
+  `--width/--height`) with `height: 3.8` on the row. The sheet `enemy-spider-mutant-poses.png`
+  and the still `enemy-spider-mutant.png` stay as `"ship": false` records.
+- **Bug chapel — first render made** (`bg-chapel`, uncommitted): his brief, a place to choose a
+  blessing like the cocoon and the snail's stall — inside a bright gothic cathedral of woven
+  twigs, sunlight from windows on the left onto a white marble praying mantis, floor open across
+  the bottom. Not wired to a node yet (no phase, no screen); the statue came out small and far,
+  and the far end is as bright as the front — both flagged to him.
 - **Still to do:** `enemy-scorpion`, `enemy-greeble` (Unseen: alphaTest 0, so its edges must
   be clean), `enemy-rat-king`, `enemy-wolf-spider` (the elite; same family as the spider,
   escalated), `boss-bear` (sample entries need `"size": "1024x1536"`). `boss-moose` is act 2.
@@ -127,10 +130,13 @@ any clip you keep into a tracked doc (`docs/local-video.md` has the rat's).
 ### Renderer facts (spec §11.2, `src/render/battle/scene.ts`)
 
 - A creature's row: `art` (= `loop-01`), `deadArt`, `poses.windup/attack/hit`, `poses.loop`
-  (played back and forth) and `poses.fidgets` (a **list**, played in turn; each creature starts
-  on a different one). `frames()` in `enemies.ts` builds the id lists; `poseArtIds` feeds them
-  to the loader. `content.test.ts` enforces `loop.frames[0] === art`, fidgets only with a loop,
-  no frame shared between them, every id distinct. `poses.idle` (cross-faded stills) still
+  (played back and forth), `poses.fidgets` (a **list**, played in turn; each creature starts
+  on a different one) and `poses.moves` (a clip per **move id**, played once instead of the
+  loop while that move's body motion runs — built for the spider's Spin Web, unused since he
+  dropped that clip; `act(uid, kind, move)` starts it, `endMove` hands back). `frames()` in `enemies.ts` builds the id lists;
+  `poseArtIds` feeds them to the loader. `content.test.ts` enforces `loop.frames[0] === art`,
+  fidgets and move clips only with a loop, no frame shared with it, a move clip's key is one of
+  the creature's moves, every id distinct. `poses.idle` (cross-faded stills) still
   exists in the type but is superseded by clips — do not make idle sheets.
 - Sprites stand on their picture's ground line (`findGroundLine`) via `baseY`; the shadow
   ellipse sits back; at rest a creature only breathes and leans in. Rows below the ground line

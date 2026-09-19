@@ -170,14 +170,18 @@ canvas (`--like`), the tone match, and the eyes relit to amber (video compressio
 below what the eye-glow finder accepts; `--eyes 2` for a front-facing creature, else only the
 largest warm blob is relit and a two-eyed face comes out lopsided). With `--like` the first
 frame's figure is stood exactly where the reference frame's figure stands (bottom-centre), so
-a fidget cut in a **second run** from the same `--like` meets the loop without a jump: run
-`--out <id>-<name> --loop 0:0.05 --fidget t0:t1` and delete the throwaway two-frame loop
-(the spider's rear-up, `enemy-spider-mutant-rear-fidget-NN`). Whatever a placed crop leaves
+a fidget cut in a **second run** from the same `--like` meets the loop without a jump (use
+`--anchor t` for such a run, see above). Whatever a placed crop leaves
 outside the canvas is clipped, with a warning naming the crop — that is the size to give the
 slicer's `--width`/`--height` if it matters. Then the content row: `art` = `<out>-loop-01`,
 `poses.loop: { frames, fps }`, `poses.fidgets: [{ frames, fps }, …]` (`frames()` in
 `enemies.ts` builds the id lists), and `npm run art:optimize`. The renderer plays the fidgets
-in turn. For a creature that is not gory, `python3 tools/art-unred.py <frames>` afterwards
+in turn. `--fidget` repeats, each `[name=]t0:t1` written as `<out>-<name>-NN`, so one run
+cuts every section of a clip; a second video of the same creature is cut in its own run with
+`--anchor t` (its rest frame) in place of `--loop`, and lands on the same placement. A section
+meant for one move goes in the row as `poses.moves: { '<move id>': { frames, fps } }` (built
+for the spider's Spin Web; the clip was dropped, the seam stays) and plays once while that move runs. For a creature
+that is not gory, `python3 tools/art-unred.py <frames>` afterwards
 pulls the raw pink a video model paints into leg tips and motion smears down to the fur's
 dark brown, leaving the amber eyes.
 
@@ -204,7 +208,7 @@ npm run art -- --only a,b,c          only these ids
 npm run art -- --force               regenerate even if the PNG exists
 npm run art -- --quality xhigh       low | medium | high | xhigh | max
 npm run art:poses -- --sheet <id> --names a,b,c [--out prefix] [--like frame] [--tone id] [--width px] [--height px]
-npm run art:video -- --video <mp4> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--eyes 1|2] [--ffmpeg exe]
+npm run art:video -- --video <mp4> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video <mp4>] [--fidget-pingpong] [--fps n] [--key name] [--like frame] [--tone id] [--eyes 1|2] [--ffmpeg exe]
 npm run video:sora -- --image <png> --out <name> --prompt <text> [--seconds 4|8|12] [--height 0.85]   # keep 0.85: smaller reframes the shot
 python3 tools/art-redden.py <frames>    one amber cluster per frame, the rest pushed to red (gory creatures)
 python3 tools/art-unred.py <frames>     red and pink pulled to dark brown, eyes kept (clean creatures)

@@ -96,8 +96,27 @@ const ENEMY_LIST: EnemyDef[] = [
         effects: [{ kind: 'cobweb', count: 1 }],
       },
     ],
-    art: 'enemy-spider',
-  },
+    // The mutant tarantula, approved 2026-09-18: a gpt edit of the v1 spider (eggs and spiderlings
+    // on its back, a front leg torn off), then a local klein edit that took every wound off - dark
+    // and morbid, not gory; strike and hit from a gpt sheet in the thicket-morbid style, the
+    // wind-up after the owner's photo of a rearing funnel-web. The loop is the still tail of a Sora
+    // jaws clip; the fidgets are that clip's jaws spreading and a local Wan rear-up (both front
+    // pairs spread and rise, played forward then back so it lands home); a Wan clip of both back
+    // legs rising for Spin Web was cut and taken out again. The raised legs need headroom, so the frames sit on
+    // an 848x848 canvas with the rest pose at 56% of it; `height` puts the spider back at a common
+    // creature's size (spec §11.4). The v1 sprite stays on disk as a master and no longer ships.
+    art: 'enemy-spider-loop-01',
+    height: 3.8,
+    poses: {
+      windup: 'enemy-spider-windup',
+      attack: 'enemy-spider-attack',
+      hit: 'enemy-spider-hit',
+      loop: { frames: frames('enemy-spider-loop', 15), fps: 12 },
+      fidgets: [
+        { frames: frames('enemy-spider-jaws', 30), fps: 12 },
+        { frames: frames('enemy-spider-rear', 38), fps: 12 },
+      ],
+    },
   },
   {
     id: 'scorpion',

@@ -198,7 +198,7 @@ export async function animateEvents(
         const actor = nextEnemy(ev.uid);
         if (actor) scene.setRestPose(ev.uid, enemyDef(actor.def).art, 140);
         ui.flashIntent(ev.uid, true);
-        await scene.act(ev.uid, actionFor(ev.uid, ev.move, next));
+        await scene.act(ev.uid, actionFor(ev.uid, ev.move, next), ev.move);
         break;
       }
 

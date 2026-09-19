@@ -10,7 +10,13 @@
  *   --video <file>     the clip; it must be on a flat chroma screen (the first frame decides)
  *   --out <prefix>     frames are written to assets/art/<out>-loop-NN.png and <out>-fidget-NN.png
  *   --loop t0:t1       the still stretch to play back and forth, in seconds
- *   --fidget t0:t1     a movement to play once now and then; it should end where the loop starts
+ *   --anchor t         instead of a loop: the frame (a rest pose) that sets the scale and, with
+ *                      --like, stands on the reference figure - for a run that cuts only
+ *                      fidgets or move clips from a second video of the same creature
+ *   --fidget [n=]t0:t1 a movement to play once now and then; it should end where the loop starts.
+ *                      Repeatable: each one is written as <out>-<n>-NN (a name before '=';
+ *                      unnamed ones are fidget, fidget2, fidget3 ...). A move clip (poses.moves,
+ *                      played once while that move's body motion runs) is cut the same way
  *   --fidget-video <f> take the fidget from this clip instead (its own t0:t1)
  *   --fidget-pingpong  play the fidget forward then backward, so it ends a frame from where it began
  *   --fps <n>          frames per second to keep (default 12)
@@ -61,10 +67,23 @@ const range = (name) => {
   return [a, b];
 };
 const loopRange = range('loop');
-const fidgetRange = range('fidget');
-if (!video || !outPrefix || !loopRange) {
+const anchor = opt('anchor') !== undefined ? Number(opt('anchor')) : null;
+if (anchor !== null && (!(anchor >= 0) || loopRange))
+  throw new Error('--anchor wants a time in seconds, and no --loop');
+// Every --fidget, in order: `[name=]t0:t1`.
+const fidgetSpecs = args
+  .map((a, i) => (a === '--fidget' ? args[i + 1] : null))
+  .filter(Boolean)
+  .map((v, i) => {
+    const [name, span] = v.includes('=') ? v.split('=') : [i ? `fidget${i + 1}` : 'fidget', v];
+    const [a, b] = span.split(':').map(Number);
+    if (!(a >= 0) || !(b > a) || !/^[a-z][a-z0-9]*$/.test(name))
+      throw new Error(`--fidget wants [name=]t0:t1 in seconds, got ${v}`);
+    return { name, range: [a, b] };
+  });
+if (!video || !outPrefix || (!loopRange && anchor === null)) {
   console.error(
-    'usage: art-video --video <file> --out <prefix> --loop t0:t1 [--fidget t0:t1] [--fidget-video f] [--fps n] [--key name] [--like id] [--tone id] [--ffmpeg exe]',
+    'usage: art-video --video <file> --out <prefix> (--loop t0:t1 | --anchor t) [--fidget [name=]t0:t1 ...] [--fidget-video f] [--fidget-pingpong] [--fps n] [--key name] [--like id] [--tone id] [--eyes 1|2] [--ffmpeg exe]',
   );
   process.exit(1);
 }
@@ -113,18 +132,21 @@ function extract(file, tag) {
   return pick;
 }
 const pickLoop = extract(video, 'loop');
-const pickFidget = fidgetRange
+const pickFidget = fidgetSpecs.length
   ? opt('fidget-video')
     ? extract(opt('fidget-video'), 'fidget')
     : pickLoop
   : null;
-const segments = [{ name: 'loop', files: pickLoop(loopRange) }];
-if (fidgetRange && pickFidget) {
-  let files = pickFidget(fidgetRange);
+// The anchor is a one-frame segment that is measured like a loop's first frame but never written.
+const segments = loopRange
+  ? [{ name: 'loop', files: pickLoop(loopRange) }]
+  : [{ name: null, files: pickLoop([anchor, anchor]) }];
+for (const { name, range: r } of fidgetSpecs) {
+  let files = pickFidget(r);
   // Forward then back (the ends not repeated), so the movement ends a frame from where it began
   // and the loop's first frame follows (a dip becomes a bob).
   if (flag('fidget-pingpong')) files = [...files, ...files.slice(1, -1).reverse()];
-  segments.push({ name: 'fidget', files });
+  segments.push({ name, files });
 }
 
 // 2. Key every frame and find the figure's box in each; the crop is the union of them all.
@@ -204,18 +226,25 @@ if (likeBox) {
     left + (union[2] - crop[0]) * scale,
     top + (union[3] - crop[1]) * scale,
   ].map(Math.round);
-  if (fig[0] < 0 || fig[1] < 0 || fig[2] > W || fig[3] > H)
+  if (fig[0] < 0 || fig[1] < 0 || fig[2] > W || fig[3] > H) {
+    // The figure is anchored on the reference's centre and bottom, so a side overflow needs
+    // twice itself added to the width, and a top overflow needs itself added to the height.
+    const needW = Math.ceil((W + 2 * Math.max(0, -fig[0], fig[2] - W)) / 16) * 16;
+    const needH = Math.ceil((H + Math.max(0, -fig[1], fig[3] - H)) / 16) * 16;
     console.warn(
-      `  warning: placed on ${likeId}, the figure spans ${fig[0]},${fig[1]}-${fig[2]},${fig[3]} and leaves the ${W}x${H} canvas; give art:poses --width ${Math.ceil((fig[2] - Math.min(0, fig[0])) / 16) * 16} --height ${Math.ceil((fig[3] - Math.min(0, fig[1])) / 16) * 16} or trim the clip`,
+      `  warning: placed on ${likeId}, the figure spans ${fig[0]},${fig[1]}-${fig[2]},${fig[3]} and leaves the ${W}x${H} canvas; give art:poses --width ${needW} --height ${needH} (and re-cut everything) or trim the clip`,
     );
+  }
 }
 
 // 4. Relight the eye. Video compression dulls the amber glow below what the renderer's eye
 // finder (and the tone pass's eye protection) accept, so find it with a looser warm test -
 // the largest warm blob, tracked from frame to frame - and push it back to amber.
 const isWarm = (r, g, b, a) => a > 200 && r > 120 && g > 60 && b < 120 && r - b > 60 && r - g > 15;
-let eyesAt = [];
-let faded = 0;
+let eyesAt = []; // per eye: { at: [x, y], r: radius, missing: frames since it was last found }
+let guessed = 0;
+let lost = 0;
+const MAX_GUESS = 8; // frames an eye may be painted where it was last seen before it is left alone
 // Each frame once, in the order the segments first use it: a frame shared by two segments (a
 // ping-pong's turnaround, a throwaway loop that overlaps the fidget) must not be relit twice,
 // since every pass paints a ring of fur amber and the eye grows.
@@ -228,18 +257,22 @@ const relitOrder = [...new Set(segments.flatMap((seg) => seg.files))];
       warm[i + 3] = isWarm(k.data[i], k.data[i + 1], k.data[i + 2], k.data[i + 3]) ? 255 : 0;
     const { label, found } = blobs({ data: warm, w: k.w, h: k.h });
     const centre = (b) => [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
+    const radius = (b) => Math.max(3, Math.sqrt(b.n / Math.PI));
     const dist = (b, at) => Math.hypot(centre(b)[0] - at[0], centre(b)[1] - at[1]);
     const candidates = found.filter((b) => b.n >= 20).sort((p, q) => q.n - p.n);
     // The first frame's largest warm blobs are the eyes. After that each eye keeps its slot:
     // the closest pairs of (eye, candidate) within 80 px are matched first, a candidate serves
-    // one eye only, and an eye whose blob is too faint this frame keeps its place for the next
-    // frame - so a wound highlight never takes over, and one dull frame never loses an eye.
-    let eyes;
+    // one eye only - so a wound highlight never takes over - and an eye whose blob is too faint
+    // this frame is painted where it was last seen (a disc of its last size), for a few frames
+    // at most: video compression dulls an eye for a frame or two, and a socket the clip leaves
+    // dark for its last frames would otherwise hand the loop a one-eyed face.
+    const ids = new Set();
+    const discs = [];
     if (eyesAt.length) {
       const pairs = [];
-      eyesAt.forEach((at, i) =>
+      eyesAt.forEach((e, i) =>
         candidates.forEach((b) => {
-          const d = dist(b, at);
+          const d = dist(b, e.at);
           if (d < 80) pairs.push({ i, b, d });
         }),
       );
@@ -251,43 +284,56 @@ const relitOrder = [...new Set(segments.flatMap((seg) => seg.files))];
         bySlot[i] = b;
         taken.add(b);
       }
-      eyes = bySlot.filter(Boolean);
-      eyesAt = eyesAt.map((at, i) => (bySlot[i] ? centre(bySlot[i]) : at));
+      eyesAt = eyesAt.map((e, i) => {
+        const b = bySlot[i];
+        if (b) {
+          ids.add(b.id);
+          return { at: centre(b), r: radius(b), missing: 0 };
+        }
+        if (e.missing < MAX_GUESS) {
+          discs.push(e);
+          guessed++;
+        } else lost++;
+        return { ...e, missing: e.missing + 1 };
+      });
     } else {
-      eyes = candidates.slice(0, nEyes);
-      eyesAt = eyes.map(centre);
+      const eyes = candidates.slice(0, nEyes);
+      for (const b of eyes) ids.add(b.id);
+      eyesAt = eyes.map((b) => ({ at: centre(b), r: radius(b), missing: 0 }));
+      if (!eyes.length) lost++;
     }
-    let box;
-    let mine;
-    if (eyes.length) {
-      box = eyes.reduce(
-        (u, b) => [
-          Math.min(u[0], b.x0),
-          Math.min(u[1], b.y0),
-          Math.max(u[2], b.x1),
-          Math.max(u[3], b.y1),
-        ],
-        [k.w, k.h, 0, 0],
-      );
-      const ids = new Set(eyes.map((b) => b.id));
-      mine = (x, y) => {
-        for (let dy = -2; dy <= 2; dy++)
-          for (let dx = -2; dx <= 2; dx++) {
-            const yy = y + dy;
-            const xx = x + dx;
-            if (yy >= 0 && yy < k.h && xx >= 0 && xx < k.w && ids.has(label[yy * k.w + xx]))
-              return true;
-          }
-        return false;
-      };
-    } else {
-      // The eye faded below the test. Leave it: the game places the glow sprite from the first
-      // frame, and painting a guessed box would put amber on fur once the head moves.
-      faded++;
-      continue;
+    if (!ids.size && !discs.length) continue;
+    const mine = (x, y) => {
+      for (let dy = -2; dy <= 2; dy++)
+        for (let dx = -2; dx <= 2; dx++) {
+          const yy = y + dy;
+          const xx = x + dx;
+          if (yy >= 0 && yy < k.h && xx >= 0 && xx < k.w && ids.has(label[yy * k.w + xx]))
+            return true;
+        }
+      // A found blob is painted with a 2 px margin (above); a remembered eye gets the same.
+      return discs.some((e) => Math.hypot(x - e.at[0], y - e.at[1]) <= e.r + 2);
+    };
+    const box = [k.w, k.h, 0, 0];
+    for (const b of found)
+      if (ids.has(b.id)) {
+        box[0] = Math.min(box[0], b.x0);
+        box[1] = Math.min(box[1], b.y0);
+        box[2] = Math.max(box[2], b.x1);
+        box[3] = Math.max(box[3], b.y1);
+      }
+    for (const e of discs) {
+      box[0] = Math.min(box[0], e.at[0] - e.r - 2);
+      box[1] = Math.min(box[1], e.at[1] - e.r - 2);
+      box[2] = Math.max(box[2], e.at[0] + e.r + 2);
+      box[3] = Math.max(box[3], e.at[1] + e.r + 2);
     }
-    for (let y = Math.max(0, box[1] - 2); y < Math.min(k.h, box[3] + 2); y++)
-      for (let x = Math.max(0, box[0] - 2); x < Math.min(k.w, box[2] + 2); x++) {
+    for (let y = Math.max(0, Math.floor(box[1]) - 2); y < Math.min(k.h, Math.ceil(box[3]) + 2); y++)
+      for (
+        let x = Math.max(0, Math.floor(box[0]) - 2);
+        x < Math.min(k.w, Math.ceil(box[2]) + 2);
+        x++
+      ) {
         if (!mine(x, y)) continue;
         const i = (y * k.w + x) * 4;
         if (k.data[i + 3] <= 200) continue;
@@ -298,8 +344,10 @@ const relitOrder = [...new Set(segments.flatMap((seg) => seg.files))];
       }
   }
 }
-if (faded)
-  console.log(`  eye: too faint to relight in ${faded} frames (the game's glow sprite covers it)`);
+if (guessed)
+  console.log(`  eye: painted where last seen in ${guessed} frame-eyes (too faint to find)`);
+if (lost)
+  console.log(`  eye: left dark in ${lost} frame-eyes (missing longer than ${MAX_GUESS} frames)`);
 
 // 5. Tone from the first loop frame, applied identically to every frame.
 const cut = (k) => {
@@ -326,6 +374,7 @@ console.log(
 
 // 6. Write the frames.
 for (const seg of segments) {
+  if (!seg.name) continue;
   let n = 0;
   for (const f of seg.files) {
     const k = keyed.get(f);

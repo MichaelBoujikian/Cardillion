@@ -136,7 +136,9 @@
       "id": "enemy-spider",
       "style": "thicket",
       "reference": "style-anchor-thicket",
-      "prompt": "A spindly spider seen from the front and slightly above, its body bloated and glistening, with eight very long thin legs that all radiate from and clearly attach to its body, eight amber eyes, strands of dirty web trailing from it."
+      "prompt": "A spindly spider seen from the front and slightly above, its body bloated and glistening, with eight very long thin legs that all radiate from and clearly attach to its body, eight amber eyes, strands of dirty web trailing from it.",
+      "$comment": "v1 sprite, replaced in the game by enemy-spider-loop-01 (2026-09-18); kept as a master, not shipped.",
+      "ship": false
     },
     {
       "id": "enemy-scorpion",
@@ -268,6 +270,14 @@
       "background": "opaque"
     },
     {
+      "id": "bg-chapel",
+      "$comment": "The bug chapel (2026-09-18, the owner's brief): a place on the map where the player chooses a blessing, a sibling of bg-cocoon and bg-shop. Direction render; not yet wired to a node.",
+      "style": "scene",
+      "prompt": "The inside of a vast gothic cathedral built by garden bugs, seen from a bug's height on the nave floor: soaring pointed arches and ribbed vaults rising far overhead, the columns made of woven twigs and dried stems, the walls of pressed petals and honeycomb, the tracery of seed pods. It is bright, airy and full of light, not dark: tall lancet windows along the LEFT wall let in broad beams of golden sunlight that slant down across the nave and fall on a white marble statue in the classical Greek manner of a praying mantis kneeling with its forelegs folded together in prayer, head bowed, standing on a stone plinth near the far end of the nave, motes of pollen drifting in the sunbeams. Rows of small pews of bark, candles of beeswax. The stone floor across the lower third of the picture is open and empty. Hushed, holy, welcoming. The statue is the only figure: no living characters, no text.",
+      "size": "1536x1024",
+      "background": "opaque"
+    },
+    {
       "id": "card-molt",
       "style": "garden",
       "reference": "style-anchor-garden",
@@ -367,7 +377,7 @@
     },
     {
       "id": "enemy-spider-mutant",
-      "$comment": "Direction sample (2026-09-18): an EDIT of enemy-spider toward a thick furry tarantula carrying eggs and spiderlings, the owner's brief. The installed raw is a local klein edit of that gpt render (seed 2, docs/local-image.md) that took every red wound off - dark and morbid, not gory - keeping the torn-off front leg; the gpt version is art/out/enemy-spider-mutant-v1-gpt-raw.png. Not a content id.",
+      "$comment": "Direction sample (2026-09-18): an EDIT of enemy-spider toward a thick furry tarantula carrying eggs and spiderlings, the owner's brief. The installed raw is a local klein edit of that gpt render (seed 2, docs/local-image.md) that took every red wound off - dark and morbid, not gory - keeping the torn-off front leg; the gpt version is art/out/enemy-spider-mutant-v1-gpt-raw.png. Approved 2026-09-18: the game's frames are enemy-spider-loop/-jaws/-rear/-web/-windup/-attack/-hit/-rest, cut from this still (klein seed 2, the installed raw). Not a content id.",
       "style": "thicket",
       "subject": "enemy-spider",
       "prompt": "Rebuild this spider as a huge tarantula: the same front view, the same amber eyes and the same stance, but the body and every leg much thicker and heavier, densely furred with coarse wet bristles like the hairy wolf spider, a bloated round abdomen. Its back and abdomen are crusted with a clutch of pale, translucent, glistening eggs, some split open, and dozens of tiny spiderlings crawling over the eggs and down its legs. One of its front legs is missing from the knee down, the stump torn and wet with a splinter of bone showing. Mangy, diseased and disgusting, fur falling out in patches over greasy skin. Keep its size and position in the frame; keep the eyes glowing amber; the eggs and spiderlings are pale and greenish-grey, never amber or orange. No shadow under the body, no web strands, nothing translucent around it.",
@@ -376,7 +386,7 @@
     },
     {
       "id": "enemy-spider-mutant-poses",
-      "$comment": "Keyframe pose sheet (2026-09-18) of enemy-spider-mutant in ONE image so the creature stays consistent; sliced by art:poses. The second image, art/refs/spider-threat-pose.png (gitignored), is the owner's photo of a real spider's threat posture, the model for the wind-up. Not a content id.",
+      "$comment": "Keyframe pose sheet (2026-09-18) of enemy-spider-mutant in ONE image so the creature stays consistent; sliced by art:poses onto an 848x848 canvas (--width 848 --height 848, headroom for the rear-up) as enemy-spider-rest/-windup/-attack/-hit. The second image, art/refs/spider-threat-pose.png (gitignored), is the owner's photo of a real spider's threat posture, the model for the wind-up. Not a content id.",
       "style": "thicket-morbid",
       "subject": "enemy-spider-mutant",
       "reference": "spider-threat-pose",

@@ -117,13 +117,40 @@ editor in a browser at http://127.0.0.1:8188 (the tool works against that server
 enemy-possum-rest --tone enemy-possum` (33 + 28 frames; the fidget frames were then renamed
   `enemy-possum-retch-NN`, and `python3 tools/art-redden.py` run on all of them). A hiss (seed 101) was cut
   first and rejected: past its first second the mouth spilled random shapes.
+- The spider's Sora clips (2026-09-18, `sora-spider-jaws.json` / `sora-spider-wave.json` hold the
+  prompts): the kept cut is `npm run art:video -- --video art/out/video/sora-spider-jaws.mp4
+--out enemy-spider --loop 2.83:4.0 --fidget jaws=0.3:2.75 --fps 12 --like enemy-spider-rest
+--tone enemy-possum --eyes 2` (the ids were `enemy-spider-mutant-*` until the 2026-09-18
+  approval). Sections of the wave clip (`--anchor 0 --fidget legs1=0.33:1.33 --fidget
+legs2=1.58:2.25 --fidget web=2.33:3.08`) were cut and **rejected** — they land off the loop.
+  The wave's rear-leg lifts sit at 0.5 s (left), 1.1 s (right), 1.7 s (left, high), 2.4–2.8 s
+  (both), 3.8 s and 5.5 s; after 2.3 s the legs settle wider.
+- The spider's single-leg fidgets and web move (2026-09-18; the keyed sprite at 60% of a
+  1280×704 pure-green canvas, `wan-spider-rear-still.png`; prompts in `spider-prompts.txt`):
+  **leg** — _The huge shaggy black mutant tarantula lifts its rear left leg high into the air:
+  the whole leg swings up and stretches straight up above its body, waves once at the top, then
+  swings back down and plants itself exactly where it was. A big, clear movement of that one
+  leg. The other seven legs stay planted; …_ seeds **411** (rear left) and **412** (rear right)
+  kept; 413 (front right) and 414 (middle left) moved several legs or the body. The first
+  wording, "holds completely still for a moment, then slowly raises its rear left leg …", made a
+  clip in which nothing moved: the action must lead. A pass with the sprite at 48% of the frame
+  (for headroom) was worse in every seed — one faded to green, one lifted and never lowered —
+  so the raised tip leaving the frame at 60% is the lesser evil. **Web** (seed **501**, 3 s):
+  _… raises both of its rear legs high into the air together, holds them up for a beat, and
+  lowers them back down to exactly where they were …_ — clean, lands home; cut in as the Spin
+  Web clip and then dropped by the owner, like the leg lifts. The cuts were `--anchor 0 --fidget
+legl=0.08:1.83`, `--fidget legr=0.15:1.58`, `--fidget web=0.2:2.9`.
 - The spider's rear-up (2026-09-18; still = the keyed sprite at 60% of a 1280×704 pure-green
   canvas, `art/out/video/wan-spider-rear-still.png`, prompt in `spider-prompts.txt`): **seed
   301**, 4 s — rears onto its back legs with all four forelegs high, holds 1.5 s, lands within a
   few pixels of where it started (d 3 against 12 for the others); cut 0–3.4 s forward. 302
   raised two legs and landed flat and wide; 303 backed away into the distance. Wan painted the
   raised leg tips pink (`tools/art-unred.py` took it off). Sora failed this move twice: at 85%
-  the legs left the frame, at 60% it reframed the shot.
+  the legs left the frame, at 60% it reframed the shot. Two more on the same prompt (the owner
+  asked): **304** raises only the front pair and has not landed at 4 s; **305** spreads and
+  raises both front pairs like his photo, stays in frame, and is half-landed at 4 s. He picked
+  305: cut `--anchor 0 --fidget rear=0:1.58 --fidget-pingpong` (38 frames, rise to the held
+  peak and back down the same way).
 - The cutter never deletes stale frames: when a re-cut has fewer frames, delete the old
   `<out>-fidget-*.png` and `public/art/<out>-fidget-*.webp` first.
 

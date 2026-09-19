@@ -106,10 +106,14 @@ interface EnemySprite {
     loop: THREE.Texture[];
     fidgets: { frames: THREE.Texture[]; fps: number }[];
     current: number;
+    /** A clip per move id, played once while that move runs (poses.moves). */
+    moves: Map<string, { frames: THREE.Texture[]; fps: number }>;
+    /** The move clip playing now. */
+    move: { frames: THREE.Texture[]; fps: number } | null;
     /** Where each frame's eyes are, found the first time the frame shows (empty: not found). */
     eyes: Map<THREE.Texture, GlowPoint[]>;
     fps: number;
-    mode: 'loop' | 'fidget';
+    mode: 'loop' | 'fidget' | 'move';
     start: number;
     nextFidgetAt: number;
   } | null;
@@ -131,7 +135,8 @@ interface EnemySprite {
   /** Its shown intent is an attack: it leans in and breathes faster. */
   threat: boolean;
   /** A move in progress, started at scene time `start`. */
-  action: { kind: EnemyAction; start: number } | null;
+  /** The move in progress; `clip` when a move clip is showing it, so the body motion stands down. */
+  action: { kind: EnemyAction; start: number; clip: boolean } | null;
   width: number;
   height: number;
   /** The plane's centre height: set so the picture's ground line sits on the table. */
@@ -631,7 +636,15 @@ export class BattleScene {
       idleIndex: 0,
       nextIdleAt: this.now + 0.5,
       seq,
-      seqMaps: new Set(seq ? [...seq.loop, ...seq.fidgets.flatMap((f) => f.frames)] : []),
+      seqMaps: new Set(
+        seq
+          ? [
+              ...seq.loop,
+              ...seq.fidgets.flatMap((f) => f.frames),
+              ...[...seq.moves.values()].flatMap((f) => f.frames),
+            ]
+          : [],
+      ),
       eyeGlide: null,
       root,
       body,
@@ -682,9 +695,16 @@ export class BattleScene {
     const fidgets = (def.poses?.fidgets ?? [])
       .map((f) => ({ frames: textures(f.frames), fps: f.fps }))
       .filter((f) => f.frames.length);
+    const moves = new Map(
+      Object.entries(def.poses?.moves ?? {})
+        .map(([move, f]) => [move, { frames: textures(f.frames), fps: f.fps }] as const)
+        .filter(([, f]) => f.frames.length),
+    );
     return {
       loop: frames,
       fidgets,
+      moves,
+      move: null,
       // Creatures start at different points of the cycle, so two of a kind do not fidget alike.
       current: fidgets.length ? this.sprites.size % fidgets.length : 0,
       eyes: new Map(),
@@ -712,14 +732,23 @@ export class BattleScene {
       // A keyframe (strike, hit) interrupted the clip and the rest still is back on the plane.
       // That still is the loop's first frame, so the loop restarts there and nothing shows; a
       // fidget cut short is over rather than resumed mid-movement, and the next one waits.
+      // A move clip that act() just started keeps its turn: the rest still act() put on the
+      // plane (the spring-up from Play Dead) has faded, and the clip begins from its first frame.
       if (q.mode === 'fidget') this.endFidget(s, q, t);
-      q.mode = 'loop';
+      if (q.mode !== 'move') q.mode = 'loop';
       q.start = t;
     }
     let tex: THREE.Texture | undefined;
     let boundary = false;
     const fidget = q.fidgets[q.current];
-    if (q.mode === 'fidget' && fidget) {
+    if (q.mode === 'move' && q.move) {
+      const i = Math.floor((t - q.start) * q.move.fps);
+      if (i >= q.move.frames.length) {
+        this.endMove(q, t);
+        tex = q.loop[0];
+        boundary = true;
+      } else tex = q.move.frames[i];
+    } else if (q.mode === 'fidget' && fidget) {
       const i = Math.floor((t - q.start) * fidget.fps);
       if (i >= fidget.frames.length) {
         this.endFidget(s, q, t);
@@ -740,7 +769,7 @@ export class BattleScene {
     }
     const old = s.plane.material.map;
     if (!tex || old === tex) return;
-    const fadeMs = q.mode === 'fidget' ? FIDGET_IN_FADE_MS : FIDGET_OUT_FADE_MS;
+    const fadeMs = q.mode === 'loop' ? FIDGET_OUT_FADE_MS : FIDGET_IN_FADE_MS;
     const ghosted = boundary && this.startGhost(s, fadeMs, true);
     s.plane.material.map = tex;
     if (ghosted) s.plane.material.opacity = 0;
@@ -778,14 +807,31 @@ export class BattleScene {
     if (q.fidgets.length) q.current = (q.current + 1) % q.fidgets.length;
   }
 
+  /** Back to the loop after a move clip; the fidgets keep their turn and wait a beat. */
+  private endMove(q: NonNullable<EnemySprite['seq']>, t: number): void {
+    q.mode = 'loop';
+    q.move = null;
+    q.start = t;
+    q.nextFidgetAt = Math.max(q.nextFidgetAt, t + 2.5);
+  }
+
   /**
    * Play a move as a body motion. Resolves at the moment the move lands, so the caller can
    * let the hit's own feedback follow; the recovery plays out on its own.
    */
-  act(uid: string, kind: EnemyAction): Promise<void> {
+  act(uid: string, kind: EnemyAction, move?: string): Promise<void> {
     const s = this.sprites.get(uid);
     if (!s || s.dead) return Promise.resolve();
-    s.action = { kind, start: this.now };
+    // A move with a clip of its own shows the clip instead of the body motion (poses.moves).
+    const q = s.seq;
+    const clip = move !== undefined && q ? q.moves.get(move) : undefined;
+    if (q && clip) {
+      if (q.mode === 'fidget') this.endFidget(s, q, this.now);
+      q.mode = 'move';
+      q.move = clip;
+      q.start = this.now;
+    }
+    s.action = { kind, start: this.now, clip: !!clip };
     return sleep(ACTION_TIMING[kind].impact * 1000);
   }
 
@@ -1236,18 +1282,19 @@ export class BattleScene {
     // a sprite standing on its shadow they read as a rattle and a slide, not as life. Life
     // now comes from the clip frames (poses.loop / poses.fidgets).
     if (s.action) {
-      const { kind, start } = s.action;
+      const { kind, start, clip } = s.action;
       const { duration } = ACTION_TIMING[kind];
       const u = Math.min(1, (t - start) / duration);
       if (u >= 1) s.action = null;
       const ease = (a: number) => 1 - (1 - a) * (1 - a);
-      if (kind === 'lunge' && s.poses) {
+      if (kind === 'lunge' && s.poses && !clip) {
         // Keyframes ride the curve: wind-up while pulling back, the strike from the moment it
         // springs until it starts to recover, then back to rest.
         const pose = u < 0.2 ? s.poses.windup : u < 0.75 ? s.poses.attack : s.restPose;
         if (pose) this.setPose(s.uid, pose, u < 0.75 ? 70 : 160);
       }
-      switch (kind) {
+      // A move clip is the motion; the body only breathes underneath it.
+      switch (clip ? null : kind) {
         case 'lunge': {
           // Pull back, strike toward the camera, hold, recover.
           if (u < 0.2) z -= 0.3 * (u / 0.2);

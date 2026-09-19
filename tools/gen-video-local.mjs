@@ -6,7 +6,9 @@
  *   npm run video:local -- --image art/out/video/rat-first-frame-1280x720.png --out rat-idle \
  *     --prompt "..." [--negative "..."] [--seconds 5] [--seed 7] [--steps 20] [--cfg 5]
  *
- *   --image <png>      the still (any size; fitted onto 1280x704, Wan's 720p, on its corner colour)
+ *   --image <png>      the still (any size; fitted onto the canvas on its corner colour)
+ *   --size WxH         the canvas, multiples of 16 (default 1280x704, Wan's 720p; 704x1280 is
+ *                      portrait - headroom for a creature that raises a leg above itself)
  *   --out <name>       writes art/out/video/<name>.mp4 (and <name>-still.png, what was sent)
  *   --prompt <text>    what moves; the default asks for a still body with only parts moving
  *   --negative <text>  what to avoid (default: the template's list minus its "static" terms)
@@ -26,8 +28,6 @@ import { ensureServer, follow, output, queue, stopServer, upload } from './lib/c
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const OUT_DIR = path.join(ROOT, 'art', 'out', 'video');
 const GRAPH = path.join(ROOT, 'tools', 'workflows', 'wan22-5b-i2v.json');
-const WIDTH = 1280;
-const HEIGHT = 704;
 const FPS = 24;
 
 const args = process.argv.slice(2);
@@ -36,6 +36,9 @@ const opt = (name) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args[i + 1] : undefined;
 };
+const [WIDTH, HEIGHT] = (opt('size') ?? '1280x704').split('x').map(Number);
+if (!(WIDTH % 16 === 0 && HEIGHT % 16 === 0 && WIDTH >= 256 && HEIGHT >= 256))
+  throw new Error('--size wants WxH in multiples of 16');
 const image = opt('image');
 const outName = opt('out');
 if (!image || !outName) {
@@ -59,7 +62,7 @@ const negative =
 
 const child = await ensureServer(server, path.join(OUT_DIR, 'comfyui.log'));
 try {
-  // The still, fitted to Wan's 720p canvas (1280x704) on the image's own corner colour.
+  // The still, fitted to the canvas (1280x704 unless --size) on the image's own corner colour.
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const src = sharp(path.resolve(ROOT, image));
   const meta = await src.metadata();

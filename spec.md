@@ -560,7 +560,11 @@ enemy; the Thicket's fog creeps a little onto the table.
   render of the same still, and 300 ms back to the loop, where the movement lands a few
   pixels off the stance and the longer fade reads as a settle; a keyframe swap dissolves
   instead. Reduce motion stops the
-  fidgets; the loop keeps playing.
+  fidgets; the loop keeps playing. A move may carry a clip of its own, `poses.moves[<move
+id>]` (2026-09-18, built for the spider's Spin Web — a clip of its back legs rising was cut and
+  then dropped by the owner; no creature uses it yet): it plays once in place of the
+  loop while the move runs, the body only breathing under it, and hands back to the loop the
+  same way a fidget does; a lunge keeps its keyframes.
 - **Hand:** DOM elements along the bottom edge in the bright zone. Hover lifts and enlarges.
 - **Playing a card:** it lifts off the hand, becomes a textured plane in the 3D scene, flies to
   its target and hits (impact flash, sprite recoil, number pop). Untargeted cards flash at the
@@ -609,9 +613,10 @@ side for the same reason. The first frame of a sheet (rest) is the creature's `a
 **Clip frames** are cut from a green-screen video by `npm run art:video`: keyed with the same
 chroma key as the renders, one shared crop and placement for every frame (so nothing drifts),
 scaled to the pose frames' figure height on their canvas, tone-matched, and the eye — dulled
-by video compression — relit to amber so the finder sees it. A clip holds a loop stretch
-and/or one fidget; a creature's fidgets may come from several clips, each under its own name
-(`-fidget-NN`, `-lash-NN`, …), cut in one run so they share a crop; ~60 frames at 12 fps is
+by video compression — relit to amber so the finder sees it (both eyes for a front-facing
+creature). A run cuts a loop stretch and any number of named fidgets or move clips from one
+video (`-jaws-NN`, `-legs1-NN`, `-web-NN`, …); a second video of the same creature is cut in
+its own run, anchored on the same rest frame so the frames meet; ~60 frames at 12 fps is
 about 2 MB of WebP.
 Prompts live in `art/manifest.json`; `npm run art` renders them (see `docs/art-pipeline.md`).
 All v1 assets are generated and approved; new content gets a manifest entry and plays with a
